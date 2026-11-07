@@ -1,0 +1,203 @@
+#usda 1.0
+(
+    defaultPrim = "strip"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "strip"
+{
+    def Scope "Looks"
+    {
+        def Material "housing"
+        {
+            token outputs:surface.connect = </strip/Looks/housing/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.92, 0.92, 0.9)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "rocker"
+        {
+            token outputs:surface.connect = </strip/Looks/rocker/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.85, 0.08, 0.06)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "housing" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            float3 physics:diagonalInertia = (0.005, 0.005, 0.005)
+            float physics:mass = 0.5
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Cube "slab" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.06, 0.29, 0.008)
+                double3 xformOp:translate = (0, 0, 0.004)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "wall_near" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.29, 0.034)
+                double3 xformOp:translate = (-0.024999999999999998, 0, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "wall_far" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.29, 0.034)
+                double3 xformOp:translate = (0.024999999999999998, 0, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "infill0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.04, 0.02, 0.034)
+                double3 xformOp:translate = (0, -0.135, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "infill1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.04, 0.015, 0.034)
+                double3 xformOp:translate = (0, -0.0775, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "infill2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.04, 0.015, 0.034)
+                double3 xformOp:translate = (0, -0.0225, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "infill3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.04, 0.12, 0.034)
+                double3 xformOp:translate = (0, 0.08499999999999999, 0.025)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "bezel" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </strip/Looks/housing>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.9)]
+                double size = 1
+                float3 xformOp:scale = (0.032, 0.06, 0.008)
+                double3 xformOp:translate = (0, 0.085, 0.046)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Xform "rocker" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, 0, 0)
+                float3 physics:diagonalInertia = (0.000002, 0.000002, 0.000002)
+                float physics:mass = 0.01
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                double3 xformOp:translate = (0, 0.085, 0.056)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                def Cube "paddle" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </strip/Looks/rocker>
+                    color3f[] primvars:displayColor = [(0.85, 0.08, 0.06)]
+                    double size = 1
+                    float xformOp:rotateX = -12
+                    float3 xformOp:scale = (0.024, 0.05, 0.008)
+                    double3 xformOp:translate = (0, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:rotateX", "xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "rocker" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.000034906585
+            float drive:angular:physics:maxForce = 10
+            float drive:angular:physics:stiffness = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </strip/Geometry/housing>
+            rel physics:body1 = </strip/Geometry/housing/rocker>
+            point3f physics:localPos0 = (0, 0.085, 0.056)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 24
+        }
+
+        def PhysicsFixedJoint "root_joint"
+        {
+            rel physics:body0 = </strip>
+            rel physics:body1 = </strip/Geometry/housing>
+        }
+    }
+}
+

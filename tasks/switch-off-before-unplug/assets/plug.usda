@@ -1,0 +1,97 @@
+#usda 1.0
+(
+    defaultPrim = "plug"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "plug" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    float physics:mass = 0.08
+
+    def Scope "Looks"
+    {
+        def Material "body"
+        {
+            token outputs:surface.connect = </plug/Looks/body/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.08, 0.08, 0.08)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "pins"
+        {
+            token outputs:surface.connect = </plug/Looks/pins/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.8, 0.7, 0.4)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+    }
+
+    def Cube "body" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </plug/Looks/body>
+        color3f[] primvars:displayColor = [(0.08, 0.08, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.036, 0.036, 0.055)
+        double3 xformOp:translate = (0, 0, 0.0275)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "pin0" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.019
+        rel material:binding = </plug/Looks/pins>
+        color3f[] primvars:displayColor = [(0.8, 0.7, 0.4)]
+        double radius = 0.0024
+        double3 xformOp:translate = (0, -0.0095, -0.0095)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "pin1" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.019
+        rel material:binding = </plug/Looks/pins>
+        color3f[] primvars:displayColor = [(0.8, 0.7, 0.4)]
+        double radius = 0.0024
+        double3 xformOp:translate = (0, 0.0095, -0.0095)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "cord" (
+        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03
+        rel material:binding = </plug/Looks/body>
+        color3f[] primvars:displayColor = [(0.08, 0.08, 0.08)]
+        double radius = 0.004
+        double3 xformOp:translate = (0.033, 0, 0.045)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+
