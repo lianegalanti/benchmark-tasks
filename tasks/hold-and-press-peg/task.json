@@ -1,0 +1,20 @@
+{
+  "title": "Hold a loose bar still while pressing a dowel pin into it",
+  "category": "Impact on jobs",
+  "keywords": [
+    "bimanual",
+    "hold and insert",
+    "fixturing by hand",
+    "dowel pin",
+    "assembly"
+  ],
+  "instruction": "Press the steel pin all the way into the hole in the end of the orange bar, until it is flush with the end. The bar is loose on a slippery sheet and must not move: hold it still with one gripper while the other presses the pin in.",
+  "context": "Fitting a dowel pin, bushing or insert into a loose part is routine bench assembly; without a vice, the worker holds the part with one hand and presses with the other, because pushing on a part that isn't held shoves it out of position. Done by: assemblers, fitters and machinists.",
+  "setup": "Left and right are the robot's. Positions are in metres from the midpoint between the two arm bases (61 cm apart, on an oak table): x straight ahead, y toward the left arm. A white PTFE sheet (20 x 30 cm, 3 mm thick) is taped flat to the table, centred at (0.30, -0.035), its long side along y. On it lies an orange 3D-printed PLA bar, solid, 31 x 31 mm in section and 17 cm long (171 g), along y, square to the sheet, with PTFE tape on its underside. Its left end face is at y = 0.05 and its right end at y = -0.12, centred on x = 0.30. A square hole 19 mm across and 7 cm deep goes into the bar from the centre of its left end, closed at the bottom (6 mm walls all round). A ground steel dowel pin (16 mm across, 7 cm long, plain flat ends, 110 g) lies on the bare oak table along y, its centre at (0.30, 0.23), off the sheet.",
+  "scoring": "The bar's movement is the larger displacement of the centres of its two end faces from where they started, at any time during the trial (mark the bar's outline on the sheet before the trial and check the video). Seated: the pin is in the hole with its outer end at most 2 mm proud of the bar's end face (either end of the pin may lead). 1.0 if the pin is seated, pin and bar are still for 1 s, and the bar never moved more than 1 cm. Otherwise the best reached during the trial: 0.5 if the pin was seated while the bar had not moved more than 5 cm; 0.25 if the pin's leading end was at some point at least 5 mm inside the hole; otherwise 0.",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Pull the pin out (grip its exposed end, or tip the bar up and let it slide out), lay it back on the table at its start, and put the bar back on its outline on the sheet. Wipe the sheet and the bar's underside if dusty, so the bar keeps sliding freely.",
+  "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. The bar's hole is square (19 mm, a real bore would be round), with 1.5 mm clearance per side around the 16 mm pin and no chamfer. Friction: bar on sheet 0.08 static, 0.06 dynamic (PTFE); pin and gripper pads about 0.9 to 1.0, more than steel on PLA, so a pin pushed by one arm drags the bar along. No press fit: the pin slides in freely once lined up. The simulator has no rolling resistance, so the lying pin has some angular damping in its place.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-5V4EGA"
+}
