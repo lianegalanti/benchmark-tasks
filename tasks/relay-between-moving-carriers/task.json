@@ -1,0 +1,20 @@
+{
+  "title": "Relay a part between two cycling shuttle lines",
+  "category": "Impact on jobs",
+  "keywords": [
+    "bimanual",
+    "handover",
+    "moving conveyance",
+    "timing",
+    "machine tending"
+  ],
+  "instruction": "Move the orange block from the right carrier into the green nest on the left carrier. Neither carrier stops for you, and each arm reaches only its own carrier.",
+  "context": "Robot cells between two indexing lines or machines move parts from one line's cycle onto another's, each pausing only briefly; when the lines are too far apart for one arm, two robots pass the part across a fixed transfer nest. Done by: machine tenders and assembly-line workers.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. Two shuttle lines run straight away from the arms, parallel to each other, their centre lines 48 cm to either side of the midpoint between the bases (17.5 cm outside each base). Each line has two steel rails (1.5 x 1.5 cm, 32 cm long, 8 cm apart centre to centre) from 16 to 48 cm in front of the line through the bases, and a grey steel carrier plate (12 x 12 x 2 cm) riding 2 mm above them, with stops at 24 cm (near) and 40 cm (far) in front of the bases. Carrier A is on the right arm's side, carrier B on the left arm's side; both start at their far stops. A bare aluminium block (5 x 5 x 3 cm, 200 g) lies flat in the middle of carrier A, square to it. Carrier B carries a green nest centred on it: four plastic lips 1 cm wide and 5 mm tall enclosing a 7 x 7 cm square pocket, square to the plate. A yellow plastic handover pad (10 x 10 x 2 cm) is fixed on the table, square to the rails, centred on the midline 30 cm in front of the bases. Carrier A's cycle: it waits 2 s at its far stop, travels 16 cm to its near stop in 2.5 s (smooth start and stop, peak speed 10 cm/s), waits 2 s, travels back in 2.5 s, and repeats every 9 s. Carrier B's cycle: it waits 3 s at its far stop, travels to its near stop in 3 s (peak speed 8.4 cm/s), waits 3 s, travels back in 3 s, and repeats every 12 s. Both cycles start with the trial.",
+  "scoring": "1.0 if the block ends lying in B's nest and riding with it: its centre within 1 cm of the nest's centre along and across the line, its underside within 1 cm of B's top, moving within 1 cm/s of B's velocity and turning under 0.5 rad/s, for 1 s. Otherwise the best reached during the trial: 0.5 if the block's centre was at some point 81 cm or more across the table from the right arm's base (beyond that arm's reach, so the left arm carried it) with its underside 3 cm or more above the table; 0.25 if its underside was at some point 3 cm or more above carrier A's top surface; otherwise 0 (the block never lifted, pushed off carrier A, or knocked to the table).",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Stop both carriers at their far stops, put the block back in the middle of carrier A, and start both cycles with the trial (each beginning with its wait at the far stop).",
+  "fidelity": "The carriers follow their paths exactly, like stiff servo axes: the arms can't push or stop them, where a real drive would fault if blocked. They ride 2 mm above their rails. The block has rubber-like friction (1.2 static, 1.0 dynamic), more than aluminium on steel; at a peak acceleration under 0.5 m/s2 it doesn't slide on a carrier.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-JNYVTS"
+}
