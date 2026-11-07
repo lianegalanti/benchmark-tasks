@@ -1,0 +1,213 @@
+#usda 1.0
+(
+    defaultPrim = "cart"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "cart"
+{
+    def Scope "Looks"
+    {
+        def Material "body"
+        {
+            token outputs:surface.connect = </cart/Looks/body/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.15, 0.45, 0.8)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "dark"
+        {
+            token outputs:surface.connect = </cart/Looks/dark/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.18, 0.18, 0.2)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "lever"
+        {
+            token outputs:surface.connect = </cart/Looks/lever/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.45, 0.08)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "body" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0.035)
+            float3 physics:diagonalInertia = (0.0007025, 0.0004225, 0.001)
+            float physics:mass = 0.3
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Cube "body" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/body>
+                color3f[] primvars:displayColor = [(0.15, 0.45, 0.8)]
+                double size = 1
+                float3 xformOp:scale = (0.12, 0.16, 0.05)
+                double3 xformOp:translate = (0, 0, 0.034999999999999996)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "runner_near" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/dark>
+                color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                double size = 1
+                float3 xformOp:scale = (0.015, 0.14, 0.01)
+                double3 xformOp:translate = (-0.04, 0, 0.005)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "runner_far" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/dark>
+                color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                double size = 1
+                float3 xformOp:scale = (0.015, 0.14, 0.01)
+                double3 xformOp:translate = (0.04, 0, 0.005)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "shoe_near" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/dark>
+                color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                double size = 1
+                float3 xformOp:scale = (0.008, 0.1, 0.016)
+                double3 xformOp:translate = (-0.018, 0, 0.002)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "shoe_far" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/dark>
+                color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                double size = 1
+                float3 xformOp:scale = (0.008, 0.1, 0.016)
+                double3 xformOp:translate = (0.018, 0, 0.002)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "bracket" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cart/Looks/dark>
+                color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                double size = 1
+                float3 xformOp:scale = (0.029, 0.012, 0.016)
+                double3 xformOp:translate = (-0.0745, -0.017, 0.03723902679996132)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Xform "lever" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, 0, 0.025195653)
+                float3 physics:diagonalInertia = (0.00004607293, 0.000044767166, 0.0000016257632)
+                float physics:mass = 0.03
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                float xformOp:rotateY = -40
+                double3 xformOp:translate = (-0.095, -0.03, 0.03723902679996132)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+
+                def Cube "pad" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </cart/Looks/dark>
+                    color3f[] primvars:displayColor = [(0.18, 0.18, 0.2)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.024, 0.008)
+                    double3 xformOp:translate = (0, 0, -0.046)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "bar" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </cart/Looks/lever>
+                    color3f[] primvars:displayColor = [(0.95, 0.45, 0.08)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.01, 0.077)
+                    double3 xformOp:translate = (0, 0, -0.0034999999999999996)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "paddle" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </cart/Looks/lever>
+                    color3f[] primvars:displayColor = [(0.95, 0.45, 0.08)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.03, 0.04)
+                    double3 xformOp:translate = (0, 0, 0.055)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "brake" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.000034906585
+            float drive:angular:physics:maxForce = 10
+            float drive:angular:physics:stiffness = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </cart/Geometry/body>
+            rel physics:body1 = </cart/Geometry/body/lever>
+            point3f physics:localPos0 = (-0.095, -0.03, 0.037239026)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -40
+            float physics:upperLimit = 12
+        }
+    }
+}
+
