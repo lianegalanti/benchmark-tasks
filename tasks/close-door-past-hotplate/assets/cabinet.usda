@@ -1,0 +1,176 @@
+#usda 1.0
+(
+    defaultPrim = "cabinet"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "cabinet"
+{
+    def Scope "Looks"
+    {
+        def Material "carcass"
+        {
+            token outputs:surface.connect = </cabinet/Looks/carcass/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.88, 0.87, 0.83)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "door"
+        {
+            token outputs:surface.connect = </cabinet/Looks/door/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.72, 0.55, 0.36)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "carcass" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            float3 physics:diagonalInertia = (0.05, 0.05, 0.05)
+            float physics:mass = 5
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Cube "bottom" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.2, 0.22, 0.011)
+                double3 xformOp:translate = (0.10750000000000001, 0.11, 0.006500000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "top" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.2, 0.22, 0.012)
+                double3 xformOp:translate = (0.10750000000000001, 0.11, 0.174)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "back" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.012, 0.22, 0.156)
+                double3 xformOp:translate = (0.2015, 0.11, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "side_right" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.188, 0.012, 0.156)
+                double3 xformOp:translate = (0.1015, 0.006, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "side_left" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.188, 0.012, 0.156)
+                double3 xformOp:translate = (0.1015, 0.214, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "shelf" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </cabinet/Looks/carcass>
+                color3f[] primvars:displayColor = [(0.88, 0.87, 0.83)]
+                double size = 1
+                float3 xformOp:scale = (0.168, 0.196, 0.012)
+                double3 xformOp:translate = (0.1115, 0.11, 0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Xform "door" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, 0.11, 0.09)
+                float3 physics:diagonalInertia = (0.0019325, 0.000728125, 0.001215625)
+                float physics:mass = 0.3
+                quatf physics:principalAxes = (1, 0, 0, 0)
+
+                def Cube "panel" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </cabinet/Looks/door>
+                    color3f[] primvars:displayColor = [(0.72, 0.55, 0.36)]
+                    double size = 1
+                    float3 xformOp:scale = (0.015, 0.22, 0.17)
+                    double3 xformOp:translate = (0, 0.11, 0.09)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "hinge" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.0008726646
+            float drive:angular:physics:maxForce = 100
+            float drive:angular:physics:stiffness = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </cabinet/Geometry/carcass>
+            rel physics:body1 = </cabinet/Geometry/carcass/door>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 90
+        }
+
+        def PhysicsFixedJoint "root_joint"
+        {
+            rel physics:body0 = </cabinet>
+            rel physics:body1 = </cabinet/Geometry/carcass>
+        }
+    }
+}
+
