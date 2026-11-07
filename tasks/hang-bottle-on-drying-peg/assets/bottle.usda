@@ -1,0 +1,411 @@
+#usda 1.0
+(
+    defaultPrim = "Bottle"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Bottle" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0, -0.00721659)
+    float physics:mass = 0.07
+
+    def Cube "wall_00" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 0)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.028499999999999998, 0, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_00" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 0)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.028499999999999998, 0, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_01" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 22.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.02633056667657167, 0.010906477822405058, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_01" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 22.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.02633056667657167, 0.010906477822405058, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_02" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 45)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.020152543263816602, 0.020152543263816602, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_02" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 45)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.020152543263816602, 0.020152543263816602, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_03" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 67.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.01090647782240506, 0.02633056667657167, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_03" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 67.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.01090647782240506, 0.02633056667657167, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_04" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 90)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (1.7451216887849783e-18, 0.028499999999999998, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_04" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 90)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (1.7451216887849783e-18, 0.028499999999999998, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_05" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 112.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.010906477822405057, 0.02633056667657167, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_05" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 112.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.010906477822405057, 0.02633056667657167, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_06" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 135)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.020152543263816602, 0.020152543263816602, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_06" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 135)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.020152543263816602, 0.020152543263816602, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_07" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 157.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.02633056667657167, 0.01090647782240506, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_07" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 157.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.02633056667657167, 0.01090647782240506, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_08" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 180)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.028499999999999998, 3.490243377569957e-18, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_08" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 180)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.028499999999999998, 3.490243377569957e-18, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_09" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 202.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.026330566676571673, -0.010906477822405055, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_09" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 202.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.026330566676571673, -0.010906477822405055, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_10" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 225)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.020152543263816606, -0.020152543263816602, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_10" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 225)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.020152543263816606, -0.020152543263816602, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_11" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 247.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-0.010906477822405074, -0.026330566676571663, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_11" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 247.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-0.010906477822405074, -0.026330566676571663, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_12" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 270)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (-5.235365066354934e-18, -0.028499999999999998, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_12" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 270)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (-5.235365066354934e-18, -0.028499999999999998, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_13" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 292.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.010906477822405064, -0.026330566676571666, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_13" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 292.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.010906477822405064, -0.026330566676571666, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_14" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 315)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.0201525432638166, -0.020152543263816606, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_14" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 315)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.0201525432638166, -0.020152543263816606, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "wall_15" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 337.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.105)
+        double3 xformOp:translate = (0.026330566676571663, -0.010906477822405076, -0.0075)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cube "collar_15" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.68, 0.15)]
+        double size = 1
+        float3 xformOp:rotateXYZ = (0, 0, 337.5)
+        float3 xformOp:scale = (0.003, 0.011934742, 0.015)
+        double3 xformOp:translate = (0.026330566676571663, -0.010906477822405076, 0.0525)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+    }
+
+    def Cylinder "bottom" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.004
+        color3f[] primvars:displayColor = [(0.88, 0.92, 0.96)]
+        double radius = 0.028
+        double3 xformOp:translate = (0, 0, -0.057999999999999996)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+

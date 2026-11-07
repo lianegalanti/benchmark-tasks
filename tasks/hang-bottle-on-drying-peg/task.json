@@ -1,0 +1,20 @@
+{
+  "title": "Hang a washed baby bottle mouth-down on a drying-rack peg",
+  "category": "Societal relevance",
+  "keywords": [
+    "household",
+    "childcare",
+    "reorientation",
+    "peg insertion",
+    "hanging"
+  ],
+  "instruction": "Hang the washed baby bottle mouth-down on a peg of the drying rack to dry.",
+  "context": "Infant feeding bottles are dried upside down on a drying rack's pegs, so water drains out and air reaches the inside without the rim sitting on a wet surface; homes, nurseries and hospital milk rooms do this many times a day. The bottle lies on its side with its mouth toward the robot, so it must be turned a quarter turn in the hand and then lowered blind over a peg that disappears inside it.",
+  "setup": "Left and right are the robot's. Positions are in metres from the midpoint between the two arm bases: x forward, y to the robot's left; heights are above the table top. Dish towel (light blue cotton, 20 cm along x by 12 cm along y, 4 mm thick) lies flat, centred at (0.21, 0.30). Baby bottle (a straight wide-neck polypropylene bottle without its teat or cap, 70 g): an open tube 12 cm long and 6.0 cm across outside, 3 mm wall (5.4 cm bore), closed at one end by a 4 mm bottom, with a 1.5 cm amber screw-collar band at the open mouth. It lies on its side on the towel, its axis along x at y = 0.30, its centre at x = 0.21, mouth toward the robot (mouth at x = 0.15, closed end at x = 0.27). Drying rack (fixed to the table): a white plastic base 9 cm along x by 22 cm along y, 1.2 cm thick, centred at (0.36, 0.14), with two upright grey plastic pegs 12 mm in diameter with rounded tips, standing on the base at (0.36, 0.20) and (0.36, 0.08), their tips 15 cm above the table top. Nothing else is on the table. The right arm starts in its ready pose and is free to use.",
+  "scoring": "On a peg: a peg's tip is at least 3 cm inside the bottle, having entered through its mouth, with the bottle's axis within 30 degrees of vertical, mouth down. Hanging: on a peg with the bottle's lowest point (its rim) at least 5 mm above the rack base. 1.0 (success): the bottle is hanging on either peg, no gripper holds it and every part of both grippers is at least 5 cm from the bottle's surface (their centre lines 8 cm from its axis), and it is still (under 2 cm/s) for 1 s. Otherwise the best reached during the trial: 0.5 if the bottle was at some point on a peg (held or not); 0.25 if its lowest point was at some point at least 3 cm above the table (lifted); else 0. A bottle that falls off the table (its centre 5 cm below the table top) scores 0 for the rest of the trial. Doing nothing scores 0.",
+  "run_limit": "1,200 steps (1 minute at 20 Hz)",
+  "reset_notes": "Take the bottle off the rack (or from wherever it ended) and lay it back on its side on the towel at its marked position, mouth toward the robot; its turn about its own axis doesn't matter. Nothing is consumed.",
+  "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. The bottle is one rigid body: a 16-sided tube (6.0 cm across the flats) with a closed bottom, so it doesn't roll on the towel as a round bottle might. Friction 0.9 static, 0.8 dynamic on the bottle; the pegs and rack are fixed, rigid colliders. Plastic flex, water and drips are not simulated.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-AX5CAL"
+}
