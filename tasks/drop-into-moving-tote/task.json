@@ -1,0 +1,20 @@
+{
+  "title": "Put a part into a tote that keeps moving",
+  "category": "Impact on jobs",
+  "keywords": [
+    "kitting",
+    "packing",
+    "moving target",
+    "timing",
+    "pick and place"
+  ],
+  "instruction": "Put the orange block in the blue tote. The tote keeps moving and won't stop for you.",
+  "context": "On kitting and packing lines, totes, trays and cartons run past a station on a conveyor that doesn't stop, and whoever loads them must drop each part in while it moves. Done by: packers, kitters and assembly-line workers.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. A bare aluminium block (5 x 5 x 3 cm, 200 g) lies flat on the table, square to the line through the arm bases, its centre 20 cm in front of the left arm's base. A blue plastic open tote (14 x 14 cm inside, about 16 x 16 cm outside, 1 cm floor and walls, 6 cm tall) is carried by a linear axis 2 mm above the table, square to the arm bases, its centre 34 cm in front of them. It moves parallel to the line through the arm bases between two ends: 20 cm toward the right arm and 30 cm toward the left arm from the midpoint between the bases. It starts at rest at its right end. Its motion, from the start: it speeds up to 10 cm/s over 0.8 s (a smooth raised-cosine ramp), runs at 10 cm/s, slows to rest at its left end over 0.8 s (5.8 s in all), turns straight back the same way, and repeats without pausing (11.6 s per cycle, peak acceleration 0.2 m/s²).",
+  "scoring": "All positions are relative to where the tote is at that moment. 1.0 if the block ends lying in the tote: its centre inside the tote's walls, its underside within 1 cm of the tote floor, moving with the tote (velocity within 1 cm/s of the tote's, turning under 0.5 rad/s) for 1 s. Otherwise the best reached during the trial: 0.5 if the block's centre was at some point inside the tote's walls with its underside less than 5 cm above the tote's rim; 0.25 if its underside was at some point 3 cm or more above the table; otherwise 0 (the block never lifted, or was pushed along the table).",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Stop the tote at rest at its right end, empty it, put the block back in place, and start the tote's motion with the trial.",
+  "fidelity": "The tote follows its path exactly, like a stiff servo axis or a conveyor: the arms can't push it or stop it. It glides 2 mm above the table and is modelled as a floor and four walls moving as one (1 mm apart). The block has the station's rubber-like friction (1.2 static, 1.0 dynamic) and the tote 0.8 static, 0.7 dynamic, more than aluminium on plastic; at a peak acceleration of 0.2 m/s², the block doesn't slide in the tote as it turns.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-B2BUZE"
+}
