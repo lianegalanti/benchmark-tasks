@@ -1,0 +1,20 @@
+{
+  "title": "Unhook two linked S-hooks and hang each on its own support",
+  "category": "Impact on jobs",
+  "keywords": [
+    "retail stocking",
+    "hardware",
+    "unlinking",
+    "topological manipulation",
+    "hanging"
+  ],
+  "instruction": "The two S-hooks on the display rail are hooked into each other. Separate them and hang each one by itself, one on the rail and the other on the peg, without putting either down.",
+  "context": "Shop and warehouse staff restocking hardware displays, and kitchen or butchery staff sorting hanging hooks, often find S-hooks hooked into one another. Unhooking them can't be done by pulling: the lower hook has to be lifted until the upper hook's curl drops out under its tip, then moved so that curl leaves through its opening, and only then carried to another support.",
+  "setup": "Left and right are the robot's. Positions are in metres from the midpoint between the two arm bases: x forward, y to the robot's left; heights are above the table top. Display (fixed): an upright plywood board 32 cm wide, 40 cm tall and 1.5 cm thick standing on the table, its front face at x = 0.40, spanning y = -0.09 to 0.23. A chrome rail (12 mm steel rod) runs along y from y = 0.04 to 0.20 at x = 0.30, 32.5 cm up, held at each end by a chrome bracket (10.8 x 1.2 x 2 cm) reaching back to the board. A straight chrome peg (12 mm rod, rounded tip) sticks out of the board toward the robot at y = -0.02, 26 cm up, 11 cm long (tip at x = 0.29). Two identical S-hooks of 10 mm aluminium rod, 60 g each, 15.0 cm tall and 6.6 cm wide: two 160-degree curls of 2.8 cm radius to the rod's centre line (4.6 cm clear inside, a 4.0 cm opening between each curl's tip and the middle stroke), their centres 8.4 cm apart one above the other, joined by a straight diagonal stroke. Hook A hangs on the rail at y = 0.12 by its top curl, edge-on to the robot (in the x-z plane), the top curl's tip toward the board. Hook B hangs by its top curl from the lowest point of hook A's bottom curl, facing the robot (in the y-z plane, at x = 0.30), its top curl's tip toward the robot's left; its centre is 14 cm up and its lowest point 6.5 cm above the table. Nothing else is on the table. Both arms start in their ready pose; both are free to use.",
+  "scoring": "A hook is on a support when the rail or the peg passes through one of its curls, crossing the curl's plane less than 2.5 cm from the curl's centre. The hooks are hooked together when either hook's rod passes through a curl of the other in the same way. 1.0 (success): one hook on the rail and the other on the peg, the hooks not hooked together and at least 3 mm apart, no gripper holding either, both grippers' centre lines at least 4 cm from both hooks' rods, and both hooks still (under 2 cm/s) for 1 s. Otherwise the best reached during the trial: 0.5 if at some point the hooks were no longer hooked together; 0.25 if at some point they were at least 1 cm apart everywhere (one lifted off the other); else 0. If either hook touches the table at any time (its lowest point within 5 mm of the table top), or falls off it, the score is 0 for the rest of the trial. Doing nothing scores 0.",
+  "run_limit": "1,800 steps (90 s at 20 Hz)",
+  "reset_notes": "Hang hook A back on the rail at y = 0.12, edge-on to the robot with its top tip toward the board, and hook B from it as in the setup, facing the robot with its top tip to the left; let both stop swinging. Nothing is consumed.",
+  "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. Each S-hook is one rigid body of 17 capsules along its centre line (each 160-degree curl is 8 straight 20-degree chords, within 0.4 mm of a true arc). The board, rail, brackets and peg are fixed colliders. Friction 0.7 static, 0.6 dynamic on the hooks. Rod flex, plating and a real display's give are not simulated.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-V63M92"
+}

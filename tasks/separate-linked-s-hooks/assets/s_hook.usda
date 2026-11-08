@@ -1,0 +1,236 @@
+#usda 1.0
+(
+    defaultPrim = "SHook"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "SHook" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0, 0)
+    float physics:mass = 0.06
+
+    def Capsule "rod_00" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348103
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -120, 0)
+        double3 xformOp:translate = (0.02388031889466841, 0, 0.05578730854217091)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_01" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348093
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -140, 0)
+        double3 xformOp:translate = (0.017724622203665694, 0, 0.0631233821885937)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_02" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348102
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -160, 0)
+        double3 xformOp:translate = (0.009431074487337028, 0, 0.06791166419515306)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_03" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0097242979493481
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -180, 0)
+        double3 xformOp:translate = (1.734723475976807e-18, 0, 0.06957461708434183)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_04" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348098
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 160, 0)
+        double3 xformOp:translate = (-0.009431074487337023, 0, 0.06791166419515306)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_05" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0097242979493481
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 140, 0)
+        double3 xformOp:translate = (-0.01772462220366569, 0, 0.0631233821885937)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_06" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348096
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 120, 0)
+        double3 xformOp:translate = (-0.023880318894668406, 0, 0.05578730854217092)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_07" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348107
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 100, 0)
+        double3 xformOp:translate = (-0.027155696691002717, 0, 0.046788282006559365)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_08" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.1009554357129917
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 56.309933, 0)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_09" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348098
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 100, 0)
+        double3 xformOp:translate = (0.02715569669100272, 0, -0.046788282006559365)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_10" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348103
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 120, 0)
+        double3 xformOp:translate = (0.02388031889466841, 0, -0.05578730854217091)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_11" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348093
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 140, 0)
+        double3 xformOp:translate = (0.017724622203665694, 0, -0.0631233821885937)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_12" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348102
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, 160, 0)
+        double3 xformOp:translate = (0.009431074487337028, 0, -0.06791166419515306)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_13" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0097242979493481
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -180, 0)
+        double3 xformOp:translate = (1.734723475976807e-18, 0, -0.06957461708434183)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_14" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348098
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -160, 0)
+        double3 xformOp:translate = (-0.009431074487337023, 0, -0.06791166419515306)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_15" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0097242979493481
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -140, 0)
+        double3 xformOp:translate = (-0.01772462220366569, 0, -0.0631233821885937)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Capsule "rod_16" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.009724297949348096
+        color3f[] primvars:displayColor = [(0.8, 0.82, 0.85)]
+        double radius = 0.005
+        float3 xformOp:rotateXYZ = (0, -120, 0)
+        double3 xformOp:translate = (-0.023880318894668406, 0, -0.05578730854217092)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+}
+
