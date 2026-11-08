@@ -1,0 +1,20 @@
+{
+  "title": "Pick the ripe fruit from a plant that keeps swaying, leaving the unripe one",
+  "category": "Impact on jobs",
+  "keywords": [
+    "harvesting",
+    "agriculture",
+    "moving target",
+    "visual tracking",
+    "selective picking"
+  ],
+  "instruction": "Pick the ripe red tomato and put it in the brown basket. The plants keep swaying and won't hold still for you, so follow the tomato as you pick it. Leave the green tomato on its plant.",
+  "context": "In greenhouses and orchards, fruit rarely hangs still: wind, ventilation fans and neighbouring picks keep plants and trellis wires swaying, so a picker has to follow the fruit while closing the hand on it, and take only the ripe fruit, leaving unripe fruit to ripen. Done by: fruit and vegetable pickers.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. Two mock tomato plants stand in front of the arms; each is a green-painted wooden stem (1.2 x 1.2 cm, 4.7 cm tall, its foot 5 mm above the table, carried from below by a two-axis drive through a slot in the table) topped by a green plastic calyx cup (5 x 5 cm outside, 3.1 cm tall: a 1 cm floor and 2 cm high, 1 cm thick walls around a square 3 x 3 cm opening; rim 8.4 cm above the table, square to the arm bases). In each cup rests a solid rubber ball (6 cm across, 150 g) on the opening's four edges, its centre 11 cm above the table: red (ripe) on the plant toward the right arm, green (unripe) on the one toward the left arm. Positions are of a cup's centre as (cm in front of the bases' line, cm toward the left arm from the midpoint between the bases). Each cup sways about its centre, (30, -9) for the ripe plant and (30, 9) for the green one, in a level figure of eight, never stopping: x = 2 sin(2a), y = 3.5 sin(a), where a advances by one turn every 4.8 s. The ripe plant starts at a = 0 (at its centre), the green one a quarter turn ahead (a = 90 deg, at (30, 12.5)). Both start at rest and reach full pace after 2 s (the pace grows as a smoothstep); then speeds are 3 to 7 cm/s. A brown plastic open basket (16 x 16 cm outside, 14 x 14 cm inside, 1 cm floor, 5 cm walls) stands on the table, square to the arm bases, its centre 17 cm in front of the bases and 7.5 cm outside the right arm's base.",
+  "scoring": "A tomato is out of its cup when its centre is more than 1.5 cm sideways from the cup's centre line, or more than 1.5 cm above or below where it rests seated; checked every 0.05 s. 1.0 if the red tomato ends resting in the basket (centre inside the walls, underside within 1 cm of the floor, still for 1 s) and the green tomato was never out of its cup. Otherwise, at the end: 0.5 if the red tomato rests in the basket (the green one was out of its cup at some point, taken or knocked off); 0.25 if the red tomato's centre was ever 3 cm or more above its seated height (picked); 0 otherwise, including when only the green tomato was taken.",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Stop both plants at their start points, seat the red and green balls in their cups, empty the basket, and start the sway with the trial.",
+  "fidelity": "The plants are rigid and translate along their paths exactly, like a stiff drive: the arms can't push or stop them, and stems don't bend or tilt. Each plant is six boxes (stem, cup floor, four walls, 1 mm apart). The tomatoes are rigid balls resting loose in their cups, not attached by a stalk, with rubber-like friction (1.2/1.0); real tomatoes are softer.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-5FMVGQ"
+}
