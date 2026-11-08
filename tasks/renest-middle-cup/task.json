@@ -1,0 +1,20 @@
+{
+  "title": "Put a cup back into the middle of its nested set",
+  "category": "Societal relevance",
+  "keywords": [
+    "household",
+    "nesting",
+    "tidying",
+    "containment",
+    "insertion with clearance"
+  ],
+  "instruction": "Put the loose cup away in the nested set, so that all three cups are nested inside one another.",
+  "context": "Putting away washed kitchenware means slotting an item back into a nested set where it belongs by size. Here the loose cup belongs in the middle, so the small cup already inside the large one has to come out first and go back in on top; dropping the loose cup in or onto the set does not nest it.",
+  "setup": "Positions are in metres from the midpoint between the two arm bases: x forward, y to the robot's left; heights are above the table top. Three square, open-topped cups, 3D-printed in teal PLA with 4 mm walls and a 4 mm floor. Large: 12.6 x 12.6 cm outside, 3.2 cm tall, 80 g, standing square to the table edge with its centre at (0.22, 0.04). Small: 5.0 x 5.0 cm outside, 9.5 cm tall, 40 g, standing upright in the middle of the large cup's floor, square to it. Medium: 8.8 x 8.8 cm outside, 6.5 cm tall, 60 g, standing on its own, square to the table edge, centred at (0.24, -0.20). Nested, each cup has 1.5 cm of clearance to the next larger cup's walls on every side, and each smaller cup's rim stands 3.4 to 3.7 cm above the rim of the cup around it. Nothing else is on the table.",
+  "scoring": "1.0 if, held still for 1 s: the medium cup stands in the large cup and the small cup in the medium cup, each with its underside within 1 cm of the floor of the cup around it and its centre within 1.8 cm of that cup's centre along each side (1.5 cm is touching a wall), every cup within 10 degrees of upright, the large cup on the table, and both grippers (centre and fingertips) at least 2 cm outside the stack's outline (the large cup's footprint, up to 1 cm above the small cup's nested rim). Otherwise the best reached during the trial: 0.5 if at some point the medium cup stood in the large cup, or the small cup in the medium cup, by the same test; 0.25 if at some point the small cup's underside was at least 1 cm above the large cup's rim; otherwise 0 (the start state, the small cup back in the large one, or the medium cup resting on the small cup's rim or turned over it).",
+  "run_limit": "1,200 steps (1 minute at 20 Hz)",
+  "reset_notes": "Stand the small cup back in the large one and the medium cup at its start mark, all square to the table edge.",
+  "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. Each cup is one rigid body of five box colliders (floor and walls), with friction 1.0 static, 0.8 dynamic, a little grippier than bare PLA. The smaller cups are taller than real measuring cups so that each nested cup stands above the next rim and can be held there. Gripper clearance is judged from the arms' joint positions each control step.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-PMN5H3"
+}

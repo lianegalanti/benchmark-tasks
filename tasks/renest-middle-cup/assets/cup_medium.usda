@@ -1,0 +1,68 @@
+#usda 1.0
+(
+    defaultPrim = "Cup"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Cup" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    float physics:mass = 0.06
+
+    def Cube "floor" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.62, 0.52)]
+        double size = 1
+        double3 xformOp:translate = (0.00000, 0.00000, 0.00200)
+        float3 xformOp:scale = (0.08800, 0.08800, 0.00400)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_near" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.62, 0.52)]
+        double size = 1
+        double3 xformOp:translate = (-0.04200, 0.00000, 0.03450)
+        float3 xformOp:scale = (0.00400, 0.08800, 0.06100)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_far" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.62, 0.52)]
+        double size = 1
+        double3 xformOp:translate = (0.04200, 0.00000, 0.03450)
+        float3 xformOp:scale = (0.00400, 0.08800, 0.06100)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_right" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.62, 0.52)]
+        double size = 1
+        double3 xformOp:translate = (0.00000, -0.04200, 0.03450)
+        float3 xformOp:scale = (0.08000, 0.00400, 0.06100)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_left" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.62, 0.52)]
+        double size = 1
+        double3 xformOp:translate = (0.00000, 0.04200, 0.03450)
+        float3 xformOp:scale = (0.08000, 0.00400, 0.06100)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
