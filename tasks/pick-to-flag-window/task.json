@@ -1,0 +1,21 @@
+{
+  "title": "Pick from each bin only while its signal flag is up",
+  "category": "Impact on jobs",
+  "keywords": [
+    "pick to light",
+    "order picking",
+    "reaction time",
+    "timing",
+    "bimanual",
+    "pick and place"
+  ],
+  "instruction": "Each bin has a green flag behind it that pops up for a few seconds when its part is wanted. Take the part from a bin only while that bin's flag is up, and drop it in the grey tote. Leave a bin alone while its flag is down.",
+  "context": "Pick-to-light racks in warehouses and kitting cells signal which bin to pick from, and only briefly, so the picker keeps pace with the line; a part taken from a bin that wasn't signalled is a mis-pick that ends up in the wrong order. The robot must watch the signals and react within the window, not follow a fixed routine. Done by: order pickers and kitting operators.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. Four grey plastic open bins (17 x 17 cm outside, 15 x 15 cm inside, 1 cm floor, 1.5 cm tall walls) stand in a row on the table, square to the line through the arm bases, their centres 33 cm in front of it and, from the robot's left, 40 and 21 cm to the left and 21 and 40 cm to the right of the midpoint between the bases (bins 1 to 4). Each holds one orange-painted wooden cube (4 cm, 40 g), lying in its middle, square to it. A black plywood screen (1 cm thick, 98 cm long, 10 cm tall) stands on the table parallel to the row, centred on the midpoint, its near face 44 cm in front of the bases. Behind it, 1 cm from its back face, stands a green acrylic flag (10 cm wide, 8 cm tall, 1 cm thick) behind each bin, centred on the bin's line, its bottom 1.2 cm above the table, so its top is 0.8 cm below the screen's top while it is down. A grey plastic open tote (14 x 45 cm outside, 12 x 43 cm inside, 1 cm floor, 5 cm tall walls) stands on the table, its long side parallel to the row, centred on the midpoint 15 cm in front of the bases. Nothing else is on the table. Each flag, once in the trial, rises 8 cm straight up in 0.3 s (smooth start and stop), stays up 4.0 s and goes back down in 0.3 s; the rises start at 2.0 s (bin 3), 4.0 s (bin 1), 10.0 s (bin 4) and 12.0 s (bin 2) after the trial starts. A flag counts as up while its top is 5 cm or more above the screen's top: about 4.2 s each.",
+  "scoring": "Each bin earns points from how its cube first left the bin (its underside 3 cm or more above the bin's floor, or its centre outside the bin's inside walls): 1 if it was lifted out while that bin's flag was up and it ends lying in the tote (centre inside the tote's walls, underside within 1 cm of its floor, still); 0.5 if lifted out while that bin's flag was up but it ends anywhere else; -0.5 (a wrong pick) if it left the bin in any way while that bin's flag was down, before or after its window, wherever it ends; 0 if it never left the bin, or was pushed out over the wall without being lifted while its flag was up. The score is the sum over the four bins divided by 4, clipped to 0 to 1, at the end of the trial; the trial ends with 1.0 as soon as all four cubes have been lifted out in their windows and lie still in the tote for 1 s.",
+  "run_limit": "800 steps (40 s at 20 Hz)",
+  "reset_notes": "Lower all four flags, put a cube back in the middle of each bin, and start the flag schedule with the trial.",
+  "fidelity": "The flags follow their path exactly, like a stiff linear actuator: the arms can't push or stop them (they stand behind the screen, out of the way). The cubes have the station's rubber-like friction (1.2 static, 1.0 dynamic), more than painted wood on plastic. Whether a cube left its bin while its flag was up is judged at each control step (20 Hz) from the flag's measured height; on a real table, from video against marks on the bin wall and the screen.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-C9UARL"
+}
