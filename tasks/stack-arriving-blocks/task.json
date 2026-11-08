@@ -1,0 +1,20 @@
+{
+  "title": "Stack blocks into a tower as they arrive on a moving conveyor",
+  "category": "Impact on jobs",
+  "keywords": [
+    "palletizing",
+    "conveyor",
+    "moving objects",
+    "timing",
+    "stacking"
+  ],
+  "instruction": "Stack the three blocks into a tower on the green pad as they come along the conveyor, each one squarely on the one before. Take each block before it passes the red end line; a block that passes the line or touches the table is lost.",
+  "context": "At the end of a packing line, cartons come off a conveyor that doesn't wait, and whoever palletizes them must take each one in time and set it squarely on the stack before the next arrives; a carton missed runs off the end, and a stack set crooked falls. Done by: palletizers and end-of-line packers.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table (110 x 130 cm). A conveyor line runs across the table from the right to the left, parallel to the line through the arm bases, its centre 38 cm in front of it: a black track bed (10 cm wide, 124 cm long, 1.5 cm tall, ending 3 cm inside each table edge) with three grey aluminium carrier plates (8 x 8 x 1.5 cm) riding 2 mm above it, square to it. The carriers' centres start 12 cm to the left, 16 cm to the right and 44 cm to the right of the midpoint between the bases. Each carrier holds one painted wooden cube (5 cm, 80 g) in its middle, square to it: red on the first (leftmost), yellow on the second, blue on the third. Two strips of red tape (6 x 1.2 cm) mark the end line across the table on both sides of the bed, 48 cm to the left of the midpoint, 0.5 cm from the bed. A green painted wooden pad (8 x 8 x 2 cm) is fixed to the table, square to it, its centre 20 cm in front of the bases and 0.5 cm inside the left arm's base (toward the midpoint). Nothing else is on the table. The line starts with the trial: the carriers speed up from rest to 4 cm/s in 0.5 s and run on at that speed, so a block reaches the end line 9.25 s (red), 16.25 s (yellow) and 23.25 s (blue) into the trial. Past the table's left edge the line turns down and drops the carriers and anything on them out of reach.",
+  "scoring": "A block is lost for the rest of the trial once its centre passes the end line, or its underside comes within 1 cm of the table top (it touched the table); lost blocks never count. A block stands on the pad if its centre is over the pad and its underside within 1 cm of the pad's top; it stands on another block if its centre is over that block's top face and its underside within 1 cm of that block's top; either way tilted no more than 10 degrees. 1.0 if all three blocks stand in one tower on the pad, each block's centre within 1.5 cm (horizontally) of the centre of the block below, all still for 1 s, with both grippers' grasp points (between the fingers) 8 cm or more from every block's centre. Otherwise, by the tower standing on the pad at the end of the trial: 0.75 for three blocks, 0.5 for two, 0.25 for one block standing on the pad, 0 otherwise.",
+  "run_limit": "1,200 steps (1 minute at 20 Hz)",
+  "reset_notes": "Stop the line, put the carriers back at their starting positions with a block in the middle of each, and start the line with the trial. Catch blocks that run off the end of the line.",
+  "fidelity": "The carriers follow their path exactly, like a stiff servo-driven pallet conveyor: the arms can't push or stop them, where a real line's drive would fault. They float 2 mm above the bed and past the table's edge simply move straight down (a real line would carry blocks off its end into a bin). The blocks are rigid sharp-edged cubes with the station's rubber-like friction (1.2 static, 1.0 dynamic), more than painted wood on aluminium; at under 0.15 m/s² they don't slide on the carriers.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-F43SKF"
+}
