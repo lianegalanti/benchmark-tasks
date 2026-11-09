@@ -1,0 +1,20 @@
+{
+  "title": "Hang parts on the hooks of a moving overhead conveyor",
+  "category": "Impact on jobs",
+  "keywords": [
+    "conveyor loading",
+    "moving target",
+    "hanging",
+    "timing",
+    "tracking"
+  ],
+  "instruction": "Hang the two orange parts on the passing conveyor hooks by the loop on top of each part, one part per hook, before the hooks reach the red mark, and let go of them. The hooks keep moving and won't stop for you.",
+  "context": "Overhead hook conveyors carry parts through paint, powder-coating and plating lines and garments through finishing; the loader hangs each part on the next passing hook at the line's pace, because the line doesn't stop. A badly hung part falls off down the line. Done by: line loaders in finishing and assembly plants.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table at least 130 cm wide. Two hanger parts of orange PLA plastic (150 g each) stand upright on the table, centred 15 cm in front of the line through the arm bases and 40 cm to the left and to the right of the midpoint between the bases. Each part is a block (8.4 cm wide, 3 cm deep, 3 cm tall) with a rectangular eye on top (outside 8.4 cm wide, 1.5 cm deep; opening 6.0 cm wide and 6.5 cm tall; 1.2 cm thick top bar and side posts) and a grip tab on top of the eye (2 cm deep, 1.2 cm wide, 2.5 cm tall), 13.2 cm tall in all; its eye's opening faces the arms. An overhead rail (grey steel bar, 4 cm deep, 3 cm tall) runs parallel to the line through the arm bases, centred 47.7 cm in front of it, its underside 40.5 cm above the table, from 140 cm left to 180 cm right of the midpoint (held beyond the table's ends). Three steel hooks hang from it, 30 cm apart; each is made of 1.2 cm square steel bar: a vertical stem centred 47.7 cm in front of the bases, from 0.5 cm under the rail down to 10.8 cm above the table; a horizontal bar from the stem's foot back toward the robot, from 47.0 to 24.2 cm in front of the bases, its top face 12 cm above the table; and an upturned tip at the bar's near end (22.9 to 24.1 cm in front of the bases) rising to 13.5 cm above the table. At the start the hooks are 70, 100 and 130 cm to the left of the midpoint, all beyond the table's left edge. A red tape mark (30 x 2 cm) on the table, across the hooks' path, is centred 36 cm in front of the bases and 60 cm to the right of the midpoint. With the trial's first step, the hooks travel toward the robot's right at a constant 5 cm/s and never stop: they pass the red mark at 26, 32 and 38 s.",
+  "scoring": "Per part, summed over the two parts: 0.5 if the part was hanging on its own hook when that hook's bar passed the red mark (the hook's bar through the part's eye, the part's lowest point at least 1 cm above the table, and no gripper's grasp point within 5 cm of the part's tab); otherwise 0.25 if at some point a hook's bar was through the part's eye (held or not); otherwise 0.1 if at some point the part's lowest point was at least 3 cm above the table; otherwise 0. A hook counts at most one part, so two parts on one hook score 0.75. Both parts hung on their own hooks scores 1.0.",
+  "run_limit": "900 steps (45 s at 20 Hz)",
+  "reset_notes": "Take the parts off the hooks and stand them back at their marks, eyes facing the arms; return the hooks to their start positions (70, 100 and 130 cm left of the midpoint) and start the conveyor with the trial. For safety, drive the hook carriers with a low-force belt and slip clutch at 5 cm/s, so a hook blocked by an arm stops instead of pushing.",
+  "fidelity": "The hooks follow their path exactly, like a stiff chain drive: the arms can't push or stop them, where a real low-force drive would slip. Each hook is three steel boxes moving together; the rail's end supports, beyond the table, are not modelled. The parts are rigid bodies of five boxes with friction 1.0 static and 0.9 dynamic, a little grippier than PLA on steel.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-UBU4VP"
+}
