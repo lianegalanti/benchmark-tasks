@@ -1,0 +1,20 @@
+{
+  "title": "Unload sample bottles from a rocker that keeps rocking",
+  "category": "Impact on jobs",
+  "keywords": [
+    "laboratory automation",
+    "moving platform",
+    "periodic disturbance",
+    "timing",
+    "pick and place"
+  ],
+  "instruction": "Take the three bottles off the rocking platform and stand them upright in the grey bins. The platform keeps rocking and won't stop for you; don't knock any bottle off it.",
+  "context": "Rockers and platform shakers keep samples moving through long incubation, staining and washing steps, and bottles are often taken off without stopping the run; anything on a moving vehicle or a ship's deck poses the same problem. The bottles rise, fall and lean with the platform, so a grasp must be timed to its motion. Done by: laboratory technicians.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. A laboratory rocker stands on the midline between them: a 1.5 cm thick platform, 18 cm from front to back and 44 cm from left to right, topped with a black rubber mat, its centre 25 cm in front of the line through the arm bases. It pivots about a front-to-back axis through its centre, 6 cm above the table, on a grey drive base (12 cm front to back, 10 cm wide, 3 cm tall) under its middle. Three square HDPE sample bottles (4 x 4 x 6 cm, capped, 80 g each) stand upright on the mat on its front-to-back centre line, square to it: orange 17 cm to the left of the centre, green at the centre, purple 17 cm to the right. Two grey plastic open bins (16 x 16 cm outside, 14 x 14 cm inside, 1 cm floor, 3.5 cm walls) stand on the table, square to the rocker, their centres 22 cm in front of the line through the arm bases and 39 cm to the left and right of the midline (8.5 cm outside each arm base). The rocker starts level with the trial and never stops: its tilt is 10 degrees x sin(2 pi t / 4 s), its left end rising first, so the ends move 3.8 cm up and down each way and the bottles at them 3 cm.",
+  "scoring": "The mean of the three bottles' credits, each judged at the end of the trial: 1 if the bottle stands in a bin (its centre inside the bin's walls, its underside within 1 cm of the bin floor, its axis within 20 degrees of vertical); otherwise, if it was taken off the platform (at some moment every corner of it was 3 cm or more above the mat directly beneath it): 0.5 if its centre is inside a bin's walls with its underside less than 5 cm above the rim, 0 if it lies on the table outside the bins, and 0.25 anywhere else (still held, or put back on the platform); 0 if it was never taken off the platform. The trial ends with 1.0 once all three stand in the bins, still, for 1 s.",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Stop the rocker level, stand the three bottles back in their places, and start the rocking with the trial (left end rising first).",
+  "fidelity": "The platform follows its motion exactly, like a stiff motor: the arms can't push it or stop it, where a real rocker's motor would stall or slip; its bearing is not modelled (it pivots clear of its base). The bottles are plain boxes with the station's rubber-like friction (1.2 static, 1.0 dynamic) and the mat has 1.0 static, 0.9 dynamic, far above what a 10 degree tilt needs, so nothing slides on the mat, as on a real rocker's rubber mat.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-WXD6DJ"
+}
