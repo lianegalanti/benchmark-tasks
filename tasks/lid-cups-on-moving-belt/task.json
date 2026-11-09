@@ -1,0 +1,22 @@
+{
+  "title": "Put lids on open tubs while they ride past on a conveyor",
+  "category": "Impact on jobs",
+  "keywords": [
+    "packaging",
+    "lidding",
+    "conveyor",
+    "moving target",
+    "timing",
+    "tracking",
+    "pick and place"
+  ],
+  "instruction": "Put a lid on each of the three tubs as they go by on the conveyor, seated flat on the tub's rim, and let go of it before the tub reaches the red end line. The conveyor won't stop for you.",
+  "context": "On food and packaging lines, filled tubs and cups run past a lidding station without stopping, and whoever lids them must match each container's motion, set the lid square over the rim before it moves on, and be ready for the next one; an unlidded or skewed lid means spills and rejected packs. Done by: packaging-line operators and pick-and-place cells.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table (110 x 130 cm). A conveyor line runs across the table from the right to the left, parallel to the line through the arm bases, its centre 34 cm in front of it: a black track bed (12 cm wide, 124 cm long, 1 cm tall, ending 3 cm inside each table edge) with three grey aluminium carrier plates (10 x 10 x 1 cm) riding 2 mm above it, square to it, their centres starting 7.5 cm to the left of, and 24.5 and 56.5 cm to the right of, the midpoint between the bases (32 cm apart). Each carrier holds an open white polypropylene tub in its middle, square to it and fixed in the carrier's nest: square, 8 x 8 cm outside, 0.6 cm walls, 5 cm tall, the carrier forming its floor; the rims are 7.3 cm above the table. Three white polypropylene lids (40 g each) lie skirt-down on the table, square to it, in a row 16 cm in front of the bases, their centres 14, 27 and 40 cm to the left of the midpoint (2.2 cm apart edge to edge). Each lid is a square plate (10.8 x 10.8 cm, 0.5 cm thick) with a skirt (0.4 cm thick) hanging 1.5 cm below it all round its edge (10 x 10 cm inside, so it fits over a tub with 1 cm to spare on every side) and a blue grip fin (8 cm long front to back, 2.4 cm thick, 5.5 cm tall) standing along the middle of its top. Two strips of red tape (6 x 1.2 cm) mark the end line across the table on both sides of the bed, 46 cm to the left of the midpoint, 0.5 cm from the bed. Nothing else is on the table. The line starts with the trial: the carriers speed up from rest to 3 cm/s in 0.5 s and run on at that speed, so a tub passes the left arm every 10.7 s and the tubs reach the end line 13.1 s, 23.8 s and 34.4 s into the trial. Past the table's left edge the line turns down and drops the carriers out of reach.",
+  "scoring": "Each tub is judged once, when its centre reaches the end line. It counts as lidded if then a lid sits on it: the lid's centre within 1.5 cm (horizontally) of the tub's axis, the underside of its plate within 5 mm of the tub's rim, the plate level within 5 degrees and right way up, moving with the tub (within 2 cm/s), and let go (both grippers' grasp points, between the fingers, 5 cm or more from the centre of the lid's grip fin). Score: 1/3 for each tub lidded at the end line (0, 0.33, 0.67 or 1.0). 1.0 when all three were; the trial then ends with success once that has held for 1 s. A tub that reaches the line without a lid, with a lid tilted, askew, perched on its rim or still held, counts 0, and lidding it after it has passed the line doesn't count; what happens to a lid after its tub has passed the line doesn't change the score.",
+  "run_limit": "1,200 steps (1 minute at 20 Hz)",
+  "reset_notes": "Stop the line, take the lids off, put the carriers back at their starting positions, lay the lids back in their row, and start the line with the trial. Catch lids that run off the end of the line.",
+  "fidelity": "The carriers and tub walls follow their path exactly, like a stiff servo-driven pallet conveyor with tubs held in nests: the arms can't push, stop or tip them. Carriers float 2 mm above the bed and past the table's edge move straight down. Each lid is one rigid body of six boxes (plate, four skirt strips, grip fin) with no snap bead, resting on the rim, with the station's rubber-like friction (1.2/1.0); line acceleration under 0.1 m/s² can't slide a seated lid. Tubs are empty.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-EC83AE"
+}
