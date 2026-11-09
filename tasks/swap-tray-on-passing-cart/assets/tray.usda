@@ -1,0 +1,79 @@
+#usda 1.0
+(
+    defaultPrim = "Tray"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Tray" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    float physics:mass = 0.15
+
+    def Cube "floor" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.15, 0.32, 0.8)]
+        double size = 1
+        double3 xformOp:translate = (0.000000, 0.000000, -0.035000)
+        float3 xformOp:scale = (0.110000, 0.110000, 0.005000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_near" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.15, 0.32, 0.8)]
+        double size = 1
+        double3 xformOp:translate = (-0.052500, 0.000000, -0.020000)
+        float3 xformOp:scale = (0.005000, 0.110000, 0.035000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_far" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.15, 0.32, 0.8)]
+        double size = 1
+        double3 xformOp:translate = (0.052500, 0.000000, -0.020000)
+        float3 xformOp:scale = (0.005000, 0.110000, 0.035000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_right" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.15, 0.32, 0.8)]
+        double size = 1
+        double3 xformOp:translate = (0.000000, -0.052500, -0.020000)
+        float3 xformOp:scale = (0.100000, 0.005000, 0.035000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_left" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.15, 0.32, 0.8)]
+        double size = 1
+        double3 xformOp:translate = (0.000000, 0.052500, -0.020000)
+        float3 xformOp:scale = (0.100000, 0.005000, 0.035000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "rib" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.95, 0.85, 0.1)]
+        double size = 1
+        double3 xformOp:translate = (0.000000, 0.000000, 0.002500)
+        float3 xformOp:scale = (0.100000, 0.012000, 0.070000)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
