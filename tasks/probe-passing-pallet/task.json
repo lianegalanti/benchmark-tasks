@@ -1,0 +1,20 @@
+{
+  "title": "Hold a test probe on each passing pallet's pad for 2 s before the end line",
+  "category": "Impact on jobs",
+  "keywords": [
+    "conveyor",
+    "moving objects",
+    "tracking",
+    "inline testing",
+    "tool use"
+  ],
+  "instruction": "Test both pallets as they pass: take the probe from its stand and hold its tip on each pallet's gold test pad for 2 seconds without a break, before the pallet reaches the red end line. The line keeps moving and won't stop for you.",
+  "context": "On lines that run continuously, such as automotive final assembly, checks are made on the move: the operator walks with the part and holds a gauge or test probe on a test point long enough for a reading, then moves to the next part. A probe that slips off the point mid-reading gives no result and the part goes on untested. Done by: assembly-line inspectors and test operators.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table (110 x 130 cm). A conveyor line runs across the table from the right to the left, parallel to the line through the arm bases, its centre 32 cm in front of it: a black track bed (14 cm wide, 124 cm long, 1.5 cm tall, ending 3 cm inside each table edge) with two grey aluminium pallets (12 x 12 x 3 cm) riding 2 mm above it, square to it, their centres starting 20 cm and 50 cm to the right of the midpoint between the bases. Each pallet has a gold-plated brass test pad (3 x 3 cm, 4 mm thick) glued in the middle of its top, square to it. Two strips of red tape (6 x 1.2 cm) mark the end line across the table on both sides of the bed, 40 cm to the left of the midpoint, 0.5 cm from the bed. The test probe is one rigid part, 60 g: a black plastic square handle (2.6 x 2.6 x 10 cm) with a brass square tip (0.8 x 0.8 x 4 cm) fixed to the middle of its bottom face. It stands tip down in a stand of four wooden blocks (4.5 cm tall) glued to the table around a 1.6 x 1.6 cm square well: two 1 x 3.6 cm blocks on the near and far sides and two 1.6 x 1 cm blocks between them; the handle rests on the block tops with the tip hanging in the well, 0.5 cm above the table. The well's centre is 18 cm in front of the bases and 22 cm left of the midpoint. Nothing else is on the table. The line starts with the trial: the pallets speed up from rest to 4 cm/s in 0.5 s and run on at that speed, so their centres reach the end line 15.25 s and 22.75 s into the trial. Past the table's left edge the line turns down and drops the pallets out of reach.",
+  "scoring": "The probe is on a pad when it is held by its handle (a gripper's grasp point, between the fingers, within 3 cm of the point on the handle's axis 3 cm below its top), it stands within 20 degrees of upright, the middle of its tip's end face is inside the pad's outline (seen from above) and no more than 4 mm above or 5 mm below the pad's top surface, and the pad's centre is short of the end line. For each pallet, its longest unbroken time with the probe on its pad earns 1.0 for 2 s or more, 0.75 for 1.5 s, 0.5 for 1 s, 0.25 for any contact, 0 for none. The score is the mean of the two pallets' credits; 1.0 when both pallets were held for 2 s.",
+  "run_limit": "800 steps (40 seconds at 20 Hz)",
+  "reset_notes": "Stop the line, put the pallets back at their starting positions and the probe in its stand, and start the line with the trial.",
+  "fidelity": "The pallets and pads follow their path exactly, like a stiff servo-driven pallet conveyor: the arms can't push or stop them. They float 2 mm above the bed, each pad 1 mm above its pallet, and past the table's edge move straight down. The probe is a rigid body with the station's rubber-like friction; a real test probe has a spring-loaded pin, which the 4 mm allowance above the pad stands in for. There is no electrical reading in sim: contact is measured from the probe's pose.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-STEJDE"
+}
