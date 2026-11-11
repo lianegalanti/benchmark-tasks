@@ -1,0 +1,19 @@
+{
+  "title": "Slide a carton onto a cycling lift's deck while it waits level with the bench",
+  "category": "Impact on jobs",
+  "keywords": [
+    "material handling",
+    "moving conveyance",
+    "timing",
+    "non-prehensile pushing"
+  ],
+  "instruction": "Slide the carton onto the lift's deck while the deck is level with the bench. The lift keeps cycling and won't stop for you.",
+  "context": "Vertical lifts and lift tables in production and pallet-return lines serve several conveyor levels on a fixed cycle and dwell only briefly at each; a carton too wide to carry is slid across from the bench at the landing, and only when the deck is level: too early or too late and it tips into the gap or is levered over the edge. Done by: material handlers, line feeders and warehouse workers.",
+  "setup": "The two arm bases stand 61 cm apart on an oak table. A grey steel-topped bench (a solid block 23 cm deep x 22 cm wide x 8 cm tall) stands on the table, its near edge 10 cm and its far edge 33 cm in front of the bases, centred 26 cm to the right of the midpoint between the bases (4.5 cm inside the right arm's base). Beyond its far edge, across a 1.5 cm gap, is the yellow steel deck of a small automatic lift (18 x 18 x 2 cm plate, centred on the same line, 34.5 to 52.5 cm in front of the bases), driven vertically, with a dark lift mast (3 x 18 x 22 cm) standing on the table 1 cm behind the deck's far edge. A brown cardboard carton (12 x 12 x 6 cm, 300 g, closed) stands on the bench on the same centre line, square to it, its far side 3 cm from the bench's far edge. Nothing else is on the table. The lift's cycle, from the start of the trial: the deck's top waits 3 s at its low stop (5.4 cm below the bench top), rises in 1.5 s to its level stop (0.4 cm below the bench top) and waits 3 s, rises in 1.5 s to its high stop (4.6 cm above the bench top) and waits 3 s, comes down in 1.5 s to the level stop and waits 3 s, goes down in 1.5 s to the low stop, and repeats every 18 s (smooth starts and stops). The deck waits level from 4.5 to 7.5 s, 13.5 to 16.5 s, and so on every 9 s.",
+  "scoring": "1.0 if the carton ends standing wholly on the deck: all four bottom corners over the deck, its underside within 1 cm of the deck's top, tilted 15 degrees or less, moving with the deck (relative speed under 2 cm/s), for 1 s. Otherwise 0 if at any time the carton tilted more than 15 degrees (tipped into the gap, levered over by the moving deck, or knocked over) or its underside went more than 1 cm below the deck's low stop (fallen to the table or into the gap); else the best reached during the trial: 0.5 if it stood upright partly on the deck (at least 2 cm of its underside over the deck and within 1 cm above the deck's top); 0.25 if it stood upright on the bench with its centre at least 5 cm closer to the lift than at the start; otherwise 0.",
+  "run_limit": "1,200 steps (1 minute at 20 Hz)",
+  "reset_notes": "Stop the lift at its low stop, stand the carton back 3 cm from the bench's far edge on the centre line, and start the lift's cycle with the trial (beginning with the 3 s wait at the low stop).",
+  "fidelity": "The deck follows its path exactly, like a stiff servo axis: the arms can't push or stop it (a real trial lift should be a low-force lead-screw stage that stalls if obstructed). Bench top and deck use steel-on-cardboard friction (0.4 static, 0.3 dynamic); the carton is a rigid sharp-edged box. At its level stop the deck sits 4 mm below the bench top as a landing tolerance. The lift mechanism under the deck isn't modelled.",
+  "scores": "Dream-1 run: none (refused as unsafe before the first step: \"Inserting an arm into moving machinery poses a severe risk of collision.\"); demo: 1.0",
+  "media": "M-QYECUQ"
+}
