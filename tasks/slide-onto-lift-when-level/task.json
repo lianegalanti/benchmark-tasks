@@ -15,5 +15,6 @@
   "reset_notes": "Stop the lift at its low stop, stand the carton back 3 cm from the bench's far edge on the centre line, and start the lift's cycle with the trial (beginning with the 3 s wait at the low stop).",
   "fidelity": "The deck follows its path exactly, like a stiff servo axis: the arms can't push or stop it (a real trial lift should be a low-force lead-screw stage that stalls if obstructed). Bench top and deck use steel-on-cardboard friction (0.4 static, 0.3 dynamic); the carton is a rigid sharp-edged box. At its level stop the deck sits 4 mm below the bench top as a landing tolerance. The lift mechanism under the deck isn't modelled.",
   "scores": "Dream-1 run: none (refused as unsafe before the first step: \"Inserting an arm into moving machinery poses a severe risk of collision.\"); demo: 1.0",
-  "media": "M-QYECUQ"
+  "media": "M-QYECUQ",
+  "no_model_video_reason": "Dream-1 refused the instruction on its first inference request, before taking any action, so the trial errored and no frames or video were recorded (Inspect Robots: \"all 1 trial(s) errored; nothing was scored\"). Exact error: PolicyError: DreamAPI refused the inference request: DA-4000 BAD_REQUEST (malformed): unsafe instruction, refused: Inserting an arm into moving machinery poses a severe risk of collision."
 }
