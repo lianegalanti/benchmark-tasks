@@ -1,0 +1,579 @@
+#usda 1.0
+(
+    defaultPrim = "printer"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "printer"
+{
+    def Scope "Looks"
+    {
+        def Material "case"
+        {
+            token outputs:surface.connect = </printer/Looks/case/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.86, 0.86, 0.84)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "rail"
+        {
+            token outputs:surface.connect = </printer/Looks/rail/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.25, 0.26, 0.28)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "roller"
+        {
+            token outputs:surface.connect = </printer/Looks/roller/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.05, 0.05, 0.05)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "door"
+        {
+            token outputs:surface.connect = </printer/Looks/door/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.71, 0.7)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "abs_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "PhysxMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.25
+            float physics:restitution = 0
+            float physics:staticFriction = 0.3
+            custom token physxMaterial:frictionCombineMode = "min"
+        }
+
+        def Material "rubber_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "PhysxMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+            custom token physxMaterial:frictionCombineMode = "max"
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "body" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0.216, 0, 0.09)
+            float3 physics:diagonalInertia = (0.1330625, 0.1140625, 0.181)
+            float physics:mass = 7.5
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Cube "foot0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/rubber_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.03, 0.008)
+                double3 xformOp:translate = (0.03, 0.17, 0.004)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "foot1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/rubber_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.03, 0.008)
+                double3 xformOp:translate = (0.03, -0.17, 0.004)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "foot2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/rubber_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.03, 0.008)
+                double3 xformOp:translate = (0.32999999999999996, 0.17, 0.004)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "foot3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/rubber_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.03, 0.008)
+                double3 xformOp:translate = (0.32999999999999996, -0.17, 0.004)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "base" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.36, 0.4, 0.042)
+                double3 xformOp:translate = (0.18, 0, 0.029)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "wall_left" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.36, 0.015, 0.18)
+                double3 xformOp:translate = (0.18, 0.1925, 0.14)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "wall_right" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.36, 0.015, 0.18)
+                double3 xformOp:translate = (0.18, -0.1925, 0.14)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "top" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.25, 0.37, 0.015)
+                double3 xformOp:translate = (0.235, 0, 0.2225)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "support0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.018, 0.04, 0.0145)
+                double3 xformOp:translate = (0.031, 0.11, 0.05725)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "support1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.018, 0.04, 0.0145)
+                double3 xformOp:translate = (0.031, -0.11, 0.05725)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "engine" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.2, 0.37, 0.165)
+                double3 xformOp:translate = (0.26, 0, 0.1325)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "rail_left_low" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 15
+                float3 xformOp:scale = (0.080751546, 0.009, 0.008)
+                double3 xformOp:translate = (0.05496472381958992, 0.1805, 0.12358631519965753)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "rail_left_up" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 15
+                float3 xformOp:scale = (0.080751546, 0.009, 0.008)
+                double3 xformOp:translate = (0.06303527618041008, 0.1805, 0.15370602665538333)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "ceiling_left" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.009, 0.008)
+                double3 xformOp:translate = (0.10900000000000001, 0.1805, 0.14500000000000002)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "flare_left_low" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = -28.072487
+                float3 xformOp:scale = (0.017, 0.009, 0.008)
+                double3 xformOp:translate = (0.009500000000000001, 0.1805, 0.12990003700962757)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "flare_left_up" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 28.072487
+                float3 xformOp:scale = (0.017, 0.009, 0.008)
+                double3 xformOp:translate = (0.009500000000000001, 0.1805, 0.16990003700962758)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "seat_left" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float3 xformOp:scale = (0.014, 0.009, 0.055)
+                double3 xformOp:translate = (0.10200000000000001, 0.1805, 0.0775)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "stop_left" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float3 xformOp:scale = (0.015, 0.009, 0.11)
+                double3 xformOp:translate = (0.11649999999999999, 0.1805, 0.10500000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "rail_right_low" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 15
+                float3 xformOp:scale = (0.080751546, 0.009, 0.008)
+                double3 xformOp:translate = (0.05496472381958992, -0.1805, 0.12358631519965753)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "rail_right_up" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 15
+                float3 xformOp:scale = (0.080751546, 0.009, 0.008)
+                double3 xformOp:translate = (0.06103527618041008, -0.1805, 0.14624192504024558)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "ceiling_right" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/case>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.86, 0.86, 0.84)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.009, 0.008)
+                double3 xformOp:translate = (0.10900000000000001, -0.1805, 0.137)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "flare_right_low" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = -28.072487
+                float3 xformOp:scale = (0.017, 0.009, 0.008)
+                double3 xformOp:translate = (0.009500000000000001, -0.1805, 0.12990003700962757)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "flare_right_up" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float xformOp:rotateY = 28.072487
+                float3 xformOp:scale = (0.017, 0.009, 0.008)
+                double3 xformOp:translate = (0.009500000000000001, -0.1805, 0.16190003700962757)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY", "xformOp:scale"]
+            }
+
+            def Cube "seat_right" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float3 xformOp:scale = (0.014, 0.009, 0.055)
+                double3 xformOp:translate = (0.10200000000000001, -0.1805, 0.0775)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "stop_right" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </printer/Looks/rail>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.25, 0.26, 0.28)]
+                double size = 1
+                float3 xformOp:scale = (0.015, 0.009, 0.11)
+                double3 xformOp:translate = (0.11649999999999999, -0.1805, 0.10500000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "transfer_roller" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.3
+                rel material:binding = </printer/Looks/roller>
+                rel material:binding:physics = </printer/Looks/abs_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.05, 0.05, 0.05)]
+                double radius = 0.006
+                float xformOp:rotateX = 90
+                double3 xformOp:translate = (0.06, 0, 0.04800000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateX"]
+            }
+
+            def Xform "door" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.024735494, 0, 0.115950845)
+                float3 physics:diagonalInertia = (0.0046819793, 0.00087992917, 0.00401205)
+                float physics:mass = 0.35
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                double3 xformOp:translate = (0, 0, 0.055)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                def Cube "panel" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </printer/Looks/door>
+                    rel material:binding:physics = </printer/Looks/abs_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.7, 0.71, 0.7)]
+                    double size = 1
+                    float3 xformOp:scale = (0.012, 0.366, 0.163)
+                    double3 xformOp:translate = (0.006, 0, 0.0815)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "flange" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </printer/Looks/door>
+                    rel material:binding:physics = </printer/Looks/abs_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.7, 0.71, 0.7)]
+                    double size = 1
+                    float3 xformOp:scale = (0.107, 0.366, 0.012)
+                    double3 xformOp:translate = (0.0535, 0, 0.169)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "rib" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </printer/Looks/door>
+                    rel material:binding:physics = </printer/Looks/abs_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.7, 0.71, 0.7)]
+                    double size = 1
+                    float3 xformOp:scale = (0.02, 0.24, 0.008)
+                    double3 xformOp:translate = (0.022, 0, 0.109)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "hinge" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.00034906584
+            float drive:angular:physics:maxForce = 100
+            float drive:angular:physics:stiffness = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </printer/Geometry/body>
+            rel physics:body1 = </printer/Geometry/body/door>
+            point3f physics:localPos0 = (0, 0, 0.055)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (0, 0, 0, 1)
+            quatf physics:localRot1 = (0, 0, 0, 1)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 80
+        }
+    }
+}
+
