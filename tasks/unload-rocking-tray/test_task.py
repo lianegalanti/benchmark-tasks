@@ -41,6 +41,20 @@ def bottle_on_platform(name, t):
     return state(M.on_platform((0.0, M.BOTTLE_Y[name], M.BOTTLE[2] / 2), t), quat=quat_x(M.tilt(t)))
 
 
+def gripper_at(tcp, opening=0.094):
+    """A gripper pointing straight down with its tool point at ``tcp``: (tool point, opening, wrist, fingertips)."""
+    tcp = np.asarray(tcp, float)
+    return (tcp, opening, tcp + [0, 0, M.WRIST_BACK], tcp - [0, 0, M.PAD_TIP])
+
+
+FAR = [gripper_at((0.0, 0.6, 1.2)), gripper_at((0.0, -0.6, 1.2))]  # both grippers parked well away
+
+
+def holding(bottle):
+    """A gripper closed across a bottle, its tool point 1 cm above the bottle's centre."""
+    return [gripper_at(np.asarray(bottle.pos) + [0, 0, 0.01], M.BOTTLE[0]), FAR[1]]
+
+
 def bin_spot(side, dy=0.0, quat=(0.0, 0.0, 0.0, 1.0), up=0.0):
     x, y = M.BIN_XY[side]
     return state((x, y + dy, M.BIN_FLOOR_TOP + M.BOTTLE[2] / 2 + up), quat=quat)
@@ -125,51 +139,161 @@ def test_taking_a_bottle_off_is_measured_from_the_tilted_mat_beneath_it():
     assert not M.taken_off(state(level.pos + [0, 0, 0.032]), rocker_at(t))
 
 
+SPOT = {"orange_bottle": ("left", 0.035), "green_bottle": ("left", -0.035), "purple_bottle": ("right", 0.0)}
+
+
+def lifted(name, t=0.0, up=0.08):
+    """``name`` held up off the mat, over its place on the platform."""
+    return state(M.on_platform((0.0, M.BOTTLE_Y[name], M.BOTTLE[2] / 2), t) + [0, 0, up])
+
+
+def carry_off(name, t=0.0, where=None):
+    """Monitor steps that lift ``name`` in a gripper and carry it out past the platform's end, held all the way, then
+    stand it in its bin spot and let go; ``where`` (updated) holds the other bottles' states, kept where they are."""
+    where = {} if where is None else where
+    b = lifted(name, t)
+    M.update(scene(t, **{**where, name: b}), holding(b))
+    side = 1 if M.BOTTLE_Y[name] >= 0 else -1
+    out = state((M.ROCKER_X, side * 0.30, M.TOP + 0.15))
+    M.update(scene(t, **{**where, name: out}), holding(out))
+    where[name] = bin_spot(*SPOT[name])
+    M.update(scene(t, **where), holding(where[name]))
+    return where
+
+
+def placed_all():
+    return {n: bin_spot(*SPOT[n]) for n in M.NAMES}
+
+
 def test_per_bottle_credit_covers_every_outcome():
     M.reset_state()
     standing = bin_spot("left")
     on_side = quat_x(math.pi / 2)
     lying = state((M.BIN_XY["left"][0], M.BIN_XY["left"][1], M.BIN_FLOOR_TOP + 0.02), quat=on_side)
     held = state((0.25, 0.25, M.TOP + 0.15))
-    on_table = state((0.25, 0.27, M.TOP + 0.02), quat=on_side)
     leaning = bin_spot("right", quat=quat_x(math.radians(25)), up=0.004)
-    # never taken off: 0 wherever it is, unless it stands in a bin (it can't get there without being carried)
-    for b, want in ((bottle_on_platform("orange_bottle", 0.0), 0.0), (on_table, 0.0), (lying, 0.0), (held, 0.0),
-                    (standing, 1.0)):
-        assert M.credit("orange_bottle", b) == want
-    M.update(scene(orange_bottle=state((0.25, 0.17, M.PLATE_TOP + 0.08))))
+    # never taken off: 0 wherever it is
+    for b in (bottle_on_platform("orange_bottle", 0.0), lying, held, standing):
+        assert M.credit("orange_bottle", b) == 0.0
+    M.update(scene(orange_bottle=state((0.25, 0.17, M.PLATE_TOP + 0.08))), FAR)
     assert M._STATE["lifted"] == {"orange_bottle": True, "green_bottle": False, "purple_bottle": False}
-    expected = ((standing, 1.0), (lying, 0.5), (leaning, 0.5), (held, 0.25), (on_table, 0.0),
+    expected = ((standing, 1.0), (lying, 0.5), (leaning, 0.5), (held, 0.25),
                 (bottle_on_platform("orange_bottle", 2.0), 0.25))
     for b, want in expected:
         assert M.credit("orange_bottle", b) == want
     held_over_bin = bin_spot("left", up=0.06)
     assert M.credit("orange_bottle", held_over_bin) == 0.5
     assert M.credit("orange_bottle", bin_spot("left", up=0.12)) == 0.25  # far above the rim: still carrying it
+    assert not M._STATE["knocked_off"]
+
+
+def test_full_credit_needs_the_bottle_let_go_with_both_grippers_clear():
+    M.reset_state()
+    carry_off("orange_bottle")
+    b = bin_spot("left", 0.035)
+    top = b.pos[2] + M.BOTTLE[2] / 2
+    M.update(scene(orange_bottle=b), holding(b))  # still gripped, standing in the bin
+    assert M.credit("orange_bottle", b) == 0.5
+    M.update(scene(orange_bottle=b), [gripper_at(b.pos + [0, 0, 0.01]), FAR[1]])  # fingers open around it
+    assert M.credit("orange_bottle", b) == 0.5
+    M.update(scene(orange_bottle=b), [gripper_at((b.pos[0], b.pos[1], top + 0.07 + M.PAD_TIP)), FAR[1]])
+    assert M.credit("orange_bottle", b) == 0.5  # fingertips 7 cm over its top: not yet clear
+    M.update(scene(orange_bottle=b), [gripper_at((b.pos[0], b.pos[1], top + 0.085 + M.PAD_TIP)), FAR[1]])
+    assert M.credit("orange_bottle", b) == 1.0
+    M.update(scene(orange_bottle=b), [FAR[0], gripper_at(b.pos + [0, 0.07, 0.01])])  # the other gripper beside it
+    assert M.credit("orange_bottle", b) == 0.5 and not M._STATE["knocked_off"]
+
+
+def test_carrying_bottles_off_in_a_gripper_is_not_knocking_them_off():
+    M.reset_state()
+    where = {}
+    for n in M.NAMES:
+        carry_off(n, 1.0, where)
+    M.update(scene(1.0, **placed_all()), FAR)
+    assert not M._STATE["knocked_off"]
+    assert M.score(placed_all()) == 1.0 and M.success(placed_all())
+
+
+def test_a_bottle_knocked_off_onto_the_table_then_put_in_a_bin_scores_zero():
+    M.reset_state()
+    on_table = state((M.ROCKER_X, 0.26, M.TOP + 0.02), quat=quat_x(math.pi / 2))  # pushed off the left end
+    M.update(scene(orange_bottle=on_table), FAR)
+    assert M._STATE["knocked_off"] and "orange_bottle" in M._STATE["why"]
+    # picked up from the table and stood in the bin, the others carried off properly: still 0 for the whole trial
+    up = state((M.ROCKER_X, 0.26, M.TOP + 0.10))
+    M.update(scene(orange_bottle=up), holding(up))
+    where = {"orange_bottle": bin_spot("left", 0.035)}
+    M.update(scene(**where), FAR)
+    carry_off("green_bottle", 0.0, where)
+    carry_off("purple_bottle", 0.0, where)
+    M.update(scene(**placed_all()), FAR)
+    assert M.score(placed_all()) == 0.0 and not M.success(placed_all())
+    M.reset_state()
+    assert not M._STATE["knocked_off"]
+
+
+def test_a_bottle_pushed_off_the_platform_unheld_scores_zero_even_if_it_never_reaches_the_table():
+    for t, name, past in ((0.0, "orange_bottle", (M.ROCKER_X, 0.24, M.PLATE_TOP + 0.03)),
+                          (1.0, "green_bottle", (M.ROCKER_X + 0.11, 0.0, M.PLATE_TOP + 0.03)),
+                          (3.0, "purple_bottle", (M.ROCKER_X, -0.24, M.PLATE_TOP))):
+        M.reset_state()
+        M.update(scene(t, **{name: state(past)}), FAR)  # pushed or flung past an edge, no gripper closed on it
+        assert M._STATE["knocked_off"], name
+        # flung straight into a bin: the trial still scores 0
+        M.update(scene(t, **{name: bin_spot("left")}), FAR)
+        assert M.score(scene(t, **{name: bin_spot("left")})) == 0.0
+    # pushed along by closed fingers that are not around it is not holding it
+    M.reset_state()
+    b = state((M.ROCKER_X, 0.24, M.PLATE_TOP + 0.03))
+    M.update(scene(orange_bottle=b), [gripper_at(b.pos + [0, -0.04, 0.0], 0.0), FAR[1]])
+    assert M._STATE["knocked_off"]
+
+
+def test_dropping_a_carried_bottle_on_the_table_scores_zero():
+    M.reset_state()
+    carry_off("purple_bottle")
+    dropped = state((0.30, -0.30, M.TOP + 0.02), quat=quat_x(math.pi / 2))
+    M.update(scene(purple_bottle=dropped), FAR)
+    assert M._STATE["knocked_off"] and M.score(scene(purple_bottle=dropped)) == 0.0
+    # a bottle in a bin is on the bin's floor, not the table
+    M.reset_state()
+    carry_off("purple_bottle")
+    lying = state((M.BIN_XY["right"][0], M.BIN_XY["right"][1], M.BIN_FLOOR_TOP + 0.02), quat=quat_x(math.pi / 2))
+    M.update(scene(purple_bottle=lying), FAR)
+    assert not M._STATE["knocked_off"] and M.score(scene(purple_bottle=lying)) == pytest.approx(0.5 / 3)
 
 
 def test_score_is_the_mean_over_the_bottles_and_resets():
     M.reset_state()
     objs = scene(1.0)
     assert M.score(objs) == 0.0
+    carry_off("orange_bottle", 1.0)
     objs["orange_bottle"] = bin_spot("left", 0.035)
+    M.update(objs, FAR)
     assert M.score(objs) == pytest.approx(1 / 3)
-    M.update(scene(green_bottle=state((0.25, 0.0, M.PLATE_TOP + 0.08))))
-    objs["green_bottle"] = state((0.25, 0.1, M.TOP + 0.15))
+    b = lifted("green_bottle", 1.0)
+    M.update(scene(1.0, green_bottle=b, orange_bottle=objs["orange_bottle"]), holding(b))
+    objs["green_bottle"] = b
     assert M.score(objs) == pytest.approx((1 + 0.25) / 3)
-    objs["purple_bottle"] = bin_spot("right")
-    objs["green_bottle"] = bin_spot("left", -0.035)
+    where = {"orange_bottle": objs["orange_bottle"]}
+    carry_off("green_bottle", 1.0, where)
+    carry_off("purple_bottle", 1.0, where)
+    objs.update(placed_all())
+    M.update(objs, FAR)
     assert M.score(objs) == pytest.approx(1.0) and M.success(objs)
     objs["green_bottle"] = state(objs["green_bottle"].pos, vel=(0.0, 0.0, -0.05))
     assert not M.success(objs)  # still moving
     M.reset_state()
-    assert not any(M._STATE["lifted"].values())
+    assert not any(M._STATE["lifted"].values()) and all(M._STATE["over"].values())
 
 
 def test_success_needs_every_bottle_standing_in_a_bin():
     M.reset_state()
-    objs = scene(orange_bottle=bin_spot("left", 0.035), green_bottle=bin_spot("left", -0.035),
-                 purple_bottle=bin_spot("right"))
+    where = {}
+    for n in M.NAMES:
+        carry_off(n, 0.0, where)
+    objs = scene(**placed_all())
+    M.update(objs, FAR)
     assert M.success(objs)
     objs["purple_bottle"] = bin_spot("right", quat=quat_x(math.radians(25)), up=0.004)
     assert not M.success(objs)  # leaning on a wall
@@ -293,3 +417,87 @@ def test_the_arms_keep_apart():
     gap = min(np.linalg.norm(_ik.tcp_pose(lacts[k, :6], station.BASES["left"])[0]
                              - _ik.tcp_pose(racts[k, :6], station.BASES["right"])[0]) for k in range(n))
     assert gap > 0.2
+
+
+def carried_centre(name, tcp):
+    """The centre of ``name`` held as it was gripped (leaning with the platform at its turn), tool point at tcp."""
+    a = M.tilt(M.TURNS[name])
+    return np.asarray(tcp) - quat_matrix_x(a) @ np.array([0.0, 0.0, M.GRIP_UP - M.BOTTLE[2] / 2])
+
+
+def quat_matrix_x(a):
+    return M.quat_matrix(quat_x(a))
+
+
+def test_the_demo_carries_each_bottle_past_the_platform_edge_with_its_fingers_closed():
+    for name, side in (("orange_bottle", "left"), ("green_bottle", "left"), ("purple_bottle", "right")):
+        wps, arm, acts, ts = PLANS[side]
+        sp = spans(wps)
+        turn = M.TURNS[name]
+        (_, hold1), = [s for s in sp["hold"] if turn - 1 < s[0] < turn + 1]
+        (low0, _), = [s for s in sp["lower"] if turn < s[0] < turn + 5]
+        crossed = None
+        for k, t in enumerate(ts):
+            if not hold1 <= t <= low0:
+                continue
+            tcp = ik.tcp_pose(acts[k, :6], station.BASES[side])[0]
+            c = carried_centre(name, tcp)
+            b = state(c, quat=quat_x(M.tilt(turn)))
+            if not M.over_platform(b, rocker_at(t)):
+                crossed = t
+                assert abs(acts[k, 6] - M.FINGER_CLOSED) < 1e-6, (name, t)
+                assert M.holds((tcp, M.BOTTLE[0], None, None), b)
+                break
+        assert crossed is not None and hold1 + 0.5 < crossed < low0 - 0.5, name
+
+
+def test_the_demo_ends_with_both_grippers_clear_of_every_bottle():
+    ends = {}
+    for side, (_, _, acts, _) in PLANS.items():
+        tcp, rot = ik.tcp_pose(acts[-1, :6], station.BASES[side])
+        ends[side] = (tcp, float(-2 * acts[-1, 6]), tcp - rot[:, 2] * M.WRIST_BACK, tcp + rot[:, 2] * M.PAD_TIP)
+        assert rot[2, 2] < -0.99  # pointing straight down
+    for name in M.NAMES:
+        side, dy = M.SPOTS[name]
+        b = bin_spot(side, dy)  # settled upright where it was let go
+        for g in ends.values():
+            assert not M.holds(g, b)
+            assert M._seg_dist(g[2], g[3], *M._axis(b)) > M.GRIPPER_CLEAR + 0.01, name
+    # the last let-go is followed by the retreat, after which the clearance holds until the plan ends
+    assert PLANS["left"][1].duration < M.TURNS["green_bottle"] + 6.0
+
+
+def test_only_fingers_stopped_by_the_bottle_hold_it():
+    b = state((M.ROCKER_X, 0.10, M.PLATE_TOP + 0.03))
+    on_axis = b.pos + [0, 0, 0.01]
+    assert M.holds(gripper_at(on_axis, M.BOTTLE[0]), b)
+    assert M.holds(gripper_at(on_axis, 0.036), b) and M.holds(gripper_at(on_axis, 0.051), b)
+    assert not M.holds(gripper_at(on_axis, 0.0), b)  # closed all the way: not around it
+    assert not M.holds(gripper_at(on_axis, 0.094), b)  # open
+    assert not M.holds(gripper_at(on_axis + [0, 0.015, 0], M.BOTTLE[0]), b)  # 1.5 cm off its axis
+    assert not M.holds(gripper_at(b.pos + [0, 0, 0.045], M.BOTTLE[0]), b)  # above its top
+
+
+def test_a_closed_gripper_shoving_a_bottle_off_the_edge_knocks_it_off():
+    M.reset_state()
+    b = state((M.ROCKER_X, 0.235, M.PLATE_TOP + 0.03))  # just past the left end
+    shover = gripper_at(b.pos + [0, -0.025, 0.01], 0.0)  # fully closed, pressed against its inner side
+    M.update(scene(orange_bottle=b), [shover, FAR[1]])
+    assert M._STATE["knocked_off"]
+    M.update(scene(orange_bottle=bin_spot("left")), FAR)
+    assert M.score(scene(orange_bottle=bin_spot("left"))) == 0.0
+
+
+def test_the_grasp_point_follows_the_fingers_when_they_close_unevenly():
+    from yam_arena import YAM_URDF
+    from yam_arena.constants import ARM_JOINTS
+    from yam_arena.urdf import forward_kinematics
+
+    q = PLANS["left"][2][100, :6]
+    for j7, j8 in ((-0.02, -0.02), (-0.035, -0.005), (-0.005, -0.035)):
+        fk = forward_kinematics(YAM_URDF, {**dict(zip(ARM_JOINTS, map(float, q))), "joint7": j7, "joint8": j8})
+        tcp, rot = ik.tcp_pose(q)
+        g = M.grasp_point(tcp, rot[:, 2], fk["tip_left"][:3, 3], fk["tip_right"][:3, 3])
+        assert abs((g - tcp) @ rot[:, 2]) < 1e-9  # at the tool point's depth
+        shift = np.linalg.norm(g - tcp)
+        assert shift == pytest.approx(abs(j7 - j8) / 2, abs=1e-6)  # centred between the fingers, not on the tool axis

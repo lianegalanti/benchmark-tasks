@@ -8,11 +8,13 @@ orange at the left end, green in the middle, purple at the right end, 17 cm apar
 with the platform: the end ones rise and fall 3 cm each way and lean 10 degrees with it. Two grey open bins
 (16 x 16 cm, 3.5 cm walls) stand on the table beside the rocker's ends, one in front of each arm.
 
-The robot must take the three bottles off the rocking platform and stand them upright in the bins (either bin),
-without knocking any off onto the table.
+The robot must take the three bottles off the rocking platform and leave them standing upright in the bins (either
+bin), let go, without knocking any off the platform or dropping one on the table: a bottle that leaves the platform
+other than in a gripper's closed fingers, or touches the table, scores the whole trial 0, even if it is put in a bin
+afterwards.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py \\
-           --instruction "Take the three bottles off the rocking platform and stand them upright in the grey bins. ..." ...
+           --instruction "Take the three bottles off the rocking platform and leave them standing upright in the grey bins. ..." ...
 """
 
 from __future__ import annotations
@@ -32,8 +34,8 @@ from yam_arena.task_file import TABLE_TOP, Box  # noqa: E402
 SCENE = "station"
 TOP = TABLE_TOP[SCENE]
 SCORE_OVER = "end"  # score() combines each bottle's state now with what the monitor has seen (see _STATE)
-INSTRUCTION = ("Take the three bottles off the rocking platform and stand them upright in the grey bins. The platform "
-               "keeps rocking and won't stop for you; don't knock any bottle off it.")
+INSTRUCTION = ("Take the three bottles off the rocking platform and leave them standing upright in the grey bins. The "
+               "platform keeps rocking and won't stop for you; don't knock any bottle off it or drop one on the table.")
 
 # -- the rocker ----------------------------------------------------------------------------------------------------
 ROCKER_X = 0.25  # the platform's centre, metres in front of the arm bases, on the midline between them
@@ -104,6 +106,16 @@ OBJECTS = [BASE, PIVOT, ROCKER, *BOTTLES, *_bin("left"), *_bin("right")]
 # -- scoring -------------------------------------------------------------------------------------------------------
 LIFT_M = 0.03  # a bottle's underside this far above the mat beneath it counts as taken off the platform
 UPRIGHT_DEG = 20.0  # standing: its axis within this of vertical (it tips over past 34 degrees)
+# A gripper holds a bottle only when its fingers are stopped by it: their opening between HOLD_OPEN (the bottle's
+# 4 cm less 5 mm of squeeze) and its tool point within HOLD_AXIS of the bottle's axis, between its ends. A fully closed
+# gripper pressed against a bottle's side (opening near 0, tool point 2 cm or more off the axis) does not hold it.
+HOLD_OPEN = (BOTTLE[0] - 0.005, BOTTLE[0] + 0.012)  # 3.5 to 5.2 cm
+HOLD_AXIS = 0.01
+GRIPPER_CLEAR = 0.08  # let go: each gripper's centre line this far from the bottle's axis (the open fingers, 4.7 cm
+# off that line, then stay 3 cm or more clear of the bottle's corners)
+TABLE_TOUCH = 0.005  # a bottle whose underside comes this close to the table outside the bins has touched it
+PAD_TIP = 0.013  # the fingertips past the tool point (yam_arena.constants.PAD_TIP_PAST_TCP)
+WRIST_BACK = 0.134  # the gripper's wrist, back from the tool point along its axis
 
 
 def mat_height(rocker, x: float, y: float) -> float:
@@ -122,6 +134,12 @@ def taken_off(bottle, rocker) -> bool:
     return all(c[2] >= mat_height(rocker, c[0], c[1]) + LIFT_M for c in corners)
 
 
+def over_platform(bottle, rocker) -> bool:
+    """The bottle's centre is within the platform's outline (seen square to the platform)."""
+    local = quat_matrix(rocker.quat_xyzw).T @ (np.asarray(bottle.pos, float) - np.asarray(rocker.pos, float))
+    return bool(abs(local[0]) <= PLATE[0] / 2 and abs(local[1]) <= PLATE[1] / 2)
+
+
 def in_bin(bottle) -> bool:
     """The bottle's centre is over the inside of a bin (between its walls)."""
     return any(abs(bottle.pos[0] - x) < BIN_IN / 2 and abs(bottle.pos[1] - y) < BIN_IN / 2
@@ -138,8 +156,39 @@ def standing_in_bin(bottle) -> bool:
 
 
 def on_table(bottle) -> bool:
-    """Down on the table outside the bins: knocked or dropped off."""
-    return bool(not in_bin(bottle) and bottle.low[2] < TOP + 0.01)
+    """Down on the table outside the bins: its underside within 5 mm of the table top, its centre outside the bins."""
+    return bool(not in_bin(bottle) and bottle.low[2] < TOP + TABLE_TOUCH)
+
+
+def _seg_dist(a0, a1, b0, b1) -> float:
+    """Shortest distance between segments a0-a1 and b0-b1 (sampled finely; exact to well under 1 mm here)."""
+    s = np.linspace(0.0, 1.0, 41)
+    pa = np.asarray(a0, float) + np.outer(s, np.asarray(a1, float) - np.asarray(a0, float))
+    pb = np.asarray(b0, float) + np.outer(s, np.asarray(b1, float) - np.asarray(b0, float))
+    return float(np.linalg.norm(pa[:, None, :] - pb[None, :, :], axis=2).min())
+
+
+def _axis(bottle):
+    """The bottle's centre line, base to top."""
+    up = quat_matrix(bottle.quat_xyzw)[:, 2] * BOTTLE[2] / 2
+    return np.asarray(bottle.pos, float) - up, np.asarray(bottle.pos, float) + up
+
+
+def holds(gripper, bottle) -> bool:
+    """A gripper (tool point, finger opening, wrist point, fingertip point) is closed on the bottle."""
+    tcp, opening, _, _ = gripper
+    if not HOLD_OPEN[0] <= opening <= HOLD_OPEN[1]:
+        return False
+    axis = quat_matrix(bottle.quat_xyzw)[:, 2]
+    d = np.asarray(tcp, float) - np.asarray(bottle.pos, float)
+    along = float(d @ axis)
+    return bool(abs(along) <= BOTTLE[2] / 2 and np.linalg.norm(d - along * axis) <= HOLD_AXIS)
+
+
+def clear_of(gripper, bottle) -> bool:
+    """The gripper's centre line (wrist to fingertips) is GRIPPER_CLEAR or more from the bottle's axis."""
+    _, _, wrist, tip = gripper
+    return _seg_dist(wrist, tip, *_axis(bottle)) >= GRIPPER_CLEAR
 
 
 _STATE: dict = {}
@@ -147,44 +196,89 @@ _STATE: dict = {}
 
 @on_reset
 def reset_state(environment=None) -> None:
-    _STATE.update(lifted={n: False for n in NAMES})
+    _STATE.clear()
+    _STATE.update(lifted={n: False for n in NAMES}, over={n: True for n in NAMES}, clear={n: True for n in NAMES},
+                  knocked_off=False, why="")
 
 
 reset_state()
 
 
-def update(objects) -> None:
-    """One control step of the monitor: remember which bottles have been taken off the platform."""
+def update(objects, grippers) -> None:
+    """One control step of the monitor, from the objects' states and the two grippers' (tool point, finger opening,
+    wrist point, fingertip point): remember which bottles have been taken off the platform, whether each is clear of
+    both grippers now, and latch knocked_off for the rest of the trial if a bottle leaves the platform's outline
+    while no gripper holds it, or touches the table outside the bins."""
+    rocker = objects["rocker"]
     for n in NAMES:
-        if taken_off(objects[n], objects["rocker"]):
+        b = objects[n]
+        if taken_off(b, rocker):
             _STATE["lifted"][n] = True
+        over = over_platform(b, rocker)
+        if _STATE["over"][n] and not over and not any(holds(g, b) for g in grippers):
+            _STATE.update(knocked_off=True, why=_STATE["why"] or f"{n} left the platform without being held")
+        if on_table(b):
+            _STATE.update(knocked_off=True, why=_STATE["why"] or f"{n} touched the table")
+        _STATE["over"][n] = over
+        _STATE["clear"][n] = all(clear_of(g, b) for g in grippers)
+
+
+def grasp_point(tcp, approach, tip_left=None, tip_right=None) -> np.ndarray:
+    """Midway between the fingers: the two fingers' link origins sit symmetrically about the gripper's centre line,
+    so their midpoint gives where the fingers are centred across, even when one has closed further than the other
+    (the tool point alone assumes they move together); along the approach axis it is the tool point's depth."""
+    tcp = np.asarray(tcp, float)
+    if tip_left is None or tip_right is None:
+        return tcp
+    off = (np.asarray(tip_left, float) + np.asarray(tip_right, float)) / 2 - tcp
+    return tcp + off - (off @ approach) * np.asarray(approach, float)
+
+
+def _grippers(environment):
+    from motionkit import arm_joints, robot_links
+    from yam_arena import ik, station
+    from yam_arena.constants import ARM_JOINTS, FINGER_JOINTS
+
+    links = robot_links(environment)
+    out = []
+    for side in ("left", "right"):
+        q = arm_joints(environment, side, ARM_JOINTS)
+        tcp, rot = ik.tcp_pose(q, station.BASES[side])
+        opening = float(np.abs(arm_joints(environment, side, FINGER_JOINTS)).sum())
+        wrist = links[side].get("gripper", tcp - rot[:, 2] * WRIST_BACK)
+        out.append((grasp_point(tcp, rot[:, 2], links[side].get("tip_left"), links[side].get("tip_right")), opening,
+                    np.asarray(wrist, float), tcp + rot[:, 2] * PAD_TIP))
+    return out
 
 
 @on_step
 def _monitor(environment) -> None:
     from yam_arena.scene import object_states
 
-    update(object_states(environment, ["rocker", *NAMES]))
+    update(object_states(environment, ["rocker", *NAMES]), _grippers(environment))
+
+
+def placed(name: str, bottle) -> bool:
+    """Full credit: taken off the platform, standing in a bin, and let go (both grippers clear of it)."""
+    return bool(_STATE["lifted"][name] and standing_in_bin(bottle) and _STATE["clear"][name])
 
 
 def credit(name: str, bottle) -> float:
-    """One bottle's credit: 1.0 standing in a bin; else, if it has been taken off the platform, 0.5 while its centre
-    is over a bin's inside below the rim plus 5 cm (in a bin but not standing, or still held there), 0 if it lies
-    on the table outside the bins, otherwise 0.25 (held, or put back on the platform); 0 if never taken off."""
-    if standing_in_bin(bottle):
-        return 1.0
+    """One bottle's credit (the trial scores 0 instead if a bottle was knocked off): 0 if it was never taken off the
+    platform; 1.0 standing in a bin and let go; 0.5 with its centre over a bin's inside below the rim plus 5 cm
+    (lying or leaning in a bin, or standing there still held); otherwise 0.25 (held, or put back on the platform)."""
     if not _STATE["lifted"][name]:
         return 0.0
+    if placed(name, bottle):
+        return 1.0
     if in_bin(bottle) and bottle.low[2] < TOP + WALL_H + 0.05:
         return 0.5
-    if on_table(bottle):
-        return 0.0
     return 0.25
 
 
 def success(objects):
-    """All three bottles standing in the bins, and still."""
-    return all(standing_in_bin(objects[n]) and objects[n].resting() for n in NAMES)
+    """No bottle knocked off, and all three standing in the bins, let go, and still."""
+    return bool(not _STATE["knocked_off"] and all(placed(n, objects[n]) and objects[n].resting() for n in NAMES))
 
 
 def distance(objects):
@@ -200,7 +294,9 @@ def distance(objects):
 
 
 def score(objects):
-    """The mean of the three bottles' credits (see credit()); success scores 1.0."""
+    """0 if a bottle was knocked off at any moment; otherwise the mean of the three bottles' credits (see credit())."""
+    if _STATE["knocked_off"]:
+        return 0.0
     return float(np.mean([credit(n, objects[n]) for n in NAMES]))
 
 
