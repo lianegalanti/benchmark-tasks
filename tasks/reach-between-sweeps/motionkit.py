@@ -31,7 +31,8 @@ from dataclasses import dataclass
 import numpy as np
 from yam_arena.task_file import Box, ObjectState
 
-__all__ = ["DrivenBox", "arm_joints", "dwell_shuttle", "on_reset", "on_step", "park_stroke", "robot_links"]
+__all__ = ["DrivenBox", "arm_joints", "dwell_shuttle", "episode_time", "on_reset", "on_step", "park_stroke",
+           "robot_links"]
 
 DRIVEN_MASS = 50.0  # kg; heavy, so contacts within one physics step barely disturb it before the next write
 
@@ -184,6 +185,11 @@ def robot_links(environment) -> dict[str, dict[str, np.ndarray]]:
         pos = _np(robot.data.body_pos_w)[0] - origin
         out[side] = {name: pos[i] for i, name in enumerate(robot.body_names)}
     return out
+
+
+def episode_time() -> float:
+    """The driven boxes' clock (s): the episode time their paths are at now (0 through the reset)."""
+    return float(_CLOCK["t"])
 
 
 def arm_joints(environment, side: str, names) -> np.ndarray:
