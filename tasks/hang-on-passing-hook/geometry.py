@@ -154,16 +154,32 @@ def lowest_z(pos, R) -> float:
     return float(min((corners(c, s) @ R.T)[:, 2].min() for c, s in PART_BOXES.values()) + pos[2])
 
 
-def bar_through_eye(pos, R, hook_bar_y: float) -> bool:
-    """Whether a hook's bar, at ``hook_bar_y`` along the rail, passes through the part's eye: its centre line (from the
-    bar's near end to the stem) crosses the plane of the eye inside the opening."""
+def _bar_crossing(pos, R, hook_bar_y: float):
+    """Where a hook's bar centre line (from the bar's near end to the stem), at ``hook_bar_y`` along the rail, crosses
+    the plane of the part's eye, in the part frame; None if it doesn't cross it."""
     a = np.array([BAR_X0, hook_bar_y, BAR_Z])
     b = np.array([BAR_X1, hook_bar_y, BAR_Z])
     pa, pb = R.T @ (a - pos), R.T @ (b - pos)  # into the part frame
     if pa[0] * pb[0] > 0 or pa[0] == pb[0]:
-        return False  # the bar doesn't cross the eye's plane
-    p = pa + (pb - pa) * (pa[0] / (pa[0] - pb[0]))
-    return bool(abs(p[1]) < W_IN / 2 and abs(p[2]) < H_IN / 2)
+        return None  # the bar doesn't cross the eye's plane
+    return pa + (pb - pa) * (pa[0] / (pa[0] - pb[0]))
+
+
+def bar_through_eye(pos, R, hook_bar_y: float) -> bool:
+    """Whether a hook's bar, at ``hook_bar_y`` along the rail, passes through the part's eye: its centre line (from the
+    bar's near end to the stem) crosses the plane of the eye inside the opening."""
+    p = _bar_crossing(pos, R, hook_bar_y)
+    return p is not None and bool(abs(p[1]) < W_IN / 2 and abs(p[2]) < H_IN / 2)
+
+
+def rest_gap(pos, R, hook_bar_y: float) -> float | None:
+    """With the hook's bar through the part's eye: the gap (m) between the bar's upper face and the underside of the
+    eye's top bar, where the bar crosses the eye (0 when the part rests on the bar, negative if they overlap). None
+    if the bar is not through the eye."""
+    if not bar_through_eye(pos, R, hook_bar_y):
+        return None
+    p = _bar_crossing(pos, R, hook_bar_y)
+    return float(H_IN / 2 - (p[2] + BAR / 2))
 
 
 def tab_centre(pos, R) -> np.ndarray:

@@ -73,7 +73,10 @@ OBJECTS = [RAIL, EXIT_MARK, *HOOKS, *PARTS]
 # -- monitoring and scoring ------------------------------------------------------------------------------------------
 LIFTED = 0.03  # m: a part's lowest point this far above the table counts as lifted
 OFF_TABLE = 0.01  # m: a hung part's lowest point at least this far above the table
-LET_GO = 0.05  # m: every gripper's grasp point (between its finger pads) at least this far from the part's tab
+REST_TOL = 0.005  # m: a hung part's eye rests on the hook's bar: at most this gap between them
+CLEAR = 0.02  # m: let go: every link of both arms (fingers, gripper and the rest) at least this far from the part
+HANG_S = 1.0  # s: a part must have hung freely on a hook this long, without a break, when the hook reaches the mark
+LAG = 0.01  # m: a hook whose bar falls this far behind its 5 cm/s schedule (stopped or slowed) credits no part
 HUNG, ON_HOOK, LIFT_CREDIT = 0.5, 0.25, 0.1  # per part
 
 _STATE: dict = {}
@@ -82,66 +85,147 @@ _STATE: dict = {}
 @on_reset
 def reset_state(environment=None) -> None:
     _STATE.clear()
-    _STATE.update(best={p: 0.0 for p in g.PARTS}, credited={p: None for p in g.PARTS}, judged=set())
+    _STATE.update(best={p: 0.0 for p in g.PARTS}, credited={p: None for p in g.PARTS}, judged=set(), since={},
+                  stalled=set())
 
 
 reset_state()
 
 
-def update(parts: dict, hook_ys, grasps) -> None:
-    """Take one control step: each part's (origin, rotation matrix), each hook's bar position along the rail (y),
-    and each gripper's grasp point (station frame).
+def arm_clearance(pos, R, hulls) -> float:
+    """The smallest distance (m) between the part, at origin ``pos`` and rotation ``R``, and the arms' collision hulls
+    ``hulls`` (a list of (link, analysis.Hull) in the station frame); negative when they overlap. Each hull is tested
+    against points on the part's surface (5 mm apart) and the part's boxes against the hull's vertices."""
+    from yam_arena import analysis
+
+    pts = g.part_points(pos, R)
+    lo, hi = pts.min(0) - 0.05, pts.max(0) + 0.05
+    best = np.inf
+    for _, h in hulls:
+        if np.any(h.vertices.max(0) < lo) or np.any(h.vertices.min(0) > hi):
+            continue  # more than 5 cm away
+        best = min(best, float(analysis._signed(pts, h).min()))
+        local = (h.vertices - pos) @ R  # into the part frame
+        for c, sz in g.PART_BOXES.values():
+            best = min(best, float(analysis.box_signed_distance(local, c, np.eye(3), sz).min()))
+    return best
+
+
+def part_clearance(a, b) -> float:
+    """The smallest distance (m) between two parts, each given as (origin, rotation matrix); negative when they
+    overlap. Points on each part's surface (5 mm apart) against the other's boxes, both ways."""
+    best = np.inf
+    for (pa, Ra), (pb, Rb) in ((a, b), (b, a)):
+        local = (g.part_points(pa, Ra) - pb) @ Rb  # into b's frame
+        for c, sz in g.PART_BOXES.values():
+            best = min(best, float(analysis_box(local, c, sz).min()))
+    return best
+
+
+def analysis_box(points, centre, size):
+    from yam_arena import analysis
+
+    return analysis.box_signed_distance(points, np.asarray(centre), np.eye(3), np.asarray(size))
+
+
+def hanging_free(pos, R, hook_bar_y: float, hulls, others=()) -> bool:
+    """The hook supports the part and nothing else touches it: the hook's bar through its eye with the eye resting on
+    the bar (gap at most 5 mm), its lowest point 1 cm or more above the table, every link of both arms at least 2 cm
+    from every part of it, and every other part (``others``: (origin, rotation) pairs) at least 2 cm from it."""
+    gap = g.rest_gap(pos, R, hook_bar_y)
+    if gap is None or gap > REST_TOL or g.lowest_z(pos, R) < g.TOP + OFF_TABLE:
+        return False
+    if any(part_clearance((pos, R), o) < CLEAR for o in others):
+        return False
+    return arm_clearance(pos, R, hulls() if callable(hulls) else hulls) >= CLEAR
+
+
+def update(parts: dict, hook_ys, hulls, t: float) -> None:
+    """Take one control step at episode time ``t``: each part's (origin, rotation matrix), each hook's bar position
+    along the rail (y), and both arms' collision hulls in the station frame (a list, or a function returning it).
 
     A part reaches ON_HOOK once a hook's bar passes through its eye, and LIFT_CREDIT once its lowest point is 3 cm
-    above the table. When a hook's bar first reaches the exit mark, one not-yet-credited part hanging on it is
-    credited HUNG: the bar through its eye, its lowest point 1 cm or more above the table, and every grasp point at
-    least 5 cm from its tab (let go). A hook credits at most one part; a credited part stays credited."""
+    above the table. A part hangs freely on a hook while the hook alone supports it (hanging_free). A hook whose bar
+    is ever more than 1 cm behind its schedule (the robot stopped or slowed it) credits no part. When a hook's bar's
+    centre first reaches the exit mark's centre line, one not-yet-credited part that has hung freely on it, without a break, for the
+    last 1 s is credited HUNG. A hook credits at most one part; a credited part stays credited."""
     for name, (pos, R) in parts.items():
         if any(g.bar_through_eye(pos, R, y) for y in hook_ys):
             _STATE["best"][name] = max(_STATE["best"][name], ON_HOOK)
         if g.lowest_z(pos, R) >= g.TOP + LIFTED:
             _STATE["best"][name] = max(_STATE["best"][name], LIFT_CREDIT)
+    cache = {}
+
+    def arm_hulls():
+        if "h" not in cache:
+            cache["h"] = hulls() if callable(hulls) else hulls
+        return cache["h"]
+
+    since = _STATE["since"]
     for i, y in enumerate(hook_ys):
-        if i in _STATE["judged"] or y > g.EXIT_Y:
+        if i in _STATE["judged"]:
+            continue
+        if y - g.hook_y(i, t) > LAG:
+            _STATE["stalled"].add(i)  # held back: a real slip-clutch drive would have stopped or slowed
+        for name, (pos, R) in parts.items():
+            others = [v for k, v in parts.items() if k != name]
+            if (_STATE["credited"][name] is None and i not in _STATE["stalled"]
+                    and hanging_free(pos, R, y, arm_hulls, others)):
+                since.setdefault((name, i), t)
+            else:
+                since.pop((name, i), None)
+        if y > g.EXIT_Y:
             continue
         _STATE["judged"].add(i)
-        for name, (pos, R) in parts.items():
-            if _STATE["credited"][name] is not None:
-                continue
-            tab = g.tab_centre(pos, R)
-            if (g.bar_through_eye(pos, R, y) and g.lowest_z(pos, R) >= g.TOP + OFF_TABLE
-                    and all(np.linalg.norm(np.asarray(p) - tab) >= LET_GO for p in grasps)):
+        for name in parts:
+            start = since.get((name, i))
+            if _STATE["credited"][name] is None and start is not None and t - start >= HANG_S - 1e-6:
                 _STATE["credited"][name] = i
                 break
 
 
-def _grasps(environment):
-    from motionkit import arm_joints
-    from yam_arena import ik, station
-    from yam_arena.constants import ARM_JOINTS
+def _arm_hulls(environment):
+    """Both arms' URDF collision hulls placed at the simulated link poses (station frame)."""
+    from motionkit import _np
+    from yam_arena import analysis
 
-    return [ik.tcp_pose(arm_joints(environment, side, ARM_JOINTS), station.BASES[side])[0] for side in ("left", "right")]
+    base = environment.unwrapped
+    origin = _np(base.scene.env_origins[0])
+    out = []
+    for side in ("left", "right"):
+        robot = base.scene[f"{side}_robot"]
+        poses = {}
+        for name, pose in zip(robot.body_names, _np(robot.data.body_link_pose_w)[0], strict=True):
+            m = analysis.pose7_to_matrix(pose)
+            m[:3, 3] -= origin
+            poses[name] = m
+        out += analysis.world_hulls(poses)
+    return out
 
 
 @on_step
 def _monitor(environment) -> None:
+    from motionkit import clock
     from yam_arena.scene import object_states
 
     names = [*g.PARTS, *(f"hook{i}_bar" for i in range(g.N_HOOKS))]
     s = object_states(environment, names)
     parts = {p: (s[p].pos, g.rot(s[p].quat_xyzw)) for p in g.PARTS}
-    update(parts, [float(s[f"hook{i}_bar"].pos[1]) for i in range(g.N_HOOKS)], _grasps(environment))
+    update(parts, [float(s[f"hook{i}_bar"].pos[1]) for i in range(g.N_HOOKS)], lambda: _arm_hulls(environment),
+           clock())
 
 
 def success(objects) -> bool:
-    """Both parts credited: each was hanging on its own hook, let go, when that hook passed the exit mark."""
+    """Both parts credited: each hung freely on its own hook for the last 1 s before that hook passed the exit mark."""
     return all(v is not None for v in _STATE["credited"].values())
 
 
 def score(objects) -> float:
-    """Per part, summed: 0.5 if it was hanging on its own hook (bar through the eye, lowest point 1 cm or more above
-    the table, no gripper within 5 cm of its tab) when that hook passed the exit mark; otherwise 0.25 if a hook's bar
-    was at some point through its eye; otherwise 0.1 if it was at some point lifted 3 cm off the table; else 0."""
+    """Per part, summed: 0.5 if it hung freely on its own hook (bar through the eye with the eye resting on it within
+    5 mm, lowest point 1 cm or more above the table, every link of both arms and the other part at least 2 cm from
+    every part of it) for the whole last 1 s before that hook's bar centre passed over the exit mark's centre line,
+    and the robot never held that hook back (its bar never more than 1 cm behind its 5 cm/s schedule); otherwise 0.25 if a hook's bar was at some point
+    through its eye; otherwise 0.1 if it was at some point lifted 3 cm off the table; else 0."""
     return float(sum(HUNG if _STATE["credited"][p] is not None else _STATE["best"][p] for p in g.PARTS))
 
 

@@ -19,18 +19,18 @@ part hung badly falls off further down the line, and an empty hook is lost throu
 | File | What |
 |---|---|
 | `task.py` | The yam_arena task file: objects, the hooks' motion, the loading monitor, `success()`, `score()` and the scripted demo |
-| `geometry.py` | Dimensions of the conveyor, hooks and parts, and the tests the score uses (is a hook's bar through a part's eye, how low is the part) |
+| `geometry.py` | Dimensions of the conveyor, hooks and parts, and the tests the score uses (is a hook's bar through a part's eye, does the eye rest on it, how low is the part) |
 | `make_part.py` | Writes `assets/hanger_part.usda`, the part as one rigid body of five boxes (needs `usd-core`) |
 | `motionkit.py` | Adds a `DrivenBox` object kind (a box whose pose and velocity follow a scripted path, set before every physics step), a `UsdPart` object kind (a free rigid body from a USD file), `on_step` / `on_reset` hooks with `arm_joints()` for the monitor, and `clock()` |
-| `test_task.py` | Offline checks (no Isaac Sim): the hooks' motion and the clearances, every scoring level, and the demo against rigid-grip parts |
+| `test_task.py` | Offline checks (no Isaac Sim): the hooks' motion and the clearances, every scoring level, the ways of keeping hold that get no hanging credit (gripping the tab, gripping or propping the block, any link within 2 cm of any box of the part, letting go under 1 s before the mark, holding the eye off the bar), and the demo against rigid-grip parts, played through the scorer |
 
-`motionkit.py` is copied from this repository's `hand-to-moving-receiver` task folder and extended with `UsdPart`,
-adapted from `scenekit.py` in the `lock-before-loading` task folder (their license applies). It hooks
+`motionkit.py` is a small helper module, shared with other task folders in this repository (their license applies).
+It hooks
 `yam_arena.scene` and the embodiment's reset, simulation step and task scoring without modifying yam_arena, so the
 task runs with the standard `yam_arena` embodiment, `yam_scripted` policy and `task_score` scorer. The hooks' clock
 is the episode clock (`observation.state_time`): they stand still at their start through the reset and start with
 the first control step. Written against yam-isaac-lab-arena at `bd62771` (Isaac Lab-Arena 0.3.1). **Measured on an
-L40S:** the scripted demo ended with success after 661 steps (33.1 s); Dream-1 scored 0 in a 900-step trial.
+L40S:** under the revised scorer the scripted demo ended with success after 661 steps (33.1 s); Dream-1 scored 0 in a 900-step trial.
 
 ## Run a trial
 
@@ -81,7 +81,9 @@ Offline (`test_task.py`), against parts held rigidly from the moment the fingers
 under 0.1 mm and 0.02 degree, joints within limits, the carried part never closer than 2 mm to any hook while it is
 threaded on (it is let go with 3 mm to spare above the bar; at its tightest the eye passes the tip with 1.9 cm above
 and below and the bar with 2.4 cm each side), and every arm link's URDF collision hull at least 1.7 cm from every hook,
-the rail and the other part, checked every 0.2 s.
+the rail and the other part, checked every 0.2 s. Played through the scorer's monitor (every arm link's hull, fingers at their
+commanded opening), each part hangs freely from 9.3 s (part A) and 25.3 s (part B), with no arm link within 5 cm of
+it in the last 1.5 s before its hook's exit, and the demo scores 1.0.
 
 ## Scoring
 
@@ -89,13 +91,19 @@ Per part, summed over the two parts:
 
 | Per part | Condition | Check on a real table |
 |---|---|---|
-| 0.5 | hanging on its own hook when that hook's bar passes the red exit mark: the hook's bar through the part's eye, the part's lowest point at least 1 cm above the table, and no gripper's grasp point (between its finger pads) within 5 cm of the part's tab | video, as each hook crosses the mark |
+| 0.5 | hung freely on its own hook for the whole last 1 s before that hook passes the red exit mark (the hook's bar centre over the mark's centre line): at every step of that second, the hook's bar through the part's eye with the eye resting on the bar (at most 5 mm between them), the part's lowest point at least 1 cm above the table, and nothing but its hook touching it: every link of both arms (both fingers of each gripper, the gripper bodies and the rest of the arms) and the other part at least 2 cm from every part of it (eye, tab and block); and the robot never held that hook back (its bar never more than 1 cm behind its 5 cm/s schedule) | video, for the second before each hook crosses the mark; a 2 cm gauge between fingers or other part and the part; a stopwatch: each hook over the mark within 0.2 s of 26, 32 and 38 s |
 | 0.25 | otherwise, at some point a hook's bar was through the part's eye (held or not) | video |
 | 0.1 | otherwise, at some point the part's lowest point was at least 3 cm above the table (lifted) | video, against a 3 cm mark |
 | 0 | otherwise | |
 
 A hook credits at most one part: two parts on one hook score 0.5 + 0.25. A credited part stays credited after its
-hook has left. Both parts credited (1.0) is success. "The bar through the eye" means the bar's centre line crosses
+hook has left. Any touch in that last second (a finger on the tab, a gripper holding or propping the block from
+below, a wrist resting against it, the other part propping it) restarts the count, so a part still held anywhere, or let go less than 1 s before
+the mark, doesn't get the 0.5. In the simulator the monitor places the URDF's collision hulls of every arm link at the
+simulated link poses each control step and measures their distance to the part's five boxes. A real slip-clutch
+conveyor can be stalled by an arm, while the simulated hooks can't: so a hook the robot stops or slows (its bar ever
+more than 1 cm, 0.2 s, behind its schedule; in the simulator, the measured bar position against the schedule) credits
+no part. Both parts credited (1.0) is success. "The bar through the eye" means the bar's centre line crosses
 the plane of the eye inside its opening; a part laid across the bar, hooked by its tab, or held against a hook is
 never through its eye.
 
@@ -109,7 +117,7 @@ place. The last hook passes the exit mark at 38 s, so a 900-step trial (45 s) co
 ## Fidelity
 
 Rigid bodies, 240 Hz physics. The hooks are driven exactly along the rail like a stiff chain drive: the arms can't
-push or stop them (a real line would need a slip clutch or guard; see the reset notes). Each hook is three boxes
+push or stop them, where a real line's slip-clutch drive could be stalled by an arm (see the reset notes); the scorer gives no hanging credit on a hook more than 1 cm behind schedule. Each hook is three boxes
 moving together with 1 mm gaps between them, hanging 5 mm under the rail without touching it; the rail's end
 supports, beyond the table, are not modelled. The part is one rigid body of five boxes with its centre of mass set
 for a uniform material; its friction is 1.0 static and 0.9 dynamic. Positions handed to Isaac Lab are plain Python

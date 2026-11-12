@@ -192,7 +192,7 @@ def _driven_object(spec: DrivenBox):
 
 
 def _part_object(spec: UsdPart):
-    # adapted from scenekit.py's UsdBody (lock-before-loading task folder), rigid bodies only
+    # a free rigid body loaded from a USD file (rigid bodies only)
     import isaaclab.sim as sim_utils
     from isaaclab_arena.assets.object import Object
     from isaaclab_arena.assets.object_type import ObjectType

@@ -15,15 +15,40 @@ import pytest
 
 import geometry as g
 from yam_arena import analysis, ik, station
-from yam_arena.constants import ARM_JOINTS, FINGER_OPEN, PAD_TIP_PAST_TCP
-from yam_arena.demo import ArmPlan
+from yam_arena.constants import ARM_JOINTS, FINGER_CLOSED, FINGER_OPEN, PAD_TIP_PAST_TCP
+from yam_arena.demo import DOWN_GRIP, ArmPlan
 from yam_arena.task_file import load
 
 HERE = Path(__file__).resolve().parent
 TASK = load(HERE / "task.py")
 M = TASK.module
 I3 = np.eye(3)
-FAR = [np.array([0.0, 0.6, 1.3]), np.array([0.0, -0.6, 1.3])]  # both grasp points far from everything
+FAR = []  # no arm link anywhere near the parts
+GRIPPER_LINKS = ["gripper", "tip_left", "tip_right"]
+
+
+def gripper_at(tcp, finger=FINGER_CLOSED, up=False):
+    """One gripper's collision hulls (its body and both finger links), pointing straight down (or, ``up``, straight
+    up) with its fingers at ``finger`` and its TCP (between the finger pads) at ``tcp``: solved by IK in front of the
+    left arm, then the gripper moved rigidly to ``tcp``."""
+    base = station.BASES["left"]
+    here = np.array([0.30, 0.30, g.TOP + 0.20])
+    q, err, _ = ik.solve(here, DOWN_GRIP, base_pos=base)
+    assert err < 1e-4
+    joints = dict(zip(ARM_JOINTS, map(float, q), strict=True)) | {"joint7": finger, "joint8": finger}
+    shift = np.eye(4)
+    if up:
+        shift[:3, :3] = np.diag([1.0, -1.0, -1.0])  # half a turn about x
+    shift[:3, 3] = np.asarray(tcp, float) - shift[:3, :3] @ ik.tcp_pose(q, base)[0]
+    poses = {k: shift @ v for k, v in analysis.fk_link_poses_world(joints, base).items()}
+    return analysis.world_hulls(poses, GRIPPER_LINKS)
+
+
+def box_hull(centre, size):
+    """A box as a collision hull (for a stand-in obstacle)."""
+    c, h = np.asarray(centre, float), np.asarray(size, float) / 2
+    planes = [np.r_[n, n @ c + abs(n) @ h] for n in np.r_[np.eye(3), -np.eye(3)]]
+    return [("box", analysis.Hull(vertices=g.corners(c, size), planes=np.array(planes)))]
 
 
 def hung_on(i, t, x=g.HUNG_X):
@@ -35,13 +60,14 @@ def standing(name):
     return g.part_start(name), I3
 
 
-def run(frames):
-    """Play (t, parts, grasps) frames through the monitor from a fresh start; return (score, success)."""
+def run(frames, delay=lambda i, t: 0.0):
+    """Play (t, parts, arm hulls) frames through the monitor from a fresh start; return (score, success). Hook ``i``
+    runs ``delay(i, t)`` seconds behind its schedule (held back by the robot)."""
     M.reset_state()
-    for t, parts, grasps in frames:
+    for t, parts, hulls in frames:
         full = {p: standing(p) for p in g.PARTS}
         full.update(parts)
-        M.update(full, [g.hook_y(i, t) for i in range(g.N_HOOKS)], grasps)
+        M.update(full, [g.hook_y(i, t - delay(i, t)) for i in range(g.N_HOOKS)], hulls, t)
     return M.score({}), M.success({})
 
 
@@ -152,10 +178,10 @@ def test_lifted_only():
     assert run(frames) == (pytest.approx(0.1), False)
 
 
-def test_threaded_but_still_held_when_the_hook_leaves():
+def test_threaded_but_still_held_by_the_tab_when_the_hook_leaves():
     def frame(t):
         pos, R = hung_on(0, t)
-        return t, {"part_a": (pos, R)}, [g.tab_centre(pos, R) + [0, 0, -0.01], FAR[1]]
+        return t, {"part_a": (pos, R)}, gripper_at(g.tab_centre(pos, R) + [0, 0, -0.005], -g.TAB[1] / 2)
 
     assert run([frame(t) for t in times(20.0, 27.0)]) == (pytest.approx(0.25), False)
 
@@ -174,17 +200,101 @@ def test_both_hung_on_their_own_hooks_succeeds():
 
 
 def test_both_on_one_hook_counts_once():
-    frames = [(t, {"part_a": hung_on(0, t, 0.27), "part_b": hung_on(0, t, 0.32)}, FAR) for t in times(20.0, 39.0)]
+    frames = [(t, {"part_a": hung_on(0, t, 0.27), "part_b": hung_on(0, t, 0.35)}, FAR) for t in times(20.0, 39.0)]
     assert run(frames) == (pytest.approx(0.75), False)
 
 
-def test_a_gripper_beside_the_tab_at_the_exit_is_not_let_go():
-    def frame(t, d):
+def test_a_gripper_holding_the_lower_block_far_from_the_tab_gets_no_hanging_credit():
+    """The reviewer's case: the bar through the eye and the eye on the bar, but a gripper holds the block under the
+    eye, its grasp point 10 cm from the tab (the old 5 cm tab test would have credited it)."""
+    def frame(t, finger=-(g.OUT_W / 2)):
         pos, R = hung_on(0, t)
-        return t, {"part_a": (pos, R)}, [g.tab_centre(pos, R) + [0, d, 0], FAR[1]]
+        block = pos + R @ g.PART_BOXES["block"][0]
+        assert np.linalg.norm(block - g.tab_centre(pos, R)) > 0.09
+        return t, {"part_a": (pos, R)}, gripper_at(block, finger)
 
-    assert run([frame(t, 0.04) for t in times(25.0, 27.0)])[0] == pytest.approx(0.25)
-    assert run([frame(t, 0.06) for t in times(25.0, 27.0)])[0] == pytest.approx(0.5)
+    assert run([frame(t) for t in times(20.0, 27.0)]) == (pytest.approx(0.25), False)
+    # the gripper open around the block without touching it still counts: within 2 cm
+    assert run([frame(t, FINGER_OPEN) for t in times(20.0, 27.0)]) == (pytest.approx(0.25), False)
+
+
+def test_a_gripper_propping_the_block_from_below_gets_no_hanging_credit():
+    def frame(t, drop):
+        pos, R = hung_on(0, t)
+        under = pos + R @ (g.PART_BOXES["block"][0] - [0, 0, g.BLOCK[2] / 2]) - [0, 0, drop]
+        return t, {"part_a": (pos, R)}, gripper_at(under - [0, 0, PAD_TIP_PAST_TCP], up=True)
+
+    assert run([frame(t, 0.0) for t in times(20.0, 27.0)])[0] == pytest.approx(0.25)  # pad tips pushing up on the block
+    assert run([frame(t, 0.03) for t in times(20.0, 27.0)])[0] == pytest.approx(0.5)  # 3 cm below: let go
+
+
+@pytest.mark.parametrize("part_box", sorted(g.PART_BOXES))
+def test_any_arm_link_within_2cm_of_any_part_of_it_blocks_credit(part_box):
+    """A 1 cm stand-in link beside each of the part's five boxes: 1.5 cm away blocks credit, 2.5 cm away doesn't."""
+    def frames(d):
+        out = []
+        for t in times(24.0, 27.0):
+            pos, R = hung_on(0, t)
+            c, sz = g.PART_BOXES[part_box]
+            side = pos + R @ (c + [-(sz[0] / 2 + d + 0.005), 0, 0])  # on the robot's side of that box
+            out.append((t, {"part_a": (pos, R)}, box_hull(side, (0.01, 0.01, 0.01))))
+        return out
+
+    assert run(frames(0.015))[0] == pytest.approx(0.25)
+    assert run(frames(0.025))[0] == pytest.approx(0.5)
+
+
+def test_the_hook_must_support_it():
+    # held with its eye 1 cm above the bar (nothing in the scene touching it): not resting on the hook
+    frames = [(t, {"part_a": (hung_on(0, t)[0] + [0, 0, 0.01], I3)}, FAR) for t in times(20.0, 27.0)]
+    assert run(frames)[0] == pytest.approx(0.25)
+    frames = [(t, {"part_a": (hung_on(0, t)[0] + [0, 0, 0.004], I3)}, FAR) for t in times(20.0, 27.0)]
+    assert run(frames)[0] == pytest.approx(0.5)  # within the 5 mm tolerance
+    pos, R = hung_on(0, 0.0)
+    assert g.rest_gap(pos, R, g.hook_y(0, 0.0)) == pytest.approx(0.0)
+    assert g.rest_gap(pos, R, g.hook_y(0, 0.0) + 0.05) is None
+
+
+def test_a_hook_the_robot_held_back_credits_nothing():
+    """A real slip-clutch drive stalls when an arm holds a hook: a hook more than 1 cm (0.2 s) behind its schedule
+    credits no part, even if it later hangs freely on it."""
+    def frames(stop_s):
+        delay = lambda i, t: stop_s if (i == 0 and t > 15.0) else 0.0  # noqa: E731
+        fr = [(t, {"part_a": hung_on(0, t - delay(0, t))}, FAR) for t in times(10.0, 28.0)]
+        return fr, delay
+
+    assert run(*frames(0.5))[0] == pytest.approx(0.25)  # stopped 0.5 s: 2.5 cm behind
+    assert run(*frames(0.1))[0] == pytest.approx(0.5)  # 5 mm behind: within tolerance
+    assert run(*frames(0.0))[0] == pytest.approx(0.5)
+
+
+def test_the_other_part_must_not_touch_it():
+    """Nothing but its hook may touch a hung part: the other part (held by the other arm, say) propping it against
+    the side of its eye blocks the credit; 3 cm away it doesn't."""
+    def frames(gap):
+        out = []
+        for t in times(20.0, 27.0):
+            pos, R = hung_on(0, t)
+            out.append((t, {"part_a": (pos, R), "part_b": (pos + [0, -(g.OUT_W + gap), 0], R)}, FAR))
+        return out
+
+    assert run(frames(0.0))[0] == pytest.approx(0.25)  # touching: part A 0.25, part B nothing
+    assert run(frames(0.015))[0] == pytest.approx(0.25)
+    assert run(frames(0.03))[0] == pytest.approx(0.5)
+    a, b = hung_on(0, 0.0), hung_on(0, 0.0)
+    assert M.part_clearance(a, (b[0] + [0, -(g.OUT_W + 0.03), 0], I3)) == pytest.approx(0.03, abs=1e-6)
+
+
+def test_letting_go_only_just_before_the_mark_is_not_enough():
+    held = lambda t: gripper_at(g.tab_centre(*hung_on(0, t)), -g.TAB[1] / 2)  # noqa: E731
+    exit_t = g.exit_time(0)
+    for free_s, expected in ((0.5, 0.25), (0.9, 0.25), (1.0, 0.5), (3.0, 0.5)):
+        frames = [(t, {"part_a": hung_on(0, t)}, held(t) if t < exit_t - free_s - 1e-6 else FAR)
+                  for t in times(20.0, 27.0)]
+        assert run(frames)[0] == pytest.approx(expected), free_s
+    # let go long before, then touched again for one step just before the mark: the hang starts over
+    frames = [(t, {"part_a": hung_on(0, t)}, held(t) if abs(t - 25.5) < 1e-6 else FAR) for t in times(20.0, 27.0)]
+    assert run(frames)[0] == pytest.approx(0.25)
 
 
 def test_the_part_must_be_on_the_hook_as_it_passes_the_mark():
@@ -319,3 +429,32 @@ def test_every_arm_link_stays_clear_of_the_hooks_rail_and_other_parts(played):
                 d = min(analysis._signed(pts, h).min() for _, h in hulls)
                 assert d > 0.015, (side, other, t)
     assert worst > 0.015
+
+
+def _all_arm_hulls(played, k):
+    """Both arms' collision hulls (every link, fingers at their commanded opening) at control step ``k``."""
+    out = []
+    for side, (arm, qs) in played.items():
+        finger = float(arm.target((k + 1) * DT)[2])
+        joints = dict(zip(ARM_JOINTS, map(float, qs[k]), strict=True)) | {"joint7": finger, "joint8": finger}
+        out += analysis.world_hulls(analysis.fk_link_poses_world(joints, station.BASES[side]))
+    return out
+
+
+def test_the_demo_scores_full_under_the_monitor(played):
+    """The demo played through the scorer's monitor, with rigid-grip parts and both arms' every link: each part hangs
+    freely on its hook for the last second before the mark, with the arms well over 2 cm away."""
+    M.reset_state()
+    worst = math.inf
+    for k in range(round(34.0 / DT)):
+        t = (k + 1) * DT
+        parts = {M.JOBS[side][0]: _part_pose(side, t, played[side][1][k]) for side in PLANS}
+        hulls = _all_arm_hulls(played, k)
+        M.update(parts, [g.hook_y(i, t) for i in range(g.N_HOOKS)], hulls, t)
+        for side in PLANS:
+            part, hook, _ = M.JOBS[side]
+            if g.exit_time(hook) - M.HANG_S - 0.5 <= t <= g.exit_time(hook):
+                worst = min(worst, M.arm_clearance(*parts[part], hulls))
+    assert M.score({}) == pytest.approx(1.0) and M.success({})
+    assert M._STATE["credited"] == {"part_a": 0, "part_b": 1}
+    assert worst > 0.05
