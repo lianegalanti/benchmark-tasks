@@ -1,0 +1,21 @@
+{
+  "title": "Mount a phone in a one-touch car holder whose sprung arms are triggered by the phone",
+  "category": "Societal relatability",
+  "keywords": [
+    "bimanual",
+    "car phone holder",
+    "spring latch",
+    "trigger",
+    "cocking",
+    "everyday device"
+  ],
+  "instruction": "Mount the phone in the car phone holder so that the holder's arms grip it, then let go of the phone.",
+  "context": "Most drivers who navigate by phone mount it in a dash or vent holder at the start of a trip, and one-touch cradles are the most common kind. Unlike setting a phone on a passive stand, the skill is working a sprung mechanism: pulling the geared arms open until the catch holds them, then firing the trigger with the phone centred and square, so the arms snap shut on its edges, not its screen, and the holder, not the hand, carries it.",
+  "setup": "Positions are in metres from the midpoint between the two arm bases: x forward, y to the robot's left; heights are above the table top. Dashboard section (dark grey moulded ABS, 60 cm wide, 15 cm deep, 9 cm tall), clamped to the table, front face at x = 0.315, centred on y = 0, with an air-vent grille on its face. One-touch vent-mount phone holder (black ABS, about 200 g), clipped to the vent louvre at y = 0, cradle facing the robot: back plate 64 x 102 mm, front face at x = 0.27; two feet 20 mm wide and 18 mm deep at y = +/-10 to 30 mm, their tops 3.0 cm above the table; two side arms geared together and sprung shut, with silicone pads 30 mm tall centred 70 mm above the feet and 3 mm front lips; pad span 58 mm closed, 90 mm when cocked (held by an internal catch), stop at 94 mm; a 20 x 20 mm trigger pad at the plate's centre, 70 mm above the feet, standing 6 mm proud, which releases the arms when pressed 3 mm (about 2 N). Start: arms closed and empty. Phone (iPhone 15 size, 147.6 x 71.6 x 7.8 mm, 171 g, aluminium frame, glass faces), screen toward the robot, standing on its bottom edge on the table at y = -0.16, leaning back 18 degrees with its back against the dashboard's top front edge (bottom edge about 3 cm in front of the dashboard face). Nothing else is on the table; the arms start at their ready pose.",
+  "scoring": "0 if at any time the phone falls faster than 0.5 m/s with no gripper finger within 1 cm of it (a free fall of about 1.3 cm), goes 2 cm below the table top, or a holder arm, just released from the catch, stops on the phone's face instead of its edge (the face turned over 20 degrees toward it, or the arm's lip on the glass: stopped more than 1.5 mm wider than the phone's edge); merely touching the arms is fine. Otherwise the stage at the end, measured in the holder's frame: 0.25 both arms still cocked open (pads at least 86 mm apart) with no gripper within 2 cm of them; 0.5 the phone standing on both feet (lowest corner within 2 mm below to 3 mm above their tops), upright and square within 10 degrees, centred within 15 mm, back within 12 mm of the back plate, between the open arms; 0.75 the arms clamped on its long edges (each within 2 mm of the phone's edge, phone centred within 2 mm, upright within 6 degrees, lowest corner from 2 mm below to 10 mm above the feet, back within 6 mm of the plate). 1.0 (success, held 1 s): clamped, every part of both grippers at least 2 cm from the phone and the holder's arms, the phone still (under 1 cm/s) and the arms still. Doing nothing or refusing scores 0.",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Take the phone out by pulling both arms open until they click (the catch holds them), then press the empty trigger pad with a finger so the arms close. Lean the phone back against the dashboard edge at its mark (y = -0.16), screen toward the robot. Use a dummy phone block (same size and weight) or a phone in a thin case.",
+  "fidelity": "Rigid boxes, 240 Hz physics, 20 Hz control. Holder: fixed-base articulation; each arm a sprung prismatic joint (80 N/m, 0.8 N preload), the right one coupled to the left by a mimic constraint (the real rack and pinion); trigger a sprung slide (300 N/m) with two 45-degree chamfered catches, 3 mm overlap. Spring forces are estimates, softer than many real holders. Friction: pads 1.0, phone 0.5, internals 0.2. Clip and dashboard fixed.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-UVC2CK"
+}

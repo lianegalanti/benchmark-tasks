@@ -1,0 +1,83 @@
+#usda 1.0
+(
+    defaultPrim = "phone"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "phone" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0, 0)
+    float3 physics:diagonalInertia = (0.00038350056, 0.00031131404, 0.00007392045)
+    float physics:mass = 0.171
+    quatf physics:principalAxes = (1, 0, 0, 0)
+
+    def Scope "Looks"
+    {
+        def Material "frame"
+        {
+            token outputs:surface.connect = </phone/Looks/frame/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.75, 0.74, 0.7)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "screen"
+        {
+            token outputs:surface.connect = </phone/Looks/screen/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.02, 0.03, 0.05)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "phone_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.4
+            float physics:restitution = 0
+            float physics:staticFriction = 0.5
+        }
+    }
+
+    def Cube "body" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </phone/Looks/frame>
+        rel material:binding:physics = </phone/Looks/phone_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.75, 0.74, 0.7)]
+        double size = 1
+        float3 xformOp:scale = (0.0078, 0.0716, 0.1476)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "screen" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </phone/Looks/screen>
+        color3f[] primvars:displayColor = [(0.02, 0.03, 0.05)]
+        double size = 1
+        float3 xformOp:scale = (0.0004, 0.0676, 0.1416)
+        double3 xformOp:translate = (-0.0040999999999999995, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+
