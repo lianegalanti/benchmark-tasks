@@ -63,8 +63,7 @@ class DrivenBox(Box):
 @dataclass(frozen=True)
 class UsdBody(Box):
     """A free rigid body from ``usd`` (relative to this folder), its origin at ``pos``, turned ``rot_xyzw``. ``size``
-    is only nominal; ``mass`` overrides the file's. Copied from this repository's ``lock-before-loading`` scenekit
-    (rigid bodies only)."""
+    is only nominal; ``mass`` overrides the file's (rigid bodies only)."""
 
     usd: str = ""
     rot_xyzw: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)

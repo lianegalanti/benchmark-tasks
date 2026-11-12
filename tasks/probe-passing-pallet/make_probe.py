@@ -1,8 +1,8 @@
 """Writes assets/probe.usda: the test probe as one rigid body, a square handle with a thin square tip under it.
 
-The body's origin is the handle's centre; the tip hangs below it along -z. Plain text (no USD library needed), in
-the same form as this repository's lock-before-loading pin. The sizes come from task.py, so run this again after
-changing them:
+The body's origin is the handle's centre; the tip hangs below it along -z. The body carries PhysX contact
+reporting, so task.py's contact sensor can read the probe's contacts with the pads. Plain text (no USD library
+needed). The sizes come from task.py, so run this again after changing them:
 
     python make_probe.py
 """
@@ -46,10 +46,11 @@ def probe_usda(handle, tip, mass: float) -> str:
 )
 
 def Xform "Probe" (
-    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxContactReportAPI"]
 )
 {{
     float physics:mass = {mass}
+    float physxContactReport:threshold = 0
 {cube("handle", handle, (0.0, 0.0, 0.0), HANDLE_COLOR)}{cube("tip", tip, (0.0, 0.0, tip_z), TIP_COLOR)}}}
 '''
 

@@ -6,10 +6,11 @@
 )
 
 def Xform "Probe" (
-    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysxContactReportAPI"]
 )
 {
     float physics:mass = 0.06
+    float physxContactReport:threshold = 0
 
     def Cube "handle" (
         prepend apiSchemas = ["PhysicsCollisionAPI"]
