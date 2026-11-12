@@ -8,8 +8,11 @@ Beside the line, on its far side, a grey steel reject table (18 cm deep) runs th
 5 mm lower than the carriers' tops and 1 cm from their far edge, with a low dark fence along its far edge and ends.
 
 The robot must push each red carton off the line onto the reject table before it goes into the tunnel, and leave the
-brown cartons standing on their carriers. The cartons are too wide to grip in one hand: they are meant to be pushed
-across, while they move.
+brown cartons standing on their carriers. A red carton counts only lying on the reject table (its bottom within 1 cm
+of the table's top), let go (no gripper within 4 cm plus its finger opening) and still, and only if it never went
+anywhere but its carrier or across onto the reject table and was never lifted; a per-step monitor remembers that, and
+any brown carton knocked off or over during the trial. The cartons are too wide to grip in one hand: they are meant
+to be pushed across, while they move.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py \\
            --instruction "The two red cartons on the moving line are rejects. ..." ...
@@ -23,7 +26,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
-from motionkit import DrivenBox, belt_path, speed_schedule  # noqa: E402
+from motionkit import DrivenBox, arm_joints, belt_path, on_reset, on_step, speed_schedule  # noqa: E402
 from yam_arena.constants import FINGER_CLOSED, PAD_TIP_PAST_TCP  # noqa: E402
 from yam_arena.demo import Waypoint  # noqa: E402
 from yam_arena.station import FLOOR_Z  # noqa: E402
@@ -31,7 +34,7 @@ from yam_arena.task_file import TABLE_TOP, Box  # noqa: E402
 
 SCENE = "station"
 TOP = TABLE_TOP[SCENE]
-SCORE_OVER = "end"  # the score is where the cartons are when the trial ends
+SCORE_OVER = "end"  # the score is where the cartons are when the trial ends, with what the monitor saw all trial
 
 
 def _floats(v) -> tuple[float, ...]:
@@ -156,22 +159,50 @@ def _tunnel() -> list[Box]:
 OBJECTS = [*RAILS, *CARRIERS, *CARTONS, *_shelf(), *_tunnel()]
 
 # -- scoring ---------------------------------------------------------------------------------------------------------
-ON_SHELF_IN = 0.03  # a carton counts as on the reject table with its centre at least this far past the table's edge
-HELD_ABOVE = 0.08  # a carton whose centre is this far above a surface it would lie on is held up, not lying there
+# A red carton counts as placed only when the reject table carries it, let go: its bottom within 1 cm of the table's
+# top, its whole footprint on the table (past its near edge, inside its fence), still, and no part of either gripper
+# within 4 cm of it, plus however far its fingers are open. A per-step monitor (below) also remembers, for the whole
+# trial, every brown carton that was ever off its carrier or knocked over, and every red carton that ever went anywhere
+# but its carrier or across onto the reject table (pushed onto the station table or the floor, toward the robot or off
+# the end of the reject table) or was lifted: such a carton never counts, even if it is later pushed onto the table.
+SUPPORT_TOL = 0.01  # the carton's bottom within this of the surface carrying it: lying on it, not held up over it
+RELEASE_CLEAR = 0.04  # every part of both grippers at least this far from the carton (fingers closed): let go
+# The gripper as the monitor sees it: the segment from the pad tips back along the gripper's axis to 12 cm above them
+# (the fingers and the bottom of the housing). The closed fingers reach at most 3.4 cm sideways off that axis (gripper
+# meshes), so 4 cm from the segment means nothing of the gripper touches the carton. Each finger opens up to 4.7 cm
+# further out (FINGER_OPEN), so the margin grows by the measured opening of the wider-open finger.
+GRIPPER_LEN = 0.12
 
 
-def on_shelf(c) -> bool:
-    """Lying on the reject table: centre 3 cm or more past its near edge and inside its fence, low (not held up above
-    it) and still."""
-    x, y, z = c.pos
-    inside = SHELF_X[0] + ON_SHELF_IN <= x <= SHELF_X[1] and SHELF_Y[0] + LIP_T < y < SHELF_Y[1] - LIP_T
-    return bool(inside and z < SHELF_TOP + HELD_ABOVE and c.resting())
+def _box_distance(p, low, high) -> float:
+    """Metres from point ``p`` to the box ``low``..``high`` (0 inside)."""
+    p = np.asarray(p, float)
+    return float(np.linalg.norm(np.maximum(np.maximum(low - p, 0.0), p - high)))
+
+
+def gripper_distance(c, segment) -> float:
+    """Metres from carton state ``c``'s bounding box to the gripper ``segment`` (pad tips, top end[, opening])."""
+    a, b = (np.asarray(v, float) for v in segment[:2])
+    return min(_box_distance(a + s * (b - a), c.low, c.high) for s in np.linspace(0.0, 1.0, 25))
+
+
+_STATE: dict = {}
+
+
+def reset_state(environment=None) -> None:
+    """Forget the last trial: no gripper seen yet, nothing spoiled or lost."""
+    _STATE.update(grippers={}, spoiled=set(), lost=set())
+
+
+reset_state()
 
 
 def on_line(c, carrier) -> bool:
-    """Still on its carrier in any pose: centre over the carrier's footprint and not held up above it."""
+    """Still on its carrier in any pose: centre over the carrier's footprint and its bottom within 1 cm of the
+    carrier's top (a carton on its side counts)."""
     d = c.pos - carrier.pos
-    return bool(abs(d[0]) < CARRIER[0] / 2 and abs(d[1]) < CARRIER[1] / 2 and c.pos[2] < CARRIER_TOP + HELD_ABOVE)
+    return bool(abs(d[0]) < CARRIER[0] / 2 and abs(d[1]) < CARRIER[1] / 2
+                and c.low[2] < carrier.pos[2] + CARRIER[2] / 2 + SUPPORT_TOL)
 
 
 def standing(c, carrier) -> bool:
@@ -179,26 +210,96 @@ def standing(c, carrier) -> bool:
     return on_line(c, carrier) and abs(c.pos[2] - (carrier.pos[2] + CARRIER[2] / 2 + CARTON[2] / 2)) < 0.01
 
 
-def tally(objects) -> tuple[int, int, int]:
-    """(rejects on the reject table, rejects off the line elsewhere, brown cartons no longer standing on their
-    carriers)."""
-    shelved = sum(on_shelf(objects[n]) for n in REJECTS)
-    elsewhere = sum(not on_shelf(objects[n]) and not on_line(objects[n], objects[f"carrier_{n}"]) for n in REJECTS)
-    spoiled = sum(not standing(objects[n], objects[f"carrier_{n}"]) for n in GOODS)
-    return shelved, elsewhere, spoiled
+def on_route(c, carrier) -> bool:
+    """Where a red carton may be at any moment: its centre over its carrier's footprint or over the reject table's side
+    of the line (from the carriers' far edge to the fence, along the reject table), and its bottom no more than 1 cm
+    above the carriers' tops (pushed, not lifted) nor more than 1 cm below the reject table's top (not fallen)."""
+    d = c.pos - carrier.pos
+    on_carrier = abs(d[0]) < CARRIER[0] / 2 and abs(d[1]) < CARRIER[1] / 2
+    across = LINE_X + CARRIER[0] / 2 <= c.pos[0] <= SHELF_X[1] and SHELF_Y[0] <= c.pos[1] <= SHELF_Y[1]
+    level = SHELF_TOP - SUPPORT_TOL <= c.low[2] <= CARRIER_TOP + SUPPORT_TOL
+    return bool((on_carrier or across) and level)
+
+
+def monitor(objects, grippers: dict) -> None:
+    """One control step of the whole-trial monitor. ``objects`` are the object states after the step, ``grippers``
+    maps each arm to (pad tips, top end, opening): its gripper segment in station coordinates and how far its
+    wider-open finger is from closed (m)."""
+    _STATE["grippers"] = {side: (np.asarray(g[0], float), np.asarray(g[1], float), float(g[2]) if len(g) > 2 else 0.0)
+                          for side, g in grippers.items()}
+    for n in GOODS:
+        if not standing(objects[n], objects[f"carrier_{n}"]):
+            _STATE["spoiled"].add(n)
+    for n in REJECTS:
+        if not on_route(objects[n], objects[f"carrier_{n}"]):
+            _STATE["lost"].add(n)
+
+
+def released(c) -> bool:
+    """No part of either gripper within 4 cm of carton state ``c``, plus however far its fingers are open (as the
+    monitor last saw the grippers)."""
+    return all(gripper_distance(c, g) >= RELEASE_CLEAR + g[2] for g in _STATE["grippers"].values())
+
+
+def on_shelf(c) -> bool:
+    """Lying on the reject table, let go: its bottom within 1 cm of the table's top, its whole footprint past the
+    table's near edge and inside its fence, still, and no gripper within 4 cm of it."""
+    (x0, x1), (y0, y1) = SHELF_X, SHELF_Y
+    inside = (c.low[0] >= x0 and c.high[0] <= x1 and c.low[1] >= y0 + LIP_T and c.high[1] <= y1 - LIP_T)
+    supported = abs(c.low[2] - SHELF_TOP) <= SUPPORT_TOL
+    return bool(inside and supported and c.resting() and released(c))
+
+
+def tally(objects) -> tuple[int, int]:
+    """(red cartons placed on the reject table, brown cartons spoiled: not standing on their carriers now, or ever
+    off them or knocked over during the trial)."""
+    placed = sum(n not in _STATE["lost"] and on_shelf(objects[n]) for n in REJECTS)
+    spoiled = sum(n in _STATE["spoiled"] or not standing(objects[n], objects[f"carrier_{n}"]) for n in GOODS)
+    return placed, spoiled
 
 
 def score(objects):
-    """0.5 for each red carton lying on the reject table; 0.125 for each red carton off the line but not on the table
-    (on the table top, the floor, in a gripper); minus 0.5 for each brown carton not standing on its carrier (pushed
-    off, knocked over, lifted). Never below 0."""
-    shelved, elsewhere, spoiled = tally(objects)
-    return max(0.0, 0.5 * shelved + 0.125 * elsewhere - 0.5 * spoiled)
+    """0.5 for each red carton placed on the reject table (supported by it, let go, still, and only ever on its carrier
+    or across on the reject table's side, never lifted); nothing for a red carton anywhere else (on its carrier, in the
+    tunnel, on the station table, on the floor, held or pressed by a gripper) or that ever went elsewhere;
+    minus 0.5 for each brown carton that is not standing on its carrier, or was off it or knocked over at any moment.
+    Never below 0."""
+    placed, spoiled = tally(objects)
+    return max(0.0, 0.5 * placed - 0.5 * spoiled)
 
 
 def success(objects):
-    """Both red cartons on the reject table and both brown cartons standing on their carriers."""
-    return tally(objects) == (len(REJECTS), 0, 0)
+    """Both red cartons placed on the reject table and both brown cartons standing on their carriers all trial."""
+    return tally(objects) == (len(REJECTS), 0)
+
+
+@on_reset
+def _reset(environment) -> None:
+    reset_state()
+
+
+@on_step
+def _monitor(environment) -> None:
+    from yam_arena import station
+    from yam_arena.constants import ARM_JOINTS, FINGER_JOINTS
+    from yam_arena.scene import object_states
+
+    objects = object_states(environment, [*NAMES, *(f"carrier_{n}" for n in NAMES)])
+    grippers = {}
+    for side in ("left", "right"):
+        opening = float(np.max(np.abs(arm_joints(environment, side, FINGER_JOINTS))))
+        grippers[side] = gripper_segment(arm_joints(environment, side, ARM_JOINTS), station.BASES[side], opening)
+    monitor(objects, grippers)
+
+
+def gripper_segment(q, base, opening: float = 0.0) -> tuple[np.ndarray, np.ndarray, float]:
+    """The gripper of an arm at joints ``q`` with its wider-open finger ``opening`` m from closed: (its pad tips, 12 cm
+    back up its axis, ``opening``)."""
+    from yam_arena import ik
+
+    tcp, rot = ik.tcp_pose(q, base)
+    tip = tcp + rot[:, 2] * PAD_TIP_PAST_TCP
+    return tip, tip - rot[:, 2] * GRIPPER_LEN, float(opening)
 
 
 SHELF_GOAL_X = 0.42  # where the demo leaves a pushed carton's centre: its near face 2 cm onto the table
@@ -229,7 +330,7 @@ TIP_Z = CARRIER_TOP + PAD_TIP_PAST_TCP + TIP_ABOVE  # TCP height while pushing
 CLEAR_Z = CARTON_TOP + PAD_TIP_PAST_TCP + 0.03  # pad tips 3 cm above the cartons' tops
 # The closed fingers seen from the side (from the gripper's meshes): within the 5 cm of a carton's height above the pad
 # tips they reach 4 to 10 mm ahead of the TCP, at most 2.4 cm counting their wider part higher up; the gripper housing
-# starts 8.4 cm above the pad tips. In Isaac Sim a 6 cm carton was touched 1.8 cm ahead of the TCP (stop-sliding-carton).
+# starts 8.4 cm above the pad tips. In Isaac Sim a 6 cm carton pushed this way was touched 1.8 cm ahead of the TCP.
 CONTACT = 0.010  # TCP to where the fingers touch the carton (planning value)
 CONTACT_MAX = 0.018  # the most it can be
 FINGER_REACH = 0.024  # the furthest any part of the fingers reaches ahead of the TCP

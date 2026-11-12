@@ -5,8 +5,8 @@ adds :class:`DrivenBox`, a box whose pose and velocity follow ``path(t)`` exactl
 by a motor: a shuttle table, a turntable, a moving tray. Objects resting on it ride along by friction, because its
 velocity (not only its pose) is set before every physics step.
 
-Copied unchanged from our sort-surging-belt task (itself from unload-paused-shuttle). This task uses
-:func:`speed_schedule` and :func:`belt_path` (carriers on a conveyor) and not :func:`stroke`.
+This task uses :func:`speed_schedule` and :func:`belt_path` (carriers on a conveyor), the per-step hooks
+(:func:`on_step`, :func:`on_reset`, :func:`arm_joints`, :func:`clock`), and not :func:`stroke`.
 
 Importing this module hooks ``yam_arena`` without changing it:
 
@@ -15,7 +15,10 @@ Importing this module hooks ``yam_arena`` without changing it:
 - the embodiment wraps its simulation's ``step`` so that, before every physics step (240 Hz), each driven box is
   put where ``path`` says. The path's clock is the episode clock (``observation.state_time``): it stands at 0
   through the reset and its settling, and runs from the first control step on, so a scripted demo can time its
-  waypoints against the motion.
+  waypoints against the motion;
+- the embodiment runs every function registered with :func:`on_step` after each control step, before the task file
+  is scored, and every function registered with :func:`on_reset` after each reset, once the scene has settled. A
+  task file uses them for a monitor that tracks the whole trial and reads the arms' joints (:func:`arm_joints`).
 
 Pure Python at import time; everything that needs Isaac Sim is imported lazily.
 """
@@ -31,7 +34,7 @@ from dataclasses import dataclass
 import numpy as np
 from yam_arena.task_file import Box, ObjectState
 
-__all__ = ["DrivenBox", "belt_path", "speed_schedule", "stroke"]
+__all__ = ["DrivenBox", "arm_joints", "belt_path", "clock", "on_reset", "on_step", "speed_schedule", "stroke"]
 
 DRIVEN_MASS = 50.0  # kg; heavy, so contacts within one physics step barely disturb it before the next write
 
@@ -200,6 +203,34 @@ def _wrap_sim(base) -> None:
     sim._motionkit = True
 
 
+def arm_joints(environment, side: str, names) -> np.ndarray:
+    """One arm's measured joint positions, in the order of ``names``."""
+    robot = environment.unwrapped.scene[f"{side}_robot"]
+    ids = robot.find_joints(list(names), preserve_order=True)[0]
+    return _np(robot.data.joint_pos)[0, ids]
+
+
+def clock() -> float:
+    """The episode clock (s) the driven boxes follow: physics time since the first control step."""
+    return float(_CLOCK["t"])
+
+
+_STEP: list = []
+_RESET: list = []
+
+
+def on_step(fn):
+    """Run ``fn(env)`` after every control step, before the task file is scored."""
+    _STEP.append(fn)
+    return fn
+
+
+def on_reset(fn):
+    """Run ``fn(env)`` after every reset, once the scene has settled."""
+    _RESET.append(fn)
+    return fn
+
+
 # -- hooking yam_arena -----------------------------------------------------------------------------------------------
 
 
@@ -228,7 +259,7 @@ def _patch_embodiment(module) -> None:
     cls = module.YamArenaEmbodiment
     if getattr(cls, "_motionkit", False):
         return
-    ensure_sim, reset = cls._ensure_sim, cls.reset
+    ensure_sim, reset, task_step = cls._ensure_sim, cls.reset, cls._task_step
 
     def ensure_sim_hook(self, *a, **k):
         out = ensure_sim(self, *a, **k)
@@ -239,9 +270,16 @@ def _patch_embodiment(module) -> None:
         _CLOCK.update(t=0.0, running=False)  # driven boxes stand at path(0) while the scene resets and settles
         obs = reset(self, *a, **k)
         _CLOCK.update(t=0.0, running=True)  # the embodiment's own clock (state_time) restarts here too
+        for fn in _RESET:
+            fn(self._env)
         return obs
 
-    cls._ensure_sim, cls.reset = ensure_sim_hook, reset_hook
+    def task_step_hook(self, *a, **k):
+        for fn in _STEP:
+            fn(self._env)
+        return task_step(self, *a, **k)
+
+    cls._ensure_sim, cls.reset, cls._task_step = ensure_sim_hook, reset_hook, task_step_hook
     cls._motionkit = True
 
 
