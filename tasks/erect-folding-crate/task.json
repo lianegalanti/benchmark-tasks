@@ -1,0 +1,21 @@
+{
+  "title": "Put up a folding produce crate's four walls until every corner catch clicks",
+  "category": "Impact on jobs",
+  "keywords": [
+    "bimanual",
+    "folding crate",
+    "returnable plastic container",
+    "hinged walls",
+    "snap catch",
+    "brace and push"
+  ],
+  "instruction": "Set up the folded crate so it is ready to fill, then let go of it.",
+  "context": "The walls are rigid hinged plates held up by sprung corner catches that must click: the long walls go up first, then each short wall is swung up and pulled through its two catches, which push back, so one hand must brace the crate while the other pulls. Reusable folding plastic crates carry much of the fresh produce from grower to store; hand packers and packagers (about 0.6 million US workers, BLS) and produce order pickers put them up where they are filled.",
+  "setup": "Left and right are the robot's; positions in metres from the midpoint between the two arm bases, x forward, y to the robot's left, heights above the table top. One object: a green polypropylene folding produce crate, catalogue size 400 x 300 x 174 mm (internal 374 x 274 x 166 mm), 0.88 kg, lying folded flat (7.8 cm tall) on the bare table, centred at (0.26, 0.00), its 400 mm length along y. Base: 6 mm floor, side rims 68 mm tall along the two long sides, end rims 50 mm tall. Walls are 10 mm plates hinged at the inner top edge of their rims and folded inward: the two short end walls (260 x 124 mm) lowest, the two long side walls (398 x 106 mm) on top of them, 8 mm higher. Each wall has a 120 x 36 mm handhold slot under a round 18 mm top rail. Each short wall has an orange 8 mm round upright hook on each side edge, 38 mm tall at the catches' height, reaching to 1.5 mm from the long walls. Catches: each long wall has an orange sprung pawl near each end, 11 mm wide and 20 mm tall, centred 145 mm above the crate's underside, standing 6 mm out of the wall's inner face with a 45 degree ramp on its inboard side and a square face 1 mm inside where the short wall stands when up (spring 0.6 N/mm, 7 mm travel).",
+  "scoring": "0 if at any time the crate leaves the table: its underside lifted clear (lowest corner more than 3 cm up), tilted more than 20 degrees, or fallen off. A corner is latched when its catch's pawl is out (within 1 mm of its rest position) and both walls that meet there are within 1 degree of upright, i.e. the short wall's hook is past the pawl. Success (1.0, held 1 s): all four corners latched, every wall within 3 degrees of vertical, the base within 3 degrees of flat, every part of both grippers at least 2 cm from the crate, and the crate still for 1 s (base moved under 2 mm, no hinge turned 0.5 degree, no pawl moved 0.5 mm). Otherwise, at the end: 0.1 for each long wall standing on its own (within 3 degrees of vertical, no gripper within 2 cm of it) plus 0.15 for each latched corner, at most 0.8. Walls held up, or short walls stood up without their catches latched, score nothing. Doing nothing scores 0.",
+  "run_limit": "2,400 steps (2 minutes at 20 Hz)",
+  "reset_notes": "Press each pawl in with a thumb (or the crate's release grip) and fold both short walls in, then fold the two long walls down on top. Put the folded crate back centred at (0.26, 0.00), its length along y.",
+  "fidelity": "One articulation: rigid base, four walls on free hinges (damping 0.02 N m s/rad) with stops, four pawls on sprung prismatic joints; parts collide with each other. Solid plates; real walls are ribbed lattices. Real crates usually have handholds only on the short walls; here all four do. Catch spring 0.6 N/mm (about 2.7 N per pawl when pushed in) is an estimate, not measured; real catches may be stiffer. PP friction 0.35. 240 Hz physics.",
+  "scores": "Dream-1 run: 0; demo: 1.0",
+  "media": "M-98TJCZ"
+}
