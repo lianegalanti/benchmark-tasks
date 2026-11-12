@@ -1,6 +1,7 @@
-"""Offline checks (no Isaac Sim): the belt, the layout, the scanner's record and every scoring level, and that the demo
-is reachable, stays clear of the other parcels, the right arm and the scanner, and merges the parcel into the gap
-with wide margins (replayed with the parcels riding the belt, standing on the infeed table or held in the fingers).
+"""Offline checks (no Isaac Sim): the belt, the layout, the scanner's record, the contact watch and every scoring
+level, and that the demo is reachable, stays clear of the other parcels, the right arm and the scanner, and merges
+the parcel into the gap with wide margins (replayed with the parcels riding the belt, standing on the infeed table or
+held in the fingers, and the arms' collision hulls placed by forward kinematics along the plan).
 
     python -m pytest -q test_task.py      # in Arena's venv, from this folder
 """
@@ -11,8 +12,9 @@ import numpy as np
 import pytest
 
 from yam_arena import YAM_URDF, ik, station
+from yam_arena.analysis import fk_link_poses_world
 from yam_arena.constants import ARM_JOINTS, FINGER_OPEN, PAD_TIP_PAST_TCP, READY
-from yam_arena.demo import ArmPlan
+from yam_arena.demo import ArmPlan, grip_rotation
 from yam_arena.task_file import ObjectState, load
 from yam_arena.urdf import forward_kinematics
 
@@ -54,12 +56,34 @@ def merged(offset=0.0, t0=6.0, x=M.LINE_X, quat=SQUARE, shifts=None, xs=None, qu
     return at
 
 
-def play(at, until=RUN_LIMIT_S):
-    """Run the scanner's record over the control steps of a trial, the parcels as ``at(t)`` gives them; return the
-    final (score, why)."""
+def arm_poses(side, q, finger=FINGER_OPEN):
+    """An arm's link poses (4x4, station frame) at joints ``q`` and finger joints ``finger``, as the simulator
+    reports them to the contact watch."""
+    named = {j: float(v) for j, v in zip(ARM_JOINTS, q, strict=True)}
+    named["joint7"] = named["joint8"] = float(finger)
+    return fk_link_poses_world(named, station.BASES[side])
+
+
+RESTING = {side: arm_poses(side, READY) for side in ("left", "right")}  # both arms in their ready pose
+
+
+def reaching(pos, yaw=M.YAW, finger=FINGER_OPEN):
+    """The left arm with its TCP at ``pos``, pointing down, turned ``yaw``."""
+    q, pe, _ = ik.solve(np.asarray(pos, float), ik.matrix_to_quat_xyzw(grip_rotation(yaw)), np.array(READY, float),
+                        base_pos=station.BASES["left"], iters=200)
+    assert pe < 1e-3
+    return {"left": arm_poses("left", q, finger), "right": RESTING["right"]}
+
+
+def play(at, until=RUN_LIMIT_S, arms=None):
+    """Run the scanner's record and the contact watch over the control steps of a trial, the parcels as ``at(t)``
+    gives them and the arms' link poses as ``arms(t)`` does (default: both at rest); return the final (score, why)."""
     M.reset_state()
     for k in range(round(until / DT) + 1):
-        M.update(k * DT, at(k * DT))
+        t = k * DT
+        s = at(t)
+        M.update(t, s)
+        M.watch_contacts(t, s, RESTING if arms is None else arms(t))
     return M.result()
 
 
@@ -90,7 +114,7 @@ def test_positions_and_sizes_are_plain_floats():
         assert all(type(v) is float for v in o.size), o.name
 
 
-def test_the_line_has_one_22_cm_gap_and_6_cm_between_the_others():
+def test_the_line_has_one_24_cm_gap_and_6_cm_between_the_others():
     ys = [M.START[n] for n in M.TRAIN]
     assert -np.diff(ys) - M.PARCEL[1] == pytest.approx([M.SPACING, M.GAP, M.SPACING])
     assert ys[-1] - M.PARCEL[1] / 2 == pytest.approx(M.REAR_Y0) and M.REAR_Y0 - M.START_Y >= 0.04
@@ -171,23 +195,35 @@ def test_centred_in_the_gap_square_scores_1_with_6_5_cm_either_side():
     ("kwargs", "expected"),
     [
         (dict(offset=0.034), 1.0),  # 4.1 cm ahead: still enough
-        (dict(offset=0.04), 0.75),  # 3.5 cm ahead: short in front
-        (dict(offset=-0.04), 0.75),  # 3.5 cm behind: short behind
+        (dict(offset=0.04), 2 / 3),  # 3.5 cm ahead: short in front
+        (dict(offset=-0.04), 2 / 3),  # 3.5 cm behind: short behind
         (dict(quat=yawed(12)), 1.0),  # turned 12 degrees: square enough
-        (dict(quat=yawed(25)), 0.75),  # turned 25 degrees
-        (dict(quat=yawed(25), offset=0.045), 0.5),  # turned, and 3 cm ahead
-        (dict(shifts={"parcel_3": -0.02}), 0.75),  # parcel_3 knocked 2 cm back: disturbed
-        (dict(shifts={"parcel_3": -0.01}), 1.0),  # 1 cm back: within tolerance
-        (dict(xs={"parcel_1": M.LINE_X + 0.02}), 0.75),  # parcel_1 pushed 2 cm across the belt
-        (dict(quats={"parcel_2": yawed(8)}), 0.75),  # parcel_2 turned 8 degrees
-        (dict(offset=0.06, shifts={"parcel_2": 0.02}), 0.5),  # set too far ahead, bumping parcel_2 forward: 3.5 cm
-        (dict(offset=0.05, quat=yawed(30), shifts={"parcel_3": -0.03}), 0.25),  # only clear behind is met
-        (dict(quat=yawed(30), shifts={"parcel_2": -0.04, "parcel_3": 0.04}), 0.0),  # all four missed: squeezed, turned
+        (dict(quat=yawed(25)), 2 / 3),  # turned 25 degrees
+        (dict(quat=yawed(25), offset=0.045), 1 / 3),  # turned, and 3 cm ahead: only clear behind is met
+        (dict(quat=yawed(25), offset=-0.045), 1 / 3),  # turned, and 3 cm behind: only clear ahead is met
+        (dict(quat=yawed(30), offset=0.055), 1 / 3),  # turned 30 degrees, 1.1 cm short of parcel_2 (not touching)
+        (dict(shifts={"parcel_3": -0.01}), 1.0),  # parcel_3 1 cm off where it started (belt slip): within tolerance
     ],
 )
-def test_a_quarter_for_each_condition_once_the_parcel_passes_in_the_gap(kwargs, expected):
+def test_a_third_for_each_condition_once_the_parcel_passes_in_the_gap_untouching(kwargs, expected):
     score, why = play(merged(**kwargs))
-    assert score == expected, why
+    assert score == pytest.approx(expected), why
+    assert "touch" not in why.split("; no touch")[0]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(shifts={"parcel_3": -0.02}),  # parcel_3 2 cm back: something pushed it
+        dict(xs={"parcel_1": M.LINE_X + 0.02}),  # parcel_1 pushed 2 cm across the belt
+        dict(quats={"parcel_2": yawed(8)}),  # parcel_2 turned 8 degrees
+        dict(shifts={"parcel_2": 0.04, "parcel_3": -0.04}),  # the gap widened 8 cm to make room
+    ],
+)
+def test_a_disturbed_line_scores_0_even_when_no_touch_was_seen(kwargs):
+    # what a touch between two control steps would leave behind
+    score, why = play(merged(**kwargs))
+    assert score == 0.0 and "disturbed" in why, why
 
 
 def test_the_clearances_are_measured_to_within_a_millimetre_between_control_steps():
@@ -206,7 +242,7 @@ def test_the_clearances_are_measured_to_within_a_millimetre_between_control_step
 )
 def test_a_parcel_merged_anywhere_but_the_gap_scores_0(offset):
     score, why = play(merged(offset=offset, t0=1.0))
-    assert score == 0.0 and ("gap" in why or "has not passed" in why), why
+    assert score == 0.0 and ("gap" in why or "has not passed" in why or "touched" in why), why
 
 
 def test_a_merged_parcel_on_top_of_another_or_over_the_edge_or_carried_through_fails():
@@ -229,7 +265,144 @@ def test_a_train_parcel_knocked_off_the_belt_fails_the_trial():
 def test_a_merged_parcel_tipped_onto_its_side_is_not_square():
     on_side = np.array([np.sin(np.pi / 4), 0.0, 0.0, np.cos(np.pi / 4)])
     score, why = play(merged(quat=on_side))
-    assert score == 0.75, why
+    assert score == pytest.approx(2 / 3), why
+
+
+# -- touching the line's parcels: 0, whenever it happens ---------------------------------------------------------------
+
+
+def test_the_gaps_measure_boxes_and_hulls():
+    a = state((M.LINE_X, 0.0, M.PARCEL_Z))
+    assert M.parcel_gap(a, state((M.LINE_X, M.PARCEL[1] + 0.02, M.PARCEL_Z))) == pytest.approx(0.02)
+    assert M.parcel_gap(a, state((M.LINE_X, M.PARCEL[1] - 0.01, M.PARCEL_Z))) == pytest.approx(-0.01)
+    corner_in = state((M.LINE_X + M.PARCEL[0] / 2 + 0.03, 0.0, M.PARCEL_Z), yawed(45))  # a turned box's edge
+    assert M.parcel_gap(a, corner_in) < 0.0
+    # the closed fingertips: pad tips 1 cm into the top of a parcel, then 2 cm above it
+    from yam_arena.analysis import world_hulls
+    tips = (M.LINE_X, 0.0, M.PARCEL_TOP - 0.01 + PAD_TIP_PAST_TCP)
+    d, link = M.arm_gap(world_hulls(reaching(tips, finger=M.FINGER_CLOSED)["left"]), a)
+    assert d < 0.0 and link in ("tip_left", "tip_right")
+    d, _ = M.arm_gap(world_hulls(reaching((tips[0], tips[1], tips[2] + 0.03), finger=M.FINGER_CLOSED)["left"]), a)
+    assert d == pytest.approx(0.02, abs=0.003)
+    # both arms at rest are far from the line
+    assert all(M.arm_gap(world_hulls(RESTING[s]), a)[0] > 0.10 for s in RESTING)
+
+
+def test_pushing_a_neighbour_back_to_widen_the_gap_then_merging_scores_0():
+    # the reviewer's cheat: the fingers shove parcel_3 back 1 cm (within the spacing tolerance) at 5 to 6 s, then the
+    # parcel is merged into the widened gap perfectly; the arm touched parcel_3, so 0
+    def arms(t):
+        if 5.0 <= t <= 6.0:
+            face = M.riding_y("parcel_3", t, -0.01) + M.PARCEL[1] / 2
+            return reaching((M.LINE_X, face + 0.004, M.PARCEL_Z + PAD_TIP_PAST_TCP), yaw=0.0)
+        return RESTING
+
+    base = merged(shifts={"parcel_3": -0.01})
+    assert play(base)[0] == 1.0  # without the touch it would score 1
+    score, why = play(base, arms=arms)
+    assert score == 0.0 and "left arm" in why and "parcel_3" in why, why
+
+
+def test_brushing_a_parcel_with_the_arm_once_scores_0():
+    # a single control step with the gripper on parcel_1's top, nothing moved
+    def arms(t):
+        if abs(t - 3.0) < 1e-9:
+            return reaching((M.LINE_X, M.riding_y("parcel_1", t), M.PARCEL_TOP + PAD_TIP_PAST_TCP + 0.002),
+                            finger=M.FINGER_CLOSED)
+        return RESTING
+
+    score, why = play(merged(), arms=arms)
+    assert score == 0.0 and "parcel_1" in why and "3.00 s" in why, why
+
+
+def test_hovering_close_over_a_parcel_without_touching_is_allowed():
+    def arms(t):
+        if 3.0 <= t <= 4.0:
+            return reaching((M.LINE_X, M.riding_y("parcel_1", t), M.PARCEL_TOP + PAD_TIP_PAST_TCP + 0.015),
+                            finger=M.FINGER_CLOSED)
+        return RESTING
+
+    score, why = play(merged(), arms=arms)
+    assert score == 1.0, why
+
+
+def test_the_merged_parcel_bumping_a_neighbour_scores_0_even_if_the_line_is_unchanged():
+    # set down against parcel_2's trailing face for 0.3 s, then slid back to the gap's middle: spacing all fine at the
+    # scanner, but it touched parcel_2
+    def bump(t):
+        return (M.LINE_X, M.riding_y("parcel_2", t) - M.PARCEL[1] - 0.002, M.PARCEL_Z)
+
+    at = _with(merged(), 6.0, 6.3, M.MERGE, bump)
+    score, why = play(at)
+    assert score == 0.0 and "merged parcel touched parcel_2" in why, why
+    clear = _with(merged(), 6.0, 6.3, M.MERGE, lambda t: (bump(t)[0], bump(t)[1] - 0.01, bump(t)[2]))
+    assert play(clear)[0] == 1.0  # 1.2 cm away instead: no touch
+
+
+def test_a_touch_is_kept_for_the_whole_trial():
+    at = _with(merged(), 6.0, 6.0, M.MERGE, lambda t: (M.LINE_X, M.riding_y("parcel_3", t), M.PARCEL_Z + 0.04))
+    M.reset_state()
+    for k in range(round(RUN_LIMIT_S / DT) + 1):
+        t = k * DT
+        s = at(t)
+        M.update(t, s)
+        M.watch_contacts(t, s, RESTING)
+        if t > 6.0:
+            assert M.result()[0] == 0.0, t
+    assert "6.00 s" in M.result()[1]
+
+
+def _pass_times():
+    """When the merged parcel (riding the gap's middle) reaches the scan line and when it has left it."""
+    play(merged())
+    return M._STATE[M.MERGE]["front_t"], M._STATE[M.MERGE]["rear_t"]
+
+
+@pytest.mark.parametrize("window", ["whole pass", "last moment"])
+def test_holding_the_merged_parcel_through_the_scanner_scores_0(window):
+    # the gripper keeps hold of it (pads closed on it, sliding it along the belt with the gap) into its pass; it lies
+    # on the belt, square, clear on both sides, but it was steered, not let go
+    front, rear = _pass_times()
+    t0, t1 = (front - 1.0, rear) if window == "whole pass" else (front - 1.0, front + 0.05)
+
+    def arms(t):
+        if t0 <= t <= t1:
+            return reaching((M.LINE_X, M.gap_y(t), M.GRASP_Z), finger=M.FINGER_CLOSED)
+        return RESTING
+
+    score, why = play(merged(), arms=arms)
+    assert score == 0.0 and "merged parcel under the scanner" in why, why
+
+
+def test_letting_go_just_before_the_scanner_is_allowed():
+    # holding it until 0.1 s before it reaches the line, then the gripper opens and rises 2 cm clear: no touch in the
+    # pass. Touching it before the pass (setting it down) is how it gets there.
+    front, rear = _pass_times()
+
+    def arms(t):
+        if front - 1.0 <= t <= front - 0.1:
+            return reaching((M.LINE_X, M.gap_y(t), M.GRASP_Z), finger=M.FINGER_CLOSED)
+        if front - 0.1 < t <= rear:
+            return reaching((M.LINE_X, M.gap_y(t), M.PARCEL_TOP + PAD_TIP_PAST_TCP + 0.02))
+        return RESTING
+
+    score, why = play(merged(), arms=arms)
+    assert score == 1.0, why
+    assert 0.01 < M._STATE["closest"]["held"] < 0.03, why
+
+
+def test_parcels_queueing_against_the_end_stop_after_the_scanner_may_touch():
+    # once both have passed the scan line, the merged parcel may close up on parcel_2 (as they gather at the stop)
+    def at(t):
+        out = merged()(t)
+        m = out[M.MERGE]
+        p2 = out["parcel_2"]
+        if m.low[1] > M.SCAN_Y + 0.01:  # past the line: closed up on parcel_2
+            out[M.MERGE] = state((M.LINE_X, p2.pos[1] - M.PARCEL[1], M.PARCEL_Z))
+        return out
+
+    score, why = play(at)
+    assert score == 1.0, why
 
 
 def test_a_new_trial_starts_with_an_empty_record():
@@ -341,6 +514,36 @@ def _replay(ratio=1.0):
         return out
 
     return at
+
+
+def _demo_arms():
+    """The arms' link poses along the demo plan (forward kinematics of its IK, fingers as commanded)."""
+    plan, cache = _plan(), {}
+
+    def arms(t):
+        k = round(t / DT)
+        if k not in cache:
+            if k == 0:
+                q, finger = np.array(READY, float), FINGER_OPEN
+            else:
+                grip = plan.action7(min(t, plan.duration))[0][6]
+                q, finger = plan.q.copy(), grip * FINGER_OPEN
+            cache[k] = {"left": arm_poses("left", q, finger), "right": RESTING["right"]}
+        return cache[k]
+
+    return arms
+
+
+@pytest.mark.parametrize("ratio", [1.0, 0.93, 1.07])
+def test_the_demo_never_comes_near_touching_the_line(ratio):
+    # replayed with the arms' collision hulls along the plan: neither arm comes within 4 cm of the line's parcels and
+    # the merged parcel stays 3 cm or more from them until past the scanner, even with the line riding 7 % off speed
+    score, why = play(_replay(ratio), arms=_demo_arms())
+    assert score == 1.0, why
+    assert M._STATE["touch"] is None
+    assert M._STATE["closest"]["arms"] > 0.04, why
+    assert M._STATE["closest"]["merged"] > (0.05 if ratio == 1.0 else 0.03), why
+    assert M._STATE["closest"]["held"] > 0.10, why  # parked well away while the merged parcel passes
 
 
 def test_the_demo_replayed_merges_the_parcel_with_wide_margins():

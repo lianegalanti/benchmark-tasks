@@ -8,7 +8,8 @@ Past it the belt runs on, off the table's left edge, to an end stop.
 
 The robot must merge the waiting parcel into the gap while the belt runs: set it onto the belt between the second and
 the third parcel, square to the belt, so that it has at least 4 cm of clear belt on both sides when it passes the
-scanner, without touching the other parcels.
+scanner, without touching the other parcels: neither the arms nor the merged parcel may touch any of the four at
+any time. It must be let go before it reaches the scanner: no arm may touch it during its pass.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py \\
            --instruction "Put the parcel from the side table into the empty gap ..." ...
@@ -23,15 +24,19 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
-from motionkit import AwakeBox, Belt, arm_joints, episode_time, on_reset, on_step, robot_links, speed_schedule  # noqa: E402
+from motionkit import (AwakeBox, Belt, arm_joints, episode_time, on_reset, on_step, robot_link_poses,  # noqa: E402
+                       robot_links, speed_schedule)
+from yam_arena.analysis import box_signed_distance, link_hulls, world_hulls  # noqa: E402
 from yam_arena.constants import FINGER_CLOSED, FINGER_OPEN, PAD_TIP_PAST_TCP  # noqa: E402
 from yam_arena.demo import Waypoint  # noqa: E402
 from yam_arena.station import FLOOR_Z  # noqa: E402
 from yam_arena.task_file import TABLE_TOP, Box  # noqa: E402
+from yam_arena.urdf import quat_xyzw_to_matrix  # noqa: E402
 
 SCENE = "station"
 TOP = TABLE_TOP[SCENE]
-SCORE_OVER = "end"  # the monitor below records each parcel's pass under the scanner; the score is read at the end
+SCORE_OVER = "end"  # the monitor below records each parcel's pass under the scanner and every touch of the four
+#                     parcels of the line, over the whole trial; the score is read at the end
 
 
 def _floats(v) -> tuple[float, ...]:
@@ -171,6 +176,14 @@ KEPT_DEG = 5.0  # ... and turned or tilted no more than this
 ON_BELT = 0.01  # lying on the belt: the parcel's underside within 1 cm of the belt's top
 LANE_TOL = 0.0  # in the lane: the parcel's footprint within the belt's edges
 
+# Contact with the four parcels of the line, watched every control step of the whole trial. A body touches a parcel
+# when it comes within TOUCH of the parcel's box (PhysX starts making contacts 5 mm out): an arm when any of its
+# links' collision hulls (the URDF's, placed where the simulator has the links) does, the merged parcel when its box
+# does. Two parcels that have both passed under the scanner may touch (they queue against the end stop). The merged
+# parcel itself must be let go before it reaches the scanner: no arm may touch it during its pass (no holding it on the
+# belt or steering it through).
+TOUCH = 0.005
+
 _STATE: dict = {}
 
 
@@ -179,6 +192,10 @@ def reset_state(environment=None) -> None:
     _STATE.clear()
     _STATE.update({n: dict(last=None, front_t=None, rear_t=None, fault=None, x=None, turn=0.0, tilt=0.0, fronts=None)
                    for n in NAMES})
+    _STATE["touch"] = None  # the first touch of the line's parcels, or of the merged parcel in its pass: (t, what)
+    # closest approach (m): of the arms and of the merged parcel to the line's parcels, of the arms to the merged
+    # parcel during its pass
+    _STATE["closest"] = {"arms": np.inf, "merged": np.inf, "held": np.inf}
 
 
 reset_state()
@@ -202,6 +219,108 @@ def turn_and_tilt(quat_xyzw) -> tuple[float, float]:
     turn = np.degrees(np.arctan2(abs(long_axis[0]), abs(long_axis[1])))
     tilt = np.degrees(np.arccos(np.clip(abs(up_z), 0.0, 1.0)))
     return float(turn), float(tilt)
+
+
+def _box(p) -> tuple[np.ndarray, np.ndarray]:
+    """A parcel's (ObjectState) box: its centre and rotation matrix (its size is PARCEL)."""
+    return np.asarray(p.pos, float), quat_xyzw_to_matrix(np.asarray(p.quat_xyzw, float))
+
+
+_SIGNS = np.array([(i, j, k) for i in (-1, 1) for j in (-1, 1) for k in (-1, 1)], float)
+
+
+def _corners(p) -> np.ndarray:
+    centre, rot = _box(p)
+    return centre + (_SIGNS * np.asarray(PARCEL) / 2) @ rot.T
+
+
+def parcel_gap(a, b) -> float:
+    """How far apart two parcels' boxes are (m; negative if they overlap, by as much): the widest separation along
+    any of the 15 separating axes of two boxes. Exact for boxes facing each other; never more than the true distance
+    otherwise, so it errs towards touching."""
+    (ca, ra), (cb, rb) = _box(a), _box(b)
+    half = np.asarray(PARCEL) / 2
+    axes = [*ra.T, *rb.T]
+    axes += [n / np.linalg.norm(n) for u in ra.T for v in rb.T if np.linalg.norm(n := np.cross(u, v)) > 1e-6]
+    return float(max(abs(np.dot(cb - ca, n)) - np.abs(ra.T @ n) @ half - np.abs(rb.T @ n) @ half for n in axes))
+
+
+def arm_gap(hulls, p) -> tuple[float, str | None]:
+    """How far an arm's collision hulls (world ``(link, Hull)`` pairs) are from a parcel's box (m; negative if they
+    overlap), and the nearest link: the nearest hull vertex to the box, or box corner to a hull (a hull's face
+    planes give a lower bound for a point outside it, so this errs towards touching)."""
+    centre, rot = _box(p)
+    corners = _corners(p)
+    lo, hi = corners.min(0) - 0.05, corners.max(0) + 0.05
+    best, link = np.inf, None
+    for name, h in hulls:
+        if np.any(h.vertices.min(0) > hi) or np.any(h.vertices.max(0) < lo):
+            continue  # more than 5 cm apart
+        d = min(float(box_signed_distance(h.vertices, centre, rot, PARCEL).min()),
+                float((corners @ h.planes[:, :3].T - h.planes[:, 3]).max(axis=1).min()))
+        if d < best:
+            best, link = d, name
+    return best, link
+
+
+def _link_corners() -> dict[str, np.ndarray]:
+    """The corners of each link's collision hulls' bounding box, in the link's frame (homogeneous, 8 x 4)."""
+    if "corners" not in _HULL_BOXES:
+        out = {}
+        for name, hulls in link_hulls().items():
+            v = np.concatenate([h.vertices for h in hulls])
+            lo, hi = v.min(0), v.max(0)
+            out[name] = np.c_[np.where(_SIGNS > 0, hi, lo), np.ones(8)]
+        _HULL_BOXES["corners"] = out
+    return _HULL_BOXES["corners"]
+
+
+_HULL_BOXES: dict = {}
+
+
+def near_hulls(poses, lo, hi):
+    """The collision hulls (world ``(link, Hull)`` pairs) of those links (``poses``: 4x4 by link name) whose bounding
+    box comes within 5 cm of the box from ``lo`` to ``hi``."""
+    corners, near = _link_corners(), {}
+    if not set(poses) & set(corners) and "named" not in _HULL_BOXES:
+        _HULL_BOXES["named"] = True
+        print(f"[merge] WARNING: no arm link has a collision hull: links {sorted(poses)}", flush=True)
+    for name, pose in poses.items():
+        if name not in corners:
+            continue
+        w = (corners[name] @ pose.T)[:, :3]
+        if np.all(w.min(0) <= hi + 0.05) and np.all(w.max(0) >= lo - 0.05):
+            near[name] = pose
+    return world_hulls(near) if near else []
+
+
+def watch_contacts(t: float, parcels, link_poses=None) -> None:
+    """One control step of the contact watch: whether an arm (``link_poses``: each arm's link poses as 4x4 matrices,
+    by side and link name) or the merged parcel touches any of the four parcels of the line, and whether an arm
+    touches the merged parcel during its pass under the scanner. Latches the first touch for the rest of the
+    trial."""
+    closest = _STATE["closest"]
+    every = np.concatenate([_corners(parcels[n]) for n in TRAIN])
+    for side, poses in (link_poses or {}).items():
+        hulls = near_hulls(poses, every.min(0), every.max(0))
+        for n in TRAIN:
+            d, link = arm_gap(hulls, parcels[n])
+            closest["arms"] = min(closest["arms"], d)
+            if d < TOUCH and _STATE["touch"] is None:
+                _STATE["touch"] = (float(t), f"the {side} arm's {link} touched {n}")
+        if _STATE[MERGE]["front_t"] is not None and _STATE[MERGE]["rear_t"] is None:  # the merged parcel's pass
+            mine = _corners(parcels[MERGE])
+            d, link = arm_gap(near_hulls(poses, mine.min(0), mine.max(0)), parcels[MERGE])
+            closest["held"] = min(closest["held"], d)
+            if d < TOUCH and _STATE["touch"] is None:
+                _STATE["touch"] = (float(t), f"the {side} arm's {link} touched the merged parcel under the scanner")
+    for n in TRAIN:
+        if _STATE[n]["rear_t"] is not None and _STATE[MERGE]["rear_t"] is not None:
+            continue  # both past the scanner: they may queue against the end stop
+        d = parcel_gap(parcels[MERGE], parcels[n])
+        closest["merged"] = min(closest["merged"], d)
+        if d < TOUCH and _STATE["touch"] is None:
+            _STATE["touch"] = (float(t), f"the merged parcel touched {n}")
 
 
 def _crossed(last_t, last_face, t, face) -> float | None:
@@ -250,6 +369,7 @@ def _monitor(environment) -> None:
     t = episode_time()
     states = object_states(environment, list(NAMES))
     update(t, states)
+    watch_contacts(t, states, robot_link_poses(environment))
     if DEBUG:
         _debug(environment, t, states)
 
@@ -312,10 +432,14 @@ def disturbed() -> list[str]:
 
 
 def result() -> tuple[float, str]:
-    """The score so far and why: 0 until every parcel has passed under the scanner lying on the belt in its lane,
-    and 0 unless the merged parcel passed between parcel_2 and parcel_3 (in the gap). Then 0.25 for each of: 4 cm or
-    more clear belt ahead of it, 4 cm or more behind it, square (turned and tilted 15 degrees or less), and the four
-    other parcels undisturbed (see :func:`disturbed`)."""
+    """The score so far and why: 0 if an arm or the merged parcel touched any of the four parcels of the line at any
+    time, or an arm touched the merged parcel during its pass (see :func:`watch_contacts`); 0 until every parcel has passed under the scanner lying on the belt in its
+    lane; 0 if the four were disturbed (see :func:`disturbed`: what a touch between two control steps would leave);
+    and 0 unless the merged parcel passed between parcel_2 and parcel_3 (in the gap). Then a third for each of: 4 cm
+    or more clear belt ahead of it, 4 cm or more behind it, and square (turned and tilted 15 degrees or less)."""
+    if _STATE["touch"] is not None:
+        t, what = _STATE["touch"]
+        return 0.0, f"{what} at {t:.2f} s"
     for n in NAMES:
         rec = _STATE[n]
         if rec["fault"] is not None:
@@ -326,16 +450,21 @@ def result() -> tuple[float, str]:
     i = seq.index(MERGE)
     if not 0 < i < len(seq) - 1 or (seq[i - 1], seq[i + 1]) != ("parcel_2", "parcel_3"):
         return 0.0, "the merged parcel did not pass in the gap: order " + ", ".join(seq)
+    spacing = "/".join(f"{clear_between(a, b) * 100:.1f}" for a, b in zip(TRAIN, TRAIN[1:]))
+    moved = disturbed()
+    if moved:
+        return 0.0, f"the other parcels were disturbed (line spacing {spacing} cm; " + "; ".join(moved) + ")"
     ahead, behind = clear_between("parcel_2", MERGE), clear_between(MERGE, "parcel_3")
     turn, tilt = _STATE[MERGE]["turn"], _STATE[MERGE]["tilt"]
-    moved = disturbed()
-    checks = (ahead >= CLEAR, behind >= CLEAR, max(turn, tilt) <= SQUARE_DEG, not moved)
-    spacing = "/".join(f"{clear_between(a, b) * 100:.1f}" for a, b in zip(TRAIN, TRAIN[1:]))
+    checks = (ahead >= CLEAR, behind >= CLEAR, max(turn, tilt) <= SQUARE_DEG)
     parts = (f"clear ahead {ahead * 100:.1f} cm", f"clear behind {behind * 100:.1f} cm",
-             f"square (turned {turn:.0f}, tilted {tilt:.0f} degrees)",
-             f"others undisturbed (line spacing {spacing} cm" + ("; " + "; ".join(moved) if moved else "") + ")")
-    why = "; ".join(("ok " if ok else "FAIL ") + part for ok, part in zip(checks, parts))
-    return 0.25 * sum(checks), why
+             f"square (turned {turn:.0f}, tilted {tilt:.0f} degrees)")
+    closest = _STATE["closest"]
+    near = {k: "over 5 cm" if v == np.inf else f"{v * 100:.1f} cm" for k, v in closest.items()}
+    why = "; ".join(("ok " if ok else "FAIL ") + part for ok, part in zip(checks, parts)) + (
+        f"; no touch (closest to the line's parcels: arms {near['arms']}, merged parcel {near['merged']}; arms to "
+        f"the merged parcel in its pass: {near['held']}; line spacing {spacing} cm)")
+    return sum(checks) / 3, why
 
 
 _SAID: dict = {}
@@ -352,8 +481,8 @@ def score(objects):
 
 
 def success(objects):
-    """The merged parcel passed the scanner in the gap, square, with 4 cm or more clear on both sides, and the
-    other four passed undisturbed."""
+    """The merged parcel passed the scanner in the gap, square, with 4 cm or more clear on both sides, nothing
+    touched the other four and they passed undisturbed."""
     return result()[0] == 1.0
 
 

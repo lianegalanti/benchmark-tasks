@@ -1,10 +1,10 @@
 """motionkit: rigid boxes that move along a scripted path, and conveyor belts, for yam_arena task files.
 
-Copied unchanged from the space-touching-parcels task (same authors), which took it from the unload-paused-shuttle
-and reach-between-sweeps tasks and added :class:`Belt` (a belt whose surface moves while its body stays put),
-:func:`speed_schedule` (from the sort-surging-belt task) and :func:`episode_time`; the shuttle and stroke paths those
-tasks use are left in place, unused here. Extended here with :class:`AwakeBox`, a free box that never sleeps, and
-:attr:`Belt.carry`, which makes up for this belt model's slip.
+Shared helpers: :class:`DrivenBox` (shuttles and strokes), :class:`Belt` (a belt
+whose surface moves while its body stays put), :func:`speed_schedule` and :func:`episode_time`; the shuttle and
+stroke paths are left in place, unused here. Extended here with :class:`AwakeBox`, a free box that never sleeps, and
+:attr:`Belt.carry`, which makes up for this belt model's slip, and :func:`robot_link_poses`, every arm link's pose
+for contact checks.
 
 yam_arena's task files spawn objects that are either fixed or free (moved only by gravity and contact). This module
 adds :class:`DrivenBox`, a box whose pose and velocity follow ``path(t)`` exactly, like a part of a machine driven
@@ -25,7 +25,8 @@ Importing this module hooks ``yam_arena`` without changing it:
   (0.2 mm at 5 cm/s) and the next step puts it back;
 - the embodiment runs every function registered with :func:`on_step` after each control step, before the task file
   is scored, and every function registered with :func:`on_reset` after each reset, once the scene has settled. A
-  task file uses them for a safety monitor that reads the arms' links (:func:`robot_links`, :func:`arm_joints`).
+  task file uses them for a safety monitor that reads the arms' links (:func:`robot_links`, :func:`robot_link_poses`,
+  :func:`arm_joints`).
 
 Pure Python at import time; everything that needs Isaac Sim is imported lazily.
 """
@@ -42,7 +43,7 @@ import numpy as np
 from yam_arena.task_file import Box, ObjectState
 
 __all__ = ["AwakeBox", "Belt", "DrivenBox", "arm_joints", "dwell_shuttle", "episode_time", "on_reset", "on_step", "park_stroke",
-           "robot_links", "speed_schedule"]
+           "robot_link_poses", "robot_links", "speed_schedule"]
 
 DRIVEN_MASS = 50.0  # kg; heavy, so contacts within one physics step barely disturb it before the next write
 
@@ -266,6 +267,25 @@ def robot_links(environment) -> dict[str, dict[str, np.ndarray]]:
         robot = base.scene[f"{side}_robot"]
         pos = _np(robot.data.body_pos_w)[0] - origin
         out[side] = {name: pos[i] for i, name in enumerate(robot.body_names)}
+    return out
+
+
+def robot_link_poses(environment) -> dict[str, dict[str, np.ndarray]]:
+    """Each arm's link poses by link name as 4x4 matrices (station frame, env 0), for contact checks against the
+    URDF's collision hulls (``yam_arena.analysis.world_hulls``)."""
+    from yam_arena.analysis import pose7_to_matrix
+
+    base = environment.unwrapped
+    origin = _np(base.scene.env_origins[0])
+    out = {}
+    for side in ("left", "right"):
+        robot = base.scene[f"{side}_robot"]
+        poses = _np(robot.data.body_link_pose_w)[0]  # (x, y, z, qx, qy, qz, qw) per body
+        out[side] = {}
+        for name, p in zip(robot.body_names, poses, strict=True):
+            m = pose7_to_matrix(p)
+            m[:3, 3] -= origin
+            out[side][name] = m
     return out
 
 
