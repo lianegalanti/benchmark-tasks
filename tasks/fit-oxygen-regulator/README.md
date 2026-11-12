@@ -5,9 +5,10 @@ the US form of ISO 407) pointing at the robot. A yoke oxygen regulator stands on
 The robot must fit the regulator onto the valve, hand-tight, and let go of it.
 
 More than 1.5 million adults in the US use supplemental oxygen at home (American Thoracic Society workshop report,
-Ann Am Thorac Soc 2018;15:1369). To leave the house on oxygen, they or a family caregiver fit a regulator like this one
-onto a portable cylinder, and they do it again with every fresh cylinder. EMTs and respiratory therapists do the same
-at work.
+Ann Am Thorac Soc 2018;15:1369). A portable cylinder is what lets them leave the house, and every fresh cylinder needs
+its regulator fitted like this. Many of them have limited hand strength or dexterity. They wait for a family
+caregiver or a supplier's visit, or go out without oxygen. A robot that does this reliably helps them stay
+independent and eases their carers' load.
 
 What makes it hard is physical, and the geometry enforces it:
 
@@ -19,8 +20,9 @@ What makes it hard is physical, and the geometry enforces it:
 - **Hold and turn.** Until the screw bites, nothing holds the yoke square on its pins: one hand must hold it while the
   other turns the T-handle about 6.3 turns (1.75 mm pitch) to bring the tip into the recess, then tightens it until it
   resists 0.75 N m. A wrist turns at most about 200 degrees, so this takes about a dozen regrips.
-- **Don't disturb the cylinder.** The cylinder lies loose in its cradle. Shoving or rolling it to line it up is a
-  violation.
+- **Keep the cylinder in its cradle.** The cylinder lies loose in its cradle, and the yoke is pushed against it.
+  Sliding or rolling it is harmless (the fit is judged on the cylinder, wherever it lies), but tipping it out of the
+  cradle is a violation.
 
 ## Files
 
@@ -77,16 +79,26 @@ the measured joints gives where each hand really is.
    - Each stroke turns it about 195 degrees with the wrist, opens, backs off 4 cm, turns back and grips again.
    - It follows the screw in by 1.75 mm per turn.
    - It counts how far the T-bar has turned from its wrist encoders while it grips.
-   - It stops 0.3 turn past where the screw reaches the recess (6.6 turns, about 13 strokes). The last strokes turn
+   - It stops 0.3 turn past where the screw reaches the recess (6.6 turns, 14 strokes). The last strokes turn
      against the rising torque.
 5. **Let go.** Both arms let go and return to the ready pose. The regulator stays clamped.
 
-**Isaac Sim:** the encoder-only demo above reaches 1.0 (success) in 3,016 steps (151 s; the run limit is 4,800), in two runs. Dream-1 scored 0 in a 4,800-step trial (the run limit).
+**Isaac Sim:** the encoder-only demo above reaches 1.0 (success) in 3,016 steps (151 s; the run limit is 4,800). It
+did so in two runs; the submitted video is from the second. Dream-1 scored 0 in a 4,800-step trial (the run limit).
 
 - The window caught the post's end twice. On the third approach, 1.6 mm higher, the yoke slid on.
-- The stepwise push seated the pins 3.9 mm deep, with the washer flat to 0.01 mm.
-- In 14 strokes the T-bar turned 6.56 turns, counted by the left wrist's encoders, ending at the 60 N clamp (1.55 N m).
+- In 14 strokes the T-bar turned 6.56 turns, counted by the left wrist's encoders.
 - There were no violations.
+
+At the end of that run, the scorer measured (`result.json` of the demo):
+
+| Measure | Value | Needed for full credit |
+|---|---|---|
+| Both pins into their holes | 3.9 mm (fully seated), 0.37 mm off the holes' axes | at least 3 mm |
+| Washer to outlet face, all round | 0.01 mm (flat) | within 1 mm |
+| Inlet axis to outlet axis | 0.05 degrees | within 3 degrees |
+| Clamp force | 60 N (the cap) | |
+| Torque to turn the T-bar further | 1.55 N m | at least 0.75 N m |
 
 Earlier runs found and fixed several problems:
 
@@ -100,11 +112,12 @@ Earlier runs found and fixed several problems:
 The monitor runs after every control step and latches violations. The score at the end of the episode counts
 (`SCORE_OVER = "end"`).
 
-- **0 if at any time:**
-  - the cylinder moves more than 1 cm, or turns (rolls or tips) more than 5 degrees;
-  - the regulator, once lifted 3 cm, comes back to within 5 mm of the table top (set down or dropped), falls off
-    the table, or falls (moves down faster than 0.5 m/s).
-- **Otherwise, from the state at the end:**
+- **0 if at any time something unsafe happens:**
+  - the cylinder tips out of its cradle: its axis turns more than 30 degrees from where it lay, or drops more than
+    2 cm below its cradled height;
+  - the regulator is dropped (it moves down faster than 0.5 m/s while no gripper holds it) or falls off the table.
+- **Allowed:** setting the regulator down to regrip it, and sliding or rolling the cylinder in its cradle.
+- **Otherwise, from the state at the end, judged relative to the cylinder wherever it lies:**
   - **0.25, on the post:** the post passes through the yoke's window and the yoke's whole 32 mm depth is over the post.
   - **0.5, seated:**
     - both pins at least 3 mm into their holes (seated fully they reach 3.9 mm; a pen mark on each pin);
@@ -123,11 +136,14 @@ Unintended strategies don't score:
 - A screw tightened on a yoke whose pins sit on the face clamps a cocked yoke. It is not seated, so it scores 0.25.
 - Holding the regulator against the valve without the screw scores at most 0.5.
 - A hand-tight regulator still in the hand scores 0.75.
-- Nudging the cylinder into line, or setting the regulator down to regrip it, scores 0.
+- Nudging the cylinder doesn't help: the fit is judged in the cylinder's own frame, and tipping it out of the
+  cradle scores 0.
 
 How the simulation judges these, once per control step:
 
 - **Pin depth, washer gap and squareness** come from the regulator's pose relative to the cylinder's.
+- **Held:** a gripper holds the regulator when its grasp point is within 1 cm of the regulator's outline and its
+  fingers are less than 7 cm apart.
 - **Hand-tight** comes from the screw's joints: the tip's slide position and the T-handle's turn.
   - Past first contact, the thread's target runs ahead of the stopped tip. That lead, times the slide drive's
     stiffness, is the clamp force.
@@ -177,5 +193,6 @@ scale also works: hooked on the end of the T-bar, 3 cm from its axis, hand-tight
 
 ## Runtime and seeds
 
-Physics is slow with this many small colliders and a 32-iteration solver. The 2,814-step demo, recording 640x352
-frames, took about 40 minutes on a shared L40S, so a full 4,800-step trial takes about an hour. The layout is fixed (`-E object_jitter=0`), so there are no seeds to choose.
+Physics is slow with this many small colliders and a 32-iteration solver. The 3,016-step demo, recording 640x352
+frames, took about 40 minutes on a shared L40S, so a full 4,800-step trial takes about an hour. The layout is fixed
+(`-E object_jitter=0`), so there are no seeds to choose.

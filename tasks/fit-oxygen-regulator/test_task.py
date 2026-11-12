@@ -41,8 +41,8 @@ def clamp_turns(extra=0.3):
     return d, theta
 
 
-def step(pos, R, d=0.0, theta=0.0, caps=FAR, v=(0, 0, 0), w=(0, 0, 0), cyl=(CYL_P, np.eye(3))):
-    M.update(cyl[0], cyl[1], pos, R, np.asarray(v, float), np.asarray(w, float), d, theta, caps)
+def step(pos, R, d=0.0, theta=0.0, caps=FAR, v=(0, 0, 0), w=(0, 0, 0), cyl=(CYL_P, np.eye(3)), held=False):
+    M.update(cyl[0], cyl[1], pos, R, np.asarray(v, float), np.asarray(w, float), d, theta, caps, held=held)
     return M.score({}), M.success({})
 
 
@@ -264,37 +264,82 @@ def test_moving_while_seated_is_not_success():
         assert step(p, R @ wobble, d=d, theta=theta)[1] is False
 
 
-def test_cylinder_moved_or_rolled_zeroes_everything_for_good():
-    lifted()
+def installed_on(cyl_pos, cyl_R=np.eye(3)):
+    """The regulator seated and hand-tight on a cylinder lying at (cyl_pos, cyl_R), station frame."""
+    p, R = g.seated_pose_c()
+    return cyl_pos + cyl_R @ p, cyl_R @ R
+
+
+def finish(pos, R, cyl):
+    """Clamped, let go and still for the 1 s success window; returns the last (score, success)."""
     d, theta = clamp_turns()
-    assert step(*seated(), d=d, theta=theta, cyl=(CYL_P + [0.012, 0, 0], np.eye(3)))[0] == 0.0
-    assert step(*seated(), d=d, theta=theta) == (0.0, False)
-    M._reset()
-    step(START, np.eye(3))
-    assert step(*seated(), d=d, theta=theta, cyl=(CYL_P, g.rot_x(math.radians(6))))[0] == 0.0
+    out = None
+    for _ in range(M.STILL_STEPS):
+        out = step(pos, R, d=d, theta=theta, cyl=cyl)
+    return out
 
 
-def test_set_down_or_dropped_after_lifting_zeroes_everything():
+def test_set_down_then_installed_scores_full():
     lifted()
-    assert step(START + [0.0, 0.05, 0.0], np.eye(3))[0] == 0.0
-    assert "set down" in M._STATE["why"][0]
+    assert step(START + [0.0, 0.05, 0.0], np.eye(3), held=True)[0] == 0.0     # set down again on the table
+    assert step(START + [0.0, 0.05, 0.0], np.eye(3)) == (0.0, False) and not M.violation()
+    lifted()
+    assert finish(*installed_on(CYL_P), cyl=(CYL_P, np.eye(3))) == (0.75, True)
+
+
+def test_cylinder_nudged_3_cm_then_installed_scores_full():
+    """Sliding the cylinder 3 cm along its cradle and rolling it 10 degrees is allowed; the fit is judged on it."""
+    lifted()
+    moved = (CYL_P + [0.03, 0.0, 0.0], g.rot_x(math.radians(10.0)))
+    assert step(START + [0, 0, 0.05], np.eye(3), cyl=moved)[0] == 0.0 and not M.violation()
+    assert finish(*installed_on(*moved), cyl=moved) == (0.75, True)
+    # the old, unmoved seated pose is not on the moved cylinder's valve
+    assert step(*seated(), cyl=moved)[0] == 0.0
+
+
+def test_cylinder_tipped_or_fallen_out_of_its_cradle_zeroes_everything_for_good():
+    lifted()
+    assert step(*installed_on(CYL_P), cyl=(CYL_P, g.rot_y(math.radians(31.0))))[0] == 0.0
+    assert finish(*installed_on(CYL_P), cyl=(CYL_P, np.eye(3))) == (0.0, False)
     M._reset()
     step(START, np.eye(3))
+    tilted = (CYL_P, g.rot_y(math.radians(25.0)))                                            # tilted, still cradled
+    assert step(*installed_on(*tilted), cyl=tilted)[0] == 0.5
+    assert not M.violation()
+    assert step(START, np.eye(3), cyl=(CYL_P - [0, 0, 0.025], np.eye(3)))[0] == 0.0          # fell out of the saddles
+    assert "cradle" in M._STATE["why"][0]
+
+
+def test_regulator_dropped_zeroes_everything():
     lifted()
     assert step(START + [0, 0, 0.03], np.eye(3), v=(0, 0, -0.8))[0] == 0.0
+    assert "dropped" in M._STATE["why"][0]
+    assert finish(*installed_on(CYL_P), cyl=(CYL_P, np.eye(3))) == (0.0, False)
 
 
-def test_sitting_on_the_table_before_lifting_is_fine():
-    assert step(START + [0.0, 0.01, 0.0], np.eye(3)) == (0.0, False)
+def test_lowered_fast_in_the_hand_is_not_a_drop():
+    lifted()
+    assert step(START + [0, 0, 0.03], np.eye(3), v=(0, 0, -0.8), held=True)[0] == 0.0
     assert not M.violation()
 
 
+def test_off_the_table_zeroes_everything():
+    assert step(START - [0, 0, 0.08], np.eye(3))[0] == 0.0 and M.violation()
+
+
 def test_reset_clears_the_memory():
-    lifted()
-    step(START, np.eye(3))
+    step(START, np.eye(3), v=(0, 0, -0.8))
     assert M.violation()
     M._reset()
     assert not M.violation() and M._STATE["cyl0"] is None
+
+
+def test_held_by_needs_a_closed_gripper_at_the_regulator():
+    pos, R = np.array(g.SEATED), np.eye(3)
+    grip_tcp = pos + [0.0, g.GRIP_Y, 0.006]
+    assert M.held_by([(grip_tcp, 0.04)], pos, R)
+    assert not M.held_by([(grip_tcp, 0.094)], pos, R)                  # open fingers
+    assert not M.held_by([(grip_tcp + [0, 0, 0.1], 0.04)], pos, R)     # closed, 10 cm away
 
 
 # -- the demo, against a rigid-grip regulator -----------------------------------------------------------------------------

@@ -197,11 +197,11 @@ REGULATOR = part("regulator", pos=g.REG_START, boxes=_RB, cylinders=_RC, mass=g.
 OBJECTS = [CYLINDER, CRADLE, REGULATOR]
 
 # -- monitor and scoring -------------------------------------------------------------------------------------------------
-CYL_MOVE = 0.01                  # m: the cylinder moved out of place
-CYL_TURN = math.radians(5.0)     # rad: ... or rolled or tipped
-LIFT = 0.03                      # m: the regulator has been lifted
-ON_TABLE = 0.005                 # m: after that, any part of it this close to the table top counts as set down
-FALL_SPEED = 0.5                 # m/s downward: dropped
+CYL_TIP = math.radians(30.0)     # rad: the cylinder's axis tipped this far from where it lay: tipped out of its cradle
+CYL_DROP = 0.02                  # m: ... or its axis this far below its cradled height: fallen out of the saddles
+FALL_SPEED = 0.5                 # m/s downward, with no gripper holding it: dropped
+HOLD_R = 0.01                    # m: a gripper holds the regulator when its grasp point is this close to its outline
+HOLD_OPEN = 0.07                 # m: ... and its fingers are less than this far apart (fully open: 9.4 cm)
 CLEAR = 0.03                     # m: let go means every part of both arms at least this far from the regulator
 STILL_MM, STILL_DEG = 0.001, 0.5  # still: over the last second it moved less than 1 mm and 0.5 degrees
 STILL_STEPS = 20
@@ -214,7 +214,7 @@ _STATE: dict = {}
 
 def _fresh() -> None:
     _STATE.clear()
-    _STATE.update(cyl0=None, reg_z0=None, lifted=False, moved=False, dropped=False, why=[], fit={}, clear=False,
+    _STATE.update(cyl0=None, tipped=False, dropped=False, why=[], fit={}, clear=False,
                   still=False, d=0.0, theta=0.0, hist=[])
 
 
@@ -248,28 +248,22 @@ def arms_clear(caps, reg_pos, reg_R) -> bool:
     return True
 
 
-def update(cyl_pos, cyl_R, reg_pos, reg_R, reg_v, reg_w, d, theta, caps) -> None:
-    """One step of the monitor, on measured values (station frame)."""
+def update(cyl_pos, cyl_R, reg_pos, reg_R, reg_v, reg_w, d, theta, caps, held: bool = False) -> None:
+    """One step of the monitor, on measured values (station frame). ``held``: a gripper holds the regulator."""
     cyl_pos, cyl_R = np.asarray(cyl_pos, float), np.asarray(cyl_R, float)
     reg_pos, reg_R = np.asarray(reg_pos, float), np.asarray(reg_R, float)
     if _STATE["cyl0"] is None:
         _STATE["cyl0"] = (cyl_pos.copy(), cyl_R.copy())
-        _STATE["reg_z0"] = float(reg_pos[2])
     p0, R0 = _STATE["cyl0"]
-    if np.linalg.norm(cyl_pos - p0) > CYL_MOVE or g.angle_between(R0, cyl_R) > CYL_TURN:
-        _flag("moved", "the cylinder was moved, rolled or tipped in its cradle")
-
-    if reg_pos[2] >= _STATE["reg_z0"] + LIFT:
-        _STATE["lifted"] = True
-    lo, hi = g.REG_BOX
-    corners = np.array([[x, y, z] for x in (lo[0], hi[0]) for y in (lo[1], hi[1]) for z in (-g.FRAME_HZ, g.FRAME_HZ)])
-    lowest = float((reg_pos + corners @ reg_R.T)[:, 2].min())
-    if _STATE["lifted"] and lowest <= g.TABLE + ON_TABLE:
-        _flag("dropped", "the regulator was set down or dropped on the table after being lifted")
+    # unsafe: the cylinder tipped or fell out of its cradle (sliding or rolling it in the cradle is allowed)
+    tip = math.acos(max(-1.0, min(1.0, float(R0[:, 0] @ cyl_R[:, 0]))))
+    if tip > CYL_TIP or cyl_pos[2] < p0[2] - CYL_DROP:
+        _flag("tipped", "the cylinder tipped or fell out of its cradle")
+    # a real drop: falling with no gripper holding it, or off the table (setting it down is allowed)
     if reg_pos[2] < g.TABLE - 0.05:
         _flag("dropped", "the regulator fell off the table")
-    if float(reg_v[2]) < -FALL_SPEED:
-        _flag("dropped", "the regulator fell")
+    if float(reg_v[2]) < -FALL_SPEED and not held:
+        _flag("dropped", "the regulator was dropped")
 
     p_rc = cyl_R.T @ (reg_pos - cyl_pos)
     R_rc = cyl_R.T @ reg_R
@@ -286,14 +280,15 @@ def update(cyl_pos, cyl_R, reg_pos, reg_R, reg_v, reg_w, d, theta, caps) -> None
 
 
 def _arm_capsules(environment):
-    """Both arms as capsules (end, end, radius) along their links and grippers, station frame."""
+    """Both arms as capsules (end, end, radius) along their links and grippers, station frame; and each gripper's
+    grasp point and finger opening."""
     from yam_arena import ik, station
-    from yam_arena.constants import ARM_JOINTS
+    from yam_arena.constants import ARM_JOINTS, FINGER_JOINTS
 
     base = environment.unwrapped
     origin = base.scene.env_origins[0]
     origin = getattr(origin, "torch", origin).detach().cpu().numpy().astype(float)
-    caps = []
+    caps, grips = [], []
     for side in ("left", "right"):
         robot = base.scene[f"{side}_robot"]
         pos = getattr(robot.data.body_pos_w, "torch", robot.data.body_pos_w)[0].detach().cpu().numpy() - origin
@@ -304,7 +299,15 @@ def _arm_capsules(environment):
         chain = [links[n] for n in CHAIN if n in links]
         caps += [(a, b, ARM_R) for a, b in zip(chain[:-1], chain[1:])]
         caps.append((chain[-1], tcp + rot[:, 2] * PAD_TIP, PAD_R))
-    return caps
+        fids = robot.find_joints(list(FINGER_JOINTS), preserve_order=True)[0]
+        grips.append((tcp, float(np.abs(jp[fids]).sum())))
+    return caps, grips
+
+
+def held_by(grips, reg_pos, reg_R) -> bool:
+    """Whether a gripper holds the regulator: its grasp point within HOLD_R of the outline, fingers partly closed."""
+    lo, hi = g.REG_BOX
+    return any(_to_box((tcp - reg_pos) @ reg_R, lo, hi)[0] < HOLD_R and opening < HOLD_OPEN for tcp, opening in grips)
 
 
 @on_reset
@@ -321,25 +324,30 @@ def _monitor(environment) -> None:
     d, theta = couple_screw(environment, "regulator")
     st = object_states(environment, ["cylinder", "regulator"])
     c, r = st["cylinder"], st["regulator"]
-    update(c.pos, c.rotation(), r.pos, r.rotation(), r.lin_vel, r.ang_vel, d, theta, _arm_capsules(environment))
+    caps, grips = _arm_capsules(environment)
+    update(c.pos, c.rotation(), r.pos, r.rotation(), r.lin_vel, r.ang_vel, d, theta, caps,
+           held=held_by(grips, r.pos, r.rotation()))
 
 
 def violation() -> bool:
-    return bool(_STATE["moved"] or _STATE["dropped"])
+    return bool(_STATE["tipped"] or _STATE["dropped"])
 
 
 def success(objects) -> bool:
     """Seated on both pins, the T-screw hand-tight in the recess (at least 0.75 N m to turn further), every part
-    of both arms 3 cm clear of the regulator, the regulator still (it moved under 1 mm and 0.5 degrees over the last second),
-    and no violation so far; held for 1 s."""
+    of both arms 3 cm clear of the regulator, the regulator still (it moved under 1 mm and 0.5 degrees over the
+    last second), and no violation so far; held for 1 s. The fit is judged relative to the cylinder, wherever it
+    lies."""
     return bool(not violation() and _STATE["fit"].get("clamped") and _STATE["clear"] and _STATE["still"])
 
 
 def score(objects) -> float:
-    """At the end of the trial (success scores 1.0): 0 after any violation (the cylinder moved more than 1 cm or
-    turned more than 5 degrees in its cradle; the regulator, once lifted 3 cm, set down or dropped on the table, or
-    falling). Otherwise 0.75 seated and hand-tight (still held or touched), 0.5 seated on both pins with the washer flat
-    on the outlet, 0.25 the yoke over the valve post, else 0."""
+    """At the end of the trial (success scores 1.0): 0 after any violation (the cylinder's axis tipped more than 30
+    degrees, or dropped more than 2 cm below its cradled height, i.e. it fell out of the cradle; the regulator falling
+    faster than 0.5 m/s with no gripper holding it, or falling off the table). Setting the regulator down, or sliding
+    or rolling the cylinder in its cradle, is not a violation. Otherwise, judged in the cylinder's frame: 0.75 seated
+    and hand-tight (still held or touched), 0.5 seated on both pins with the washer flat on the outlet, 0.25 the yoke
+    over the valve post, else 0."""
     if violation():
         return 0.0
     f = _STATE["fit"]
