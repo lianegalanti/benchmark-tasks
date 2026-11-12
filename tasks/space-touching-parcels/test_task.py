@@ -202,17 +202,159 @@ def test_a_parcel_stacked_on_another_fails():
     assert score == 0.0 and "parcel_2" in why
 
 
-def test_a_parcel_held_back_until_the_trial_ends_fails():
+def test_a_parcel_held_back_off_the_belt_fails():
     t = 4.0
     held = _with(riding(GOOD), t, 99.0, "parcel_3", lambda _: (M.LINE_X, -0.40, M.PARCEL_Z + 0.04))
+    score, why = play(held)
+    assert score == 0.0 and "parcel_3 held off the belt for more than 5 s" in why
+
+
+def test_a_parcel_held_back_on_the_belt_until_the_trial_ends_fails():
+    held = _with(riding(GOOD), 4.0, 99.0, "parcel_3", lambda _: (M.LINE_X, -0.40, M.PARCEL_Z))
     score, why = play(held)
     assert score == 0.0 and "parcel_3 has not passed" in why
 
 
+# -- staying on the belt before the scanner --------------------------------------------------------------------------
+
+
+def _carry(name, t0, t1, path, shift_after):
+    """``riding(GOOD)``, except that parcel ``name`` follows ``path(t)`` from ``t0`` to ``t1`` and afterwards rides the
+    belt moved ``shift_after`` from its start."""
+    base, after = riding(GOOD), riding({**GOOD, name: shift_after})
+
+    def at(t):
+        out = base(t)
+        if t0 <= t <= t1:
+            out[name] = state(path(t))
+        elif t > t1:
+            out[name] = after(t)[name]
+        return out
+
+    return at
+
+
+def test_staging_a_parcel_on_the_table_then_returning_it_scores_0():
+    # parcel_3 lifted, set down on the table beside the belt for 2 s, then put back on the belt 10 cm back: the gaps
+    # at the scanner would earn full credit, but the parcel left the belt
+    off_x = M.BELT_NEAR - 0.08
+    on_table = M.TOP + M.PARCEL[2] / 2
+
+    def path(t):
+        y = M.riding_y("parcel_3", 2.0)
+        if t < 2.5:
+            return (M.LINE_X + (off_x - M.LINE_X) * (t - 2.0) / 0.5, y, M.PARCEL_Z + 0.06)
+        if t < 4.5:
+            return (off_x, y, on_table)
+        return (M.LINE_X, M.riding_y("parcel_3", t, -0.10), M.PARCEL_Z + 0.03)
+
+    at = _carry("parcel_3", 2.0, 5.0, path, -0.10)
+    score, why = play(at)
+    assert score == 0.0 and "parcel_3 taken off the belt" in why
+    # the same gaps without the detour score full credit
+    assert play(riding(GOOD))[0] == 1.0
+
+
+def test_carrying_a_parcel_out_past_the_belts_edge_in_the_air_scores_0():
+    # held 10 cm up, its centre 1 cm past the far edge for a moment, then back
+    def path(t):
+        return (M.BELT_FAR + 0.01, M.riding_y("parcel_3", t, -0.10), M.PARCEL_Z + 0.10)
+
+    score, why = play(_carry("parcel_3", 3.0, 3.2, path, -0.10))
+    assert score == 0.0 and "taken off the belt" in why
+
+
+def test_a_brief_lift_over_the_belt_is_allowed_a_long_one_is_not():
+    def path(t):
+        return (M.LINE_X, M.riding_y("parcel_3", t, -0.10), M.PARCEL_Z + 0.08)
+
+    for seconds, expected in ((2.0, 1.0), (4.9, 1.0), (5.2, 0.0)):
+        score, why = play(_carry("parcel_3", 2.0, 2.0 + seconds, path, -0.10))
+        assert score == expected, (seconds, why)
+    # a lift of 4 s, a touchdown of 0.3 s, then 4 s more in the air: one lift of 8.3 s, not two of 4 s
+    def dipping(t):
+        z = M.PARCEL_Z if 6.0 <= t < 6.3 else M.PARCEL_Z + 0.08
+        return (M.LINE_X, M.riding_y("parcel_3", t, -0.10), z)
+
+    score, why = play(_carry("parcel_3", 2.0, 10.3, dipping, -0.10))
+    assert score == 0.0 and "held off the belt for more than 5 s" in why
+    # resting on the belt 0.5 s between the two lifts ends the first one
+    def resting(t):
+        z = M.PARCEL_Z if 6.0 <= t < 6.55 else M.PARCEL_Z + 0.08
+        return (M.LINE_X, M.riding_y("parcel_3", t, -0.10), z)
+
+    assert play(_carry("parcel_3", 2.0, 10.5, resting, -0.10))[0] == 1.0
+    # its centre right at the belt's edge, but over the belt: still allowed
+    edge = lambda t: (M.BELT_FAR - 0.001, M.riding_y("parcel_3", t, -0.10), M.PARCEL_Z + 0.08)  # noqa: E731
+    assert play(_carry("parcel_3", 2.0, 3.0, edge, -0.10))[0] == 1.0
+
+
+def test_setting_a_parcel_down_on_another_then_returning_it_scores_0():
+    # parcel_3 rests on parcel_2 for 1 s (lifted for 2 s in all), then goes back on the belt 10 cm back
+    def path(t):
+        if 2.5 <= t < 3.5:
+            return (M.LINE_X, M.riding_y("parcel_2", t), M.PARCEL_Z + M.PARCEL[2])
+        return (M.LINE_X, M.riding_y("parcel_3", t, -0.10), M.PARCEL_Z + 0.07)
+
+    score, why = play(_carry("parcel_3", 2.0, 4.0, path, -0.10))
+    assert score == 0.0 and "parcel_3 set down on another parcel" in why
+    # carried over a neighbour, 1 cm clear of its top, it's a lift
+    over = lambda t: (M.LINE_X, M.riding_y("parcel_2", t), M.PARCEL_Z + M.PARCEL[2] + 0.012)  # noqa: E731
+    assert play(_carry("parcel_3", 2.0, 2.4, over, -0.10))[0] == 1.0  # then set down 10 cm back, as in GOOD
+
+
+def test_a_parcel_knocked_off_and_put_back_before_the_scanner_scores_0():
+    def path(t):
+        return (M.BELT_NEAR - 0.06, M.riding_y("parcel_2", 3.0), M.TOP + M.PARCEL[2] / 2)
+
+    score, why = play(_carry("parcel_2", 3.0, 3.5, path, 0.0))
+    assert score == 0.0 and "parcel_2 taken off the belt" in why
+
+
 def test_lifting_a_parcel_after_it_has_passed_changes_nothing():
+    # parcel_1, once past the line, lifted off the belt and carried away downstream
     gone = _front_reaches_line("parcel_1", 0.10) + M.PARCEL[1] / M.SPEED + 0.5
-    score, _ = play(_with(riding(GOOD), gone, 99.0, "parcel_1", lambda _: (0.2, 0.4, M.TOP + 0.2)))
+    score, _ = play(_with(riding(GOOD), gone, 99.0, "parcel_1", lambda _: (0.2, 0.9, M.TOP + 0.2)))
     assert score == 1.0
+
+
+def test_a_passed_parcel_brought_back_in_front_of_the_next_shortens_its_gap():
+    # parcel_1, once past the line, set back on the belt 2 cm in front of parcel_2, which has not reached the line yet
+    gone = _front_reaches_line("parcel_1", 0.10) + M.PARCEL[1] / M.SPEED + 0.5
+    back = lambda t: (M.LINE_X, M.riding_y("parcel_2", t, M.PARCEL[1] + 0.02), M.PARCEL_Z)  # noqa: E731
+    score, _ = play(_with(riding(GOOD), gone, 99.0, "parcel_1", back))
+    assert M.gaps()[0] == pytest.approx(0.02, abs=0.002) and score == 0.5
+
+
+def test_a_parcel_pushed_forward_after_the_one_ahead_has_left_shortens_its_gap():
+    # parcel_2 slid 8 cm ahead once parcel_1 has left the line: the gap measured as parcel_2 reaches the line counts
+    left = _front_reaches_line("parcel_1", 0.10) + M.PARCEL[1] / M.SPEED + 0.2
+    at = _with(riding(GOOD), left, 99.0, "parcel_2",
+               lambda t: (M.LINE_X, M.riding_y("parcel_2", t, 0.08), M.PARCEL_Z))
+    score, _ = play(at)
+    assert M.gaps()[0] == pytest.approx(0.102 - 0.08, abs=0.002) and score == 0.5
+
+
+def test_gaps_are_measured_between_the_parcels_whatever_the_belt_does():
+    # the parcels ride 1.1 cm/s slower than the belt's surface, as the friction belt lets them slip in Isaac Sim:
+    # the gaps are still the 10.2 cm between them (belt travel between the photo-eye's events would read 13 cm)
+    slip = 0.011
+
+    def at(t):
+        return {n: state((M.LINE_X, M.START[n] + GOOD.get(n, 0.0) + M.RUN(t)[0] * (1 - slip / M.SPEED), M.PARCEL_Z))
+                for n in M.NAMES}
+
+    score, why = play(at, until=35.0)
+    assert score == 1.0, why
+    assert M.gaps() == pytest.approx([0.102, 0.102], abs=5e-4)
+    # with less than 5 cm between them, slip doesn't lift the gaps into full credit
+    small = {"parcel_1": 0.045, "parcel_3": -0.045}
+
+    def at_small(t):
+        return {n: state((M.LINE_X, M.START[n] + small.get(n, 0.0) + M.RUN(t)[0] * (1 - slip / M.SPEED), M.PARCEL_Z))
+                for n in M.NAMES}
+
+    assert play(at_small, until=35.0)[0] == 0.5
 
 
 def test_lifting_a_parcel_while_it_straddles_the_line_fails():
@@ -443,3 +585,32 @@ def test_the_arms_collision_meshes_stay_8_cm_apart_and_touch_only_their_own_parc
     for (arm, n), d in closest.items():
         if n != own[arm]:
             assert d > 0.02, (arm, n, d)  # never within 2 cm of another parcel, its 2 mm neighbour included
+
+
+def test_the_demo_keeps_its_parcels_over_the_belt_and_lifts_them_briefly():
+    at = _replay()
+    plans = _plans()
+    up, longest, edge = {}, dict.fromkeys(M.NAMES, 0.0), np.inf
+    for k in range(_steps(plans)):
+        t = k * DT
+        s = at(t)
+        for n in M.NAMES:
+            if s[n].low[2] > M.BELT_TOP + M.ON_BELT:
+                up.setdefault(n, t)
+                longest[n] = max(longest[n], t - up[n])
+            else:
+                up.pop(n, None)
+            edge = min(edge, s[n].pos[0] - M.BELT_NEAR, M.BELT_FAR - s[n].pos[0])
+            assert not M._on_another(n, s), (t, n)
+    assert max(longest.values()) < M.LIFT_MAX - 2.0, longest  # about 2.6 s: 2.4 s or more to spare
+    assert edge > 0.07  # the centres stay on the belt's centre line, 8 cm from either edge
+
+
+def test_the_demo_outlasts_the_last_parcel_even_with_the_belt_slipping():
+    # in Isaac Sim the parcels ride about 1 cm/s slower than the belt's surface (the last parcel passed at about 25.6 s);
+    # at 1.2 cm/s of slip from the start the last parcel (parcel_3, set 13 cm back) still passes, and success holds
+    # 1 s, before the plans end (28.7 s against 30 s)
+    slow = M.SPEED - 0.012
+    rear = M.START["parcel_3"] - M.PARCEL[1] / 2 - 0.13
+    passed = (M.SCAN_Y - rear) / slow + M.RAMP_S
+    assert passed + 1.0 < M.END_S

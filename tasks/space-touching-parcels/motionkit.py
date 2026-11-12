@@ -1,8 +1,7 @@
 """motionkit: rigid boxes that move along a scripted path, and conveyor belts, for yam_arena task files.
 
-Copied from the unload-paused-shuttle and reach-between-sweeps tasks (same authors), with :class:`Belt` (a belt
-whose surface moves while its body stays put), :func:`speed_schedule` (from the sort-surging-belt task) and
-:func:`episode_time` added; the shuttle and stroke paths those tasks use are left in place, unused here.
+A shared helper module, with :class:`Belt` (a belt whose surface moves while its body stays put),
+:func:`speed_schedule` and :func:`episode_time`; its shuttle and stroke paths are general helpers, unused here.
 
 yam_arena's task files spawn objects that are either fixed or free (moved only by gravity and contact). This module
 adds :class:`DrivenBox`, a box whose pose and velocity follow ``path(t)`` exactly, like a part of a machine driven
