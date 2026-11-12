@@ -28,20 +28,23 @@ DOOR_Z = (0.005, 0.175)            # door bottom and top above the table
 DOOR_MASS = 0.30                   # kg: 15 mm plywood
 CAB_D, CAB_H, PANEL = 0.20, 0.18, 0.012   # carcass depth (x), height, panel thickness; its width is DOOR_W
 FRONT_X = 0.40                     # the carcass's front face
-HINGE = np.array([FRONT_X - DOOR_T / 2, -0.05])   # hinge axis (x, y): the door's right edge, mid-thickness
+HINGE = np.array([FRONT_X - DOOR_T / 2, -0.025])   # hinge axis (x, y): the door's right edge, mid-thickness
 OPEN = math.radians(60.0)          # the door's angle at the start
 MAX_OPEN = math.radians(90.0)      # the hinge's stop
 HINGE_DAMPING = 0.05               # N m s/rad
 
-# -- hot plate (a fixed box with a red burner disc on top) ---------------------------------------------------------
-PLATE_LO = np.array([0.18, -0.255])   # footprint corners (x, y)
-PLATE_HI = np.array([0.36, -0.075])
-PLATE_H = 0.04
-BURNER_R = 0.07
+# -- hot plate: a compact lab hot plate, a fixed box with a red disc marking the heated area on its 15 cm square top --
+# Its right edge stands 3.5 cm (capsule to column) left of the right arm's ready pose, so a centimetre or two of
+# placement error on a real table can't put the resting arm in the hot zone.
+PLATE_LO = np.array([0.21, -0.21])    # footprint corners (x, y): 15 x 15 cm
+PLATE_HI = np.array([0.36, -0.06])
+PLATE_H = 0.08
+BURNER_R = 0.06
 PLATE_TOP = TOP + PLATE_H
-SAFE_ABOVE = 0.15                  # the hot zone reaches this far above the plate's top
+# The hot zone is the whole column over the plate's footprint, from the table up, with no height limit: any part of
+# either arm above the plate, however high, is in it.
 ZONE_LO = np.array([*PLATE_LO, TOP])
-ZONE_HI = np.array([*PLATE_HI, PLATE_TOP + SAFE_ABOVE])
+ZONE_HI = np.array([*PLATE_HI, math.inf])
 
 # -- scoring thresholds (door angle) -------------------------------------------------------------------------------
 CLOSED = math.radians(4.0)         # closed: the free edge within 1.5 cm of the cabinet's front

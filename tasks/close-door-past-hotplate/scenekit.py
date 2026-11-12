@@ -1,6 +1,6 @@
 """scenekit: USD bodies, articulations and posed fixed shapes for a yam_arena task file.
 
-Copied from the lock-before-loading task folder; this copy adds ``UsdBody.self_collisions`` and writes articulations'
+Reused from our earlier scene helpers; this copy adds ``UsdBody.self_collisions`` and writes articulations'
 ``joint_pos`` into the sim after every reset (Arena itself resets only the arms).
 
 yam_arena's task files spawn single primitives (yaw only) and library assets. This module adds two object kinds

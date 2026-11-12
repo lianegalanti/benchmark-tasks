@@ -94,14 +94,15 @@ def test_the_asset_matches_the_geometry():
 def test_the_door_swings_clear_of_the_hot_plate_and_stands_just_behind_it():
     plate = g.plate_corners()
     gaps = [g.polygon_gap(g.door_corners(math.radians(a)), plate) for a in np.arange(0.0, 90.01, 0.5)]
-    assert min(gaps) >= 0.012  # even opened to its 90-degree stop, the door misses the plate
+    assert min(gaps) >= 0.025  # even opened to its 90-degree stop, the door misses the plate
     at_start = g.polygon_gap(g.door_corners(g.OPEN), plate)
-    assert 0.015 <= at_start <= 0.04  # the plate stands 2.6 cm in front of the door's hinge half
+    assert 0.03 <= at_start <= 0.045  # the plate stands 4 cm in front of the door's hinge half
     # the plate is between the right arm and the door; the free edge sticks out past the plate's left side
     assert g.door_point(g.OPEN, g.DOOR_W)[1] - g.PLATE_HI[1] > 0.12
     assert g.PLATE_LO[0] > 0.1 and g.PLATE_HI[0] < g.FRONT_X
-    # the door top is below the safe height: no push on the door can be made from above the zone
-    assert TOP_OF_DOOR < g.ZONE_HI[2]
+    assert g.PLATE_HI - g.PLATE_LO == pytest.approx([0.15, 0.15])
+    # the hot zone has no top: the whole column over the plate's footprint
+    assert g.ZONE_HI[2] == math.inf and g.ZONE_LO[2] == g.TOP
 
 
 TOP_OF_DOOR = g.TOP + g.DOOR_Z[1]
@@ -118,26 +119,64 @@ def test_the_tape_measure_thresholds():
 
 
 def test_both_arms_start_clear_of_the_hot_zone():
-    for side in ("left", "right"):
-        assert M.zone_gap(AT_READY[side]) >= 0.02, side
+    """Neither arm's ready pose is over the plate's footprint at any height: the right arm's capsules stand 3.5 cm to
+    the right of it (its real parts a little more), so a 1-2 cm placement error on a real table can't score a perfect
+    trial 0 at step 0."""
+    assert M.zone_gap(AT_READY["left"]) >= 0.3
+    assert M.zone_gap(AT_READY["right"]) >= 0.034
 
 
-def test_the_zone_rule_catches_low_parts_and_lets_high_ones_pass():
+def test_the_pre_trial_check_refuses_a_misplaced_plate():
+    """The check run after every reset (and on the logged ready pose before a real trial): it passes with the plate
+    where it belongs, and refuses a trial if the plate stands 2 cm or more too far toward the right arm."""
+    both = AT_READY["left"] + AT_READY["right"]
+    assert M.check_arms_clear(both) == pytest.approx(0.035, abs=0.001)
+    lo, hi = g.ZONE_LO.copy(), g.ZONE_HI.copy()
+    try:
+        for shift, ok in ((0.01, True), (0.02, False), (0.04, False)):
+            g.ZONE_LO[1], g.ZONE_HI[1] = lo[1] - shift, hi[1] - shift
+            if ok:
+                M.check_arms_clear(both)
+            else:
+                with pytest.raises(RuntimeError):
+                    M.check_arms_clear(both)
+    finally:
+        g.ZONE_LO[:], g.ZONE_HI[:] = lo, hi
+
+
+def test_any_part_over_the_plate_is_an_intrusion_however_high():
+    """The reviewer's case: crossing above the plate more than 15 cm over its top. There is no safe height."""
     c = np.array([*((g.PLATE_LO + g.PLATE_HI) / 2), 0.0])
-    over = lambda z: [(c + [0, 0, z + 0.13], c + [0, 0, z], M.GRIP_R)]  # noqa: E731  a gripper pointing down
-    assert M.zone_gap(over(g.ZONE_HI[2] + M.GRIP_R - 0.005)) < 0      # 0.5 cm too low
-    assert M.zone_gap(over(g.ZONE_HI[2] + M.GRIP_R + 0.005)) > 0      # 0.5 cm above the safe height
-    beside = np.array([g.PLATE_HI[0] + M.GRIP_R + 0.005, c[1], g.TOP + 0.08])  # low, 0.5 cm beyond the far edge
-    assert M.zone_gap([(beside + [0, 0, 0.13], beside, M.GRIP_R)]) > 0
-    beside[0] -= 0.01
-    assert M.zone_gap([(beside + [0, 0, 0.13], beside, M.GRIP_R)]) < 0
+    for above in (0.0, 0.15, 0.16, 0.25, 0.40, 1.0):                  # m above the plate's top
+        z = g.PLATE_TOP + above + M.GRIP_R + 0.005                     # the capsule's lowest point is this high
+        assert M.zone_gap([(c + [0, 0, z + 0.13], c + [0, 0, z], M.GRIP_R)]) < 0, above
+        assert M.zone_gap([(c + [0, 0.3, z], c + [0, -0.3, z], M.ARM_R)]) < 0, above   # a link passing across it
+    # the reach-over: the right arm's tool point carried across the plate 25 cm above its top scores 0
+    high = [(np.array([0.285, -0.30, g.PLATE_TOP + 0.25]), np.array([0.285, 0.05, g.PLATE_TOP + 0.25]), M.GRIP_R)]
+    assert play([60, 40, 29, 10, 3, 0], [None, None, high, None, None, None]) == [0.0, 0.25, 0.0, 0.0, 0.0, 0.0]
+    assert M.violation() and not M.success(door(0.0))
+    M.reset_state()
+
+
+def test_the_zone_rule_is_the_footprint_edge_at_every_height():
+    c = np.array([*((g.PLATE_LO + g.PLATE_HI) / 2), 0.0])
+    for z in (g.TOP + 0.08, g.PLATE_TOP + 0.30, g.PLATE_TOP + 0.60):   # low, high and very high
+        beside = np.array([g.PLATE_HI[0] + M.GRIP_R + 0.005, c[1], z])  # 0.5 cm beyond the far edge
+        assert M.zone_gap([(beside + [0, 0, 0.13], beside, M.GRIP_R)]) > 0, z
+        beside[0] -= 0.01                                                # 0.5 cm over it
+        assert M.zone_gap([(beside + [0, 0, 0.13], beside, M.GRIP_R)]) < 0, z
+        left = np.array([c[0], g.PLATE_HI[1] + M.ARM_R + 0.005, z])      # beside the left edge, then over it
+        assert M.zone_gap([(left, left + [0, 0, 0.1], M.ARM_R)]) > 0, z
+        left[1] -= 0.01
+        assert M.zone_gap([(left, left + [0, 0, 0.1], M.ARM_R)]) < 0, z
 
 
 def test_the_obvious_reach_crosses_the_hot_zone():
-    """Pushing the door anywhere on its hinge half (up to 11 cm from the hinge), with either arm, puts the gripper over the plate; and the right
-    arm's straight-line reach from its ready pose to the door passes over it, low."""
+    """Pushing the door anywhere on its hinge half or a little beyond (up to 12 cm from the hinge), with either arm,
+    puts the arm over the plate; and the right arm's straight-line reach from its ready pose to the door passes over
+    it."""
     for side in ("left", "right"):
-        for r in (0.06, 0.09, 0.11):
+        for r in (0.06, 0.09, 0.11, 0.12):
             q, err, _ = reach(side, (*g.door_point(g.OPEN, r, M.PUSH_OFF), M.PUSH_Z), M._yaw(g.OPEN))
             assert err < 0.002, (side, r)
             assert M.zone_gap(capsules(q, side)) < 0, (side, r)
@@ -147,6 +186,9 @@ def test_the_obvious_reach_crosses_the_hot_zone():
         line = start + np.outer(np.linspace(0, 1, 50), goal - start)
         inside = np.all((line >= g.ZONE_LO) & (line <= g.ZONE_HI), axis=1)
         assert inside.any(), r  # the TCP itself passes through the zone
+    # with the right arm, only the outer 5 cm of the door can be pushed without it being over the plate
+    q, _, _ = reach("right", (*g.door_point(g.OPEN, 0.15, M.PUSH_OFF), M.PUSH_Z), M._yaw(g.OPEN))
+    assert M.zone_gap(capsules(q, "right")) < 0
 
 
 # -- scoring ---------------------------------------------------------------------------------------------------------
@@ -187,7 +229,7 @@ def test_partial_credit_is_the_best_so_far():
 
 
 def test_an_intrusion_scores_0_for_the_rest_of_the_trial():
-    low = [(np.array([0.27, -0.165, 0.95]), np.array([0.27, -0.165, 0.85]), M.GRIP_R)]
+    low = [(np.array([0.285, -0.135, 0.95]), np.array([0.285, -0.135, 0.85]), M.GRIP_R)]
     assert play([60, 29, 20, 5, 0], [None, None, low, None, None]) == [0.0, 0.5, 0.0, 0.0, 0.0]
     assert M.violation() and not M.success(door(0.0))
     M.reset_state()  # a new trial starts clean
@@ -213,13 +255,15 @@ def test_the_demo_is_reachable_within_joint_limits():
 
 def test_along_the_demo_both_arms_stay_out_of_the_hot_zone():
     """Every capsule the monitor checks, from the URDF's forward kinematics on the demo's commanded joints, at every
-    control step: at least 1 cm clear of the zone."""
+    control step: the moving left arm at least 1.4 cm clear of the zone (the whole column over the plate), the right
+    arm, at its ready pose, 3.4 cm."""
     _, arm = _plan()
     worst = math.inf
     for k in range(round(arm.duration / DT) + 5):
         arm.action7((k + 1) * DT)
-        worst = min(worst, M.zone_gap(capsules(arm.q, "left") + AT_READY["right"]))
-    assert worst >= 0.01, worst
+        worst = min(worst, M.zone_gap(capsules(arm.q, "left")))
+    assert worst >= 0.014, worst
+    assert M.zone_gap(AT_READY["right"]) >= 0.034
 
 
 def test_the_demo_pushes_the_door_all_the_way_shut_and_holds_it():

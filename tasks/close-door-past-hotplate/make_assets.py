@@ -2,8 +2,8 @@
 
     python make_assets.py        # needs usd-core (pip install usd-core); the .usda is committed, so only to rebuild
 
-The file's origin is the hinge axis at table level; the task file places it there, unrotated. The layout follows
-the lock-before-loading task's platform asset: a root rigid body (the carcass) carrying the articulation root and
+The file's origin is the hinge axis at table level; the task file places it there, unrotated. The layout: a
+root rigid body (the carcass) carrying the articulation root and
 fixed to the world by ``root_joint``, a child rigid body (the door) nested under it, and a revolute joint ``hinge``
 between them. The hinge turns about +z: 0 is closed, positive opens the door toward the robot, with stops at 0 and
 90 degrees. The carcass and the door don't collide with each other (the task turns self-collisions off); the
