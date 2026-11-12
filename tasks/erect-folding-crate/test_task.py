@@ -184,21 +184,30 @@ def test_base_not_flat_is_not_success():
     assert play(30, joints(latched=tuple(g.PAWLS)), quat=quat) == (pytest.approx(0.8), False)
 
 
-@pytest.mark.parametrize("case", ["lifted", "tipped", "fell"])
-def test_leaving_the_table_once_zeroes_the_trial(case):
+def test_falling_off_the_table_once_zeroes_the_trial():
     """The violation latches: putting the crate back and finishing it still scores 0."""
     M.reset_state()
     j = joints(latched=tuple(g.PAWLS))
-    if case == "lifted":
-        M.update(START + [0, 0, 0.05], LEVEL, joints(), AWAY, 0.05)
-    elif case == "tipped":
-        a = math.radians(30)
-        M.update(START, np.array([0, math.sin(a / 2), 0, math.cos(a / 2)]), joints(), AWAY, 0.05)
-    else:
-        M.update(START - [0, 0, 0.5], LEVEL, joints(), AWAY, 0.05)
+    M.update(START - [0, 0, 0.5], LEVEL, joints(), AWAY, 0.05)
     for _ in range(40):
         M.update(START, LEVEL, j, AWAY, 0.05)
     assert M.score({}) == 0.0 and not M.success({})
+
+
+@pytest.mark.parametrize("case", ["lifted", "tipped"])
+def test_lifting_or_tilting_while_setting_up_is_allowed(case):
+    """Lifting the crate 5 cm or tilting it 30 degrees on the way is no violation; finishing it still succeeds."""
+    M.reset_state()
+    if case == "lifted":
+        M.update(START + [0, 0, 0.05], LEVEL, joints(), AWAY, 0.05)
+    else:
+        a = math.radians(30)
+        M.update(START, np.array([0, math.sin(a / 2), 0, math.cos(a / 2)]), joints(), AWAY, 0.05)
+    assert not M._STATE["violation"]
+    j = joints(latched=tuple(g.PAWLS))
+    for _ in range(40):
+        M.update(START, LEVEL, j, AWAY, 0.05)
+    assert M.success({})
 
 
 def test_small_slide_and_tilt_are_not_violations():

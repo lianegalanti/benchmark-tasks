@@ -39,9 +39,7 @@ CLEAR = 0.02             # m: released means both grippers at least this far fro
 STILL_S = 1.0            # s: still means over the last second ...
 STILL_MOVE = 0.002       # ... the base moved less than 2 mm ...
 STILL_TURN = math.radians(0.5)   # ... and no hinge turned more than 0.5 degree, and no catch moved 0.5 mm
-LIFT = 0.03              # violation: the base's underside lifted clear of the table, its lowest corner 3 cm up ...
-TIP = math.radians(20)   # ... or the base tilted more than 20 degrees ...
-DROP = 0.10              # ... or the base more than 10 cm below the table top (fallen off)
+DROP = 0.10              # violation: the base more than 10 cm below the table top (fallen off); lifting or tilting is fine
 PAD_TIP = 0.013          # fingertips past the grasp point (yam_arena.constants.PAD_TIP_PAST_TCP)
 DT = 0.05                # s per control step at 20 Hz; replaced by the environment's step_dt when known
 
@@ -117,14 +115,8 @@ def update(pos, quat_xyzw, joints, segments, dt: float = DT) -> None:
     rot = _rot(quat_xyzw)
     _STATE["steps"] += 1
 
-    # Whole-trial violation: the crate leaves the table (lifted, tipped or fallen off).
-    corners = np.array([pos + rot @ np.array([sx * g.WIDTH / 2, sy * g.LENGTH / 2, 0.0])
-                        for sx in (-1, 1) for sy in (-1, 1)])
+    # Whole-trial violation: the crate falls off the table. Lifting or tilting it on the way is allowed.
     tilt = math.acos(max(-1.0, min(1.0, rot[2, 2])))
-    if corners[:, 2].min() - g.TOP > LIFT:
-        _flag("crate lifted off the table")
-    if tilt > TIP:
-        _flag("crate tipped")
     if pos[2] < g.TOP - DROP:
         _flag("crate fell off the table")
 
@@ -178,8 +170,7 @@ def success(objects) -> bool:
 
 
 def score(objects) -> float:
-    """Without success: 0 after a violation (the crate lifted more than 3 cm off the table, tipped more than 20 degrees
-    or fallen off). Otherwise, at the end, 0.1 for each long wall standing up on its own (within 3 degrees of vertical,
+    """Without success: 0 after a violation (the crate fell off the table). Otherwise, at the end, 0.1 for each long wall standing up on its own (within 3 degrees of vertical,
     no gripper within 2 cm of it) plus 0.15 for each latched catch: at most 0.8."""
     if _STATE["violation"]:
         return 0.0

@@ -110,10 +110,8 @@ about 1.5 s into the 3 s pull. IK is within 0.1 mm and 0.02 degrees of every tar
 The monitor runs after every control step and latches violations. The score at the end of the episode counts
 (`SCORE_OVER = "end"`).
 
-- **0 if at any time** the crate leaves the table:
-  - its underside is lifted clear, with its lowest corner more than 3 cm up;
-  - it is tilted more than 20 degrees;
-  - or it has fallen off.
+- **0 if at any time** the crate falls off the table (its base more than 10 cm below the table top). Lifting or
+  tilting the crate while setting it up is allowed; success still needs the base flat and still at the end.
 - **A corner is latched** when both of these hold:
   - its catch's pawl is out, within 1 mm of its rest position;
   - both walls that meet there are within 1 degree of upright.
@@ -145,7 +143,7 @@ Use a 400 x 300 x 174 mm folding produce crate of this kind (long walls up first
 on the long walls), on a bare table. The crate is light plastic with no sharp edges or stored energy beyond the
 catches' small springs, so trials are safe. Keep hands out of the arms' reach while they move. Score by eye and with
 a protractor or square: count the four pawls standing out behind the short walls, check each wall against a square,
-and watch that the crate stays still for a second after the grippers leave it. A crate that leaves the table is
+and watch that the crate stays still for a second after the grippers leave it. A crate that falls off the table is
 caught on the floor and scores 0.
 
 ## Runtime and seeds
