@@ -16,5 +16,5 @@
   "reset_notes": "Hang hook A back on the rail at y = 0.12, edge-on to the robot with its top tip toward the board, and hook B from it as in the setup, facing the robot with its top tip to the left; let both stop swinging. Nothing is consumed.",
   "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. Each S-hook is one rigid body of 17 capsules along its centre line (each 160-degree curl is 8 straight 20-degree chords, within 0.4 mm of a true arc). The board, rail, brackets and peg are fixed colliders. Friction 0.7 static, 0.6 dynamic on the hooks. Rod flex, plating and a real display's give are not simulated.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-V63M92"
+  "media": "M-4M8H32"
 }

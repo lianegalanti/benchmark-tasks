@@ -108,7 +108,7 @@ A 1,800-step trial with Dream-1 takes a few minutes on an RTX GPU, plus Isaac Si
 before sliding it onto the peg, so it does not depend on exact timing.
 
 On an L40S the scripted demo ended with success after 461 steps (23.1 s); Dream-1 scored 0 in a
-2,400-step trial.
+1,800-step trial (the run limit).
 
 ## Fidelity
 
