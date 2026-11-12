@@ -4,14 +4,18 @@ left, where it ends in a 3 cm drop to the table. Its top is almost frictionless 
 (16 x 16 cm) is marked on it, its centre 17 cm in front of the bases and 6 cm toward the left arm.
 
 A brown cardboard carton (10 x 10 x 6 cm, 150 g) starts on the deck's right end, 31 cm in front of the bases, and is
-already sliding toward the left at 0.42 m/s when the episode starts. Untouched, it passes beside the green square
-1.5 s later and slides off the deck's left end after 2.3 s.
+already sliding toward the left at 0.42 m/s when the episode starts. Untouched, its centre comes level with the green
+square's right edge after 1.5 s, crosses the square's centre line after 1.8 s and slides off the deck's left end
+after 2.3 s.
 
 The robot must stop the carton before it slides off and push it into the green square, so that it ends at rest
-standing upright, wholly inside it. The carton is wider than the open gripper; it is meant to be pushed.
+standing upright (its top face's normal within 15 degrees of vertical), wholly inside it. The carton is wider than
+the open gripper; it is meant to be pushed, never lifted. The carton is tracked through the whole trial: if it
+ever leaves the deck, or its underside ever rises more than 2 cm above the deck top (lifted or carried), the trial
+scores 0, even if it is put back afterwards.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py \\
-           --instruction "Stop the sliding carton before it falls off the deck and push it into the green square." ...
+           --instruction "Stop the sliding carton before it falls off the deck and push it into the green square, without lifting it off the deck." ...
 """
 
 from __future__ import annotations
@@ -23,14 +27,14 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
-from motionkit import LaunchedBox, Marker, SlickBox  # noqa: E402
+from motionkit import LaunchedBox, Marker, SlickBox, on_reset, on_step  # noqa: E402
 from yam_arena.constants import FINGER_CLOSED, PAD_TIP_PAST_TCP  # noqa: E402
 from yam_arena.demo import Waypoint  # noqa: E402
 from yam_arena.task_file import TABLE_TOP  # noqa: E402
 
 SCENE = "station"
 TOP = TABLE_TOP[SCENE]
-SCORE_OVER = "end"  # where the carton is when the trial ends: a carton stopped and then pushed off scores 0
+SCORE_OVER = "end"  # where the carton is when the trial ends (and 0 if it ever left the deck or was lifted)
 
 # -- the deck ------------------------------------------------------------------------------------------------------
 DECK_H = 0.03
@@ -65,16 +69,81 @@ OBJECTS = [DECK, SQUARE, CARTON_SPEC]
 
 # -- scoring -------------------------------------------------------------------------------------------------------
 MAX_TILT_DEG = 15.0
+DROP_TOL = 0.01  # its underside this far below the deck top: it has gone over an edge
+LIFT_TOL = 0.02  # its underside this far above the deck top: lifted or carried (a bump on the fingers stays below)
+
+
+def _over_deck(c) -> bool:
+    """Its centre over the deck (seen from above)."""
+    return bool(DECK_X[0] < c.pos[0] < DECK_X[1] and DECK_Y[0] < c.pos[1] < DECK_Y[1])
+
+
+def _off_deck(c) -> bool:
+    """Fallen (or carried) off the deck: its centre no longer over the deck, or its underside more than 1 cm below
+    the deck top."""
+    return bool(not _over_deck(c) or c.low[2] < DECK_TOP - DROP_TOL)
+
+
+def _lifted(c) -> bool:
+    """Lifted or carried: its underside more than 2 cm above the deck top."""
+    return bool(c.low[2] > DECK_TOP + LIFT_TOL)
+
+
+# The carton is tracked through the whole trial, not only at its end: once it has left the deck, or been lifted off
+# it, the trial scores 0, so letting it fall onto the table and putting it back on the square, or picking it up and
+# carrying it there, can't stand in for stopping it and pushing it along the deck.
+_MONITOR = {"left_deck": False, "lifted": False, "steps": 0, "max_lift": 0.0}
+
+
+def reset_monitor() -> None:
+    _MONITOR.update(left_deck=False, lifted=False, steps=0, max_lift=0.0)
+
+
+def track(c) -> None:
+    """Called with the carton's state after every control step; latches ``left_deck`` and ``lifted`` for the rest of
+    the trial."""
+    _MONITOR["steps"] += 1
+    _MONITOR["max_lift"] = max(_MONITOR["max_lift"], float(c.low[2] - DECK_TOP))
+    if _off_deck(c):
+        _MONITOR["left_deck"] = True
+    if _lifted(c):
+        _MONITOR["lifted"] = True
+
+
+def left_deck() -> bool:
+    """The carton has left the deck at some control step of this trial."""
+    return bool(_MONITOR["left_deck"])
+
+
+def lifted() -> bool:
+    """The carton has been lifted more than 2 cm off the deck at some control step of this trial."""
+    return bool(_MONITOR["lifted"])
+
+
+def broke_the_rules() -> bool:
+    """It left the deck or was lifted at some point: the trial scores 0."""
+    return left_deck() or lifted()
+
+
+@on_reset
+def _reset(environment) -> None:
+    reset_monitor()
+
+
+@on_step
+def _monitor(environment) -> None:
+    from yam_arena.scene import object_states
+
+    track(object_states(environment, ["carton"])["carton"])
 
 
 def _on_deck(c) -> bool:
     """Lying on the deck: centre over it, underside within 1 cm of its top (not fallen off, not held up)."""
-    over = DECK_X[0] < c.pos[0] < DECK_X[1] and DECK_Y[0] < c.pos[1] < DECK_Y[1]
-    return bool(over and abs(c.low[2] - DECK_TOP) < 0.01)
+    return bool(_over_deck(c) and abs(c.low[2] - DECK_TOP) < 0.01)
 
 
 def _upright(c) -> bool:
-    """Its top face points within 15 degrees of straight up."""
+    """Its top face's normal (the carton's local +z axis) within 15 degrees of vertical (pointing up)."""
     x, y, _, _ = c.quat_xyzw
     return bool(1 - 2 * (x * x + y * y) > math.cos(math.radians(MAX_TILT_DEG)))
 
@@ -89,9 +158,9 @@ def _wholly_in_square(c) -> bool:
 
 
 def success(objects):
-    """Upright on the deck, its footprint wholly inside the green square, and still."""
+    """Never left the deck or lifted; upright on the deck, its footprint wholly inside the green square, and still."""
     c = objects["carton"]
-    return bool(_on_deck(c) and _upright(c) and _wholly_in_square(c) and c.resting())
+    return bool(not broke_the_rules() and _on_deck(c) and _upright(c) and _wholly_in_square(c) and c.resting())
 
 
 def distance(objects):
@@ -100,11 +169,12 @@ def distance(objects):
 
 
 def score(objects):
-    """Partial credit at the end of the trial: 0.5 if the carton stands upright on the deck with its centre inside the
-    green square (but sticks out of it, or is still moving); 0.25 if it stands upright on the deck anywhere else;
-    0 if it fell off the deck, tipped over or is held up."""
+    """Partial credit at the end of the trial: 0 if the carton left the deck, or was lifted more than 2 cm off it, at
+    any time during the trial (even if put back); otherwise 0.5 if it stands upright on the deck with its centre inside the green square (but sticks out
+    of it, or is still moving); 0.25 if it stands upright on the deck anywhere else; 0 if it tipped over or is held
+    up."""
     c = objects["carton"]
-    if not (_on_deck(c) and _upright(c)):
+    if broke_the_rules() or not (_on_deck(c) and _upright(c)):
         return 0.0
     return 0.5 if _centre_in_square(c) else 0.25
 

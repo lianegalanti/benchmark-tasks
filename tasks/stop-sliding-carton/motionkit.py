@@ -25,7 +25,10 @@ Importing this module hooks ``yam_arena`` without changing it:
   through the reset and its settling, and runs from the first control step on, so a scripted demo can time its
   waypoints against the motion;
 - the embodiment's reset, once it has put everything back and settled, sets each launched box's velocity, so it
-  is moving from the first control step on (the episode clock's 0).
+  is moving from the first control step on (the episode clock's 0);
+- the embodiment runs every function registered with :func:`on_reset` after each reset (once the scene has settled
+  and the launched boxes are moving), and every function registered with :func:`on_step` after each control step,
+  before the task file is scored. A task file uses them for a monitor that latches a violation for the whole trial.
 
 Pure Python at import time; everything that needs Isaac Sim is imported lazily.
 """
@@ -41,7 +44,7 @@ from dataclasses import dataclass
 import numpy as np
 from yam_arena.task_file import Box, ObjectState
 
-__all__ = ["DrivenBox", "LaunchedBox", "Marker", "SlickBox", "dwell_shuttle", "slide"]
+__all__ = ["DrivenBox", "LaunchedBox", "Marker", "SlickBox", "dwell_shuttle", "on_reset", "on_step", "slide"]
 
 DRIVEN_MASS = 50.0  # kg; heavy, so contacts within one physics step barely disturb it before the next write
 
@@ -297,6 +300,22 @@ def _wrap_sim(base) -> None:
     sim._motionkit = True
 
 
+_STEP: list = []
+_RESET: list = []
+
+
+def on_step(fn):
+    """Run ``fn(env)`` after every control step, before the task file is scored."""
+    _STEP.append(fn)
+    return fn
+
+
+def on_reset(fn):
+    """Run ``fn(env)`` after every reset, once the scene has settled and the launched boxes are moving."""
+    _RESET.append(fn)
+    return fn
+
+
 # -- hooking yam_arena -----------------------------------------------------------------------------------------------
 
 
@@ -332,7 +351,7 @@ def _patch_embodiment(module) -> None:
     cls = module.YamArenaEmbodiment
     if getattr(cls, "_motionkit", False):
         return
-    ensure_sim, reset = cls._ensure_sim, cls.reset
+    ensure_sim, reset, task_step = cls._ensure_sim, cls.reset, cls._task_step
 
     def ensure_sim_hook(self, *a, **k):
         out = ensure_sim(self, *a, **k)
@@ -344,9 +363,16 @@ def _patch_embodiment(module) -> None:
         obs = reset(self, *a, **k)
         _CLOCK.update(t=0.0, running=True)  # the embodiment's own clock (state_time) restarts here too
         _launch(self._env.unwrapped)  # after the settling, before the first control step
+        for fn in _RESET:
+            fn(self._env)
         return obs
 
-    cls._ensure_sim, cls.reset = ensure_sim_hook, reset_hook
+    def task_step_hook(self, *a, **k):
+        for fn in _STEP:
+            fn(self._env)
+        return task_step(self, *a, **k)
+
+    cls._ensure_sim, cls.reset, cls._task_step = ensure_sim_hook, reset_hook, task_step_hook
     cls._motionkit = True
 
 

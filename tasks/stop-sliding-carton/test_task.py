@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import motionkit
 from motionkit import LaunchedBox, Marker, SlickBox, slide
 
 from yam_arena import ik, station
@@ -30,6 +31,19 @@ def state(pos, size=M.CARTON, vel=(0.0, 0.0, 0.0), tilt_deg=0.0):
     return ObjectState(pos, quat, np.asarray(vel, float), np.zeros(3), pos - half, pos + half)
 
 
+@pytest.fixture(autouse=True)
+def fresh_trial():
+    M.reset_monitor()
+    yield
+    M.reset_monitor()
+
+
+def run(*states):
+    """Feed the monitor the carton's states, one per control step, as the embodiment does."""
+    for s in states:
+        M.track(s)
+
+
 def time_to_travel(d):
     a = M.MU * G
     return (M.V0 - math.sqrt(M.V0**2 - 2 * a * d)) / a
@@ -41,6 +55,7 @@ def test_it_loads_with_only_the_carton_free():
     assert isinstance(M.DECK, SlickBox) and M.DECK.friction == (M.MU, M.MU)
     assert isinstance(M.SQUARE, Marker)  # seen, not touched: no seam for the carton to catch on
     assert TASK.score_over == "end"
+    assert M._monitor in motionkit._STEP and M._reset in motionkit._RESET  # run every step / every reset
 
 
 def test_one_deck_and_the_square_painted_on_it():
@@ -71,8 +86,10 @@ def test_untouched_it_slides_off_the_left_end_at_a_real_slide_speed():
     t_off = time_to_travel(to_edge)
     _, v_off = slide(M.V0, M.MU, t_off)
     assert v_off > 0.15 and t_off == pytest.approx(2.3, abs=0.05)
-    t_beside = time_to_travel(M.ZONE_LO[1] - M.START_Y)
-    assert t_beside == pytest.approx(1.5, abs=0.05)
+    t_level = time_to_travel(M.ZONE_LO[1] - M.START_Y)  # its centre level with the square's right edge
+    assert t_level == pytest.approx(1.5, abs=0.05)
+    t_centre = time_to_travel(M.ZONE_XY[1] - M.START_Y)  # its centre crossing the square's centre line
+    assert t_centre == pytest.approx(1.8, abs=0.05)
     assert slide(M.V0, M.MU, t_off)[0] == pytest.approx(to_edge)
     # sliding off the end: its centre is past the deck, so it no longer scores
     gone = state((M.LANE_X, M.DECK_Y[1] + 0.01, REST_Z), vel=(0, v_off, 0))
@@ -153,3 +170,94 @@ def test_the_push_slows_more_gently_than_friction_so_the_carton_stops_with_the_f
     d = M.PUSH_FROM_X - M.PUSH_TO_X
     peak_decel = 6 * d / push.duration**2  # smoothstep's largest acceleration
     assert peak_decel < 0.8 * M.MU * G
+
+
+# -- the whole-trial monitor: once the carton has left the deck, the trial scores 0 --------------------------------
+
+
+def in_square():
+    return state((*M.ZONE_XY, REST_Z))
+
+
+def test_cheat_let_it_fall_onto_the_table_then_put_it_back_on_the_square_scores_0():
+    on_table = state((M.LANE_X, M.DECK_Y[1] + 0.08, M.TOP + M.CARTON[2] / 2))
+    run(state((M.LANE_X, M.START_Y, REST_Z)), on_table, on_table, in_square(), in_square())
+    assert M.left_deck()
+    assert M.score({"carton": in_square()}) == 0.0
+    assert not M.success({"carton": in_square()})  # so the 1 s success hold never ends the trial with 1.0
+
+
+def test_cheat_its_centre_past_the_left_end_for_one_step_then_pulled_back_scores_0():
+    past_end = state((M.LANE_X, M.DECK_Y[1] + 0.005, REST_Z), vel=(0, 0.2, 0))  # tipping over the end
+    run(past_end, in_square())
+    assert M.score({"carton": in_square()}) == 0.0 and not M.success({"carton": in_square()})
+
+
+def test_cheat_tipped_over_an_edge_with_its_underside_below_the_deck_top_scores_0():
+    hanging = state((M.LANE_X, M.DECK_Y[1] - 0.01, M.DECK_TOP - 0.02), tilt_deg=40)
+    run(hanging, in_square())
+    assert M.score({"carton": in_square()}) == 0.0
+
+
+def test_cheat_off_the_far_or_near_side_then_back_scores_0():
+    for x in (M.DECK_X[1] + 0.01, M.DECK_X[0] - 0.01):
+        M.reset_monitor()
+        run(state((x, M.ZONE_XY[1], REST_Z)), in_square())
+        assert M.score({"carton": in_square()}) == 0.0, x
+
+
+def test_the_violation_lasts_the_whole_trial_and_only_a_reset_clears_it():
+    run(state((M.LANE_X, M.DECK_Y[1] + 0.08, M.TOP + M.CARTON[2] / 2)))
+    run(*[in_square()] * 1000)
+    assert M.score({"carton": in_square()}) == 0.0
+    M._reset(None)  # what the embodiment's reset runs
+    run(in_square())
+    assert M.success({"carton": in_square()}) and M.score({"carton": in_square()}) == 0.5
+
+
+def test_resting_on_the_deck_or_bumping_up_a_little_breaks_no_rule():
+    sunk = state((M.LANE_X, M.START_Y, REST_Z - 0.004))  # a few mm of contact penetration
+    bump = state((M.LANE_X, 0.0, REST_Z + 0.015), tilt_deg=5)  # jolted 1.5 cm up against the fingers
+    run(sunk, bump, state((M.LANE_X, M.DECK_Y[1] - 0.01, REST_Z)))  # 1 cm short of the end
+    assert not M.broke_the_rules()
+    assert M.success({"carton": in_square()})
+
+
+def test_cheat_lift_and_carry_it_onto_the_square_scores_0():
+    """Picked up (wedged between the fingers or scooped), carried over the deck and set down on the square: it never
+    leaves the area over the deck, but it was lifted more than 2 cm, so the trial scores 0."""
+    path = [state((M.LANE_X, M.ZONE_XY[1], REST_Z))]
+    path += [state((M.LANE_X, M.ZONE_XY[1], REST_Z + h)) for h in (0.01, 0.03, 0.06)]
+    path += [state((x, M.ZONE_XY[1], REST_Z + 0.06)) for x in np.linspace(M.LANE_X, M.ZONE_XY[0], 10)]
+    path += [state((*M.ZONE_XY, REST_Z + h)) for h in (0.03, 0.01, 0.0)]
+    run(*path, *[in_square()] * 40)
+    assert M.lifted() and not M.left_deck()
+    assert not M.success({"carton": in_square()}) and M.score({"carton": in_square()}) == 0.0
+
+
+def test_a_lift_just_past_2_cm_trips_the_monitor():
+    run(state((*M.ZONE_XY, M.DECK_TOP + M.LIFT_TOL + 0.001 + M.CARTON[2] / 2)), in_square())
+    assert M.lifted() and M.score({"carton": in_square()}) == 0.0
+
+
+def test_upright_means_the_top_face_normal_within_15_degrees_of_vertical():
+    x, y = M.ZONE_XY
+    assert M.success({"carton": state((x, y, REST_Z), tilt_deg=14)})
+    assert not M.success({"carton": state((x, y, REST_Z), tilt_deg=16)})
+    assert M.score({"carton": state((x, y, REST_Z), tilt_deg=16)}) == 0.0
+    assert not M.success({"carton": state((x, y, REST_Z), tilt_deg=180)})  # upside down: the normal points down
+
+
+def test_the_demo_keeps_the_carton_well_inside_the_deck_the_whole_trial():
+    """Along the demo, the carton slides to the fingers, then is pushed toward the arms onto the square: every
+    centre on that path stays at least 5 cm inside the deck's edges, so the monitor never trips."""
+    stopped_y = M.BLOCK[1] - M.FINGER_HALF - M.CARTON[1] / 2
+    path = [(M.LANE_X, y) for y in np.linspace(M.START_Y, stopped_y, 50)]
+    path += [(x, stopped_y) for x in np.linspace(M.LANE_X, M.ZONE_XY[0], 50)]
+    for x, y in path:
+        margin = min(x - M.DECK_X[0], M.DECK_X[1] - x, y - M.DECK_Y[0], M.DECK_Y[1] - y)
+        assert margin > 0.05, (x, y)
+        M.track(state((x, y, REST_Z)))
+    assert not M.broke_the_rules()
+    pushed_x = M.PUSH_TO_X - M.FINGER_HALF - M.CARTON[0] / 2
+    assert M.success({"carton": state((pushed_x, stopped_y, REST_Z))})
