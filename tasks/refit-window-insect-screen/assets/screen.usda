@@ -1,0 +1,287 @@
+#usda 1.0
+(
+    defaultPrim = "screen"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "screen"
+{
+    def Scope "Looks"
+    {
+        def Material "alu"
+        {
+            token outputs:surface.connect = </screen/Looks/alu/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.8, 0.8, 0.78)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "mesh"
+        {
+            token outputs:surface.connect = </screen/Looks/mesh/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.12, 0.12, 0.13)
+                float inputs:opacity = 0.55
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "pom"
+        {
+            token outputs:surface.connect = </screen/Looks/pom/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.92, 0.92, 0.88)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "alu_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.5
+            float physics:restitution = 0
+            float physics:staticFriction = 0.6
+        }
+
+        def Material "mesh_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.5
+            float physics:restitution = 0
+            float physics:staticFriction = 0.6
+        }
+
+        def Material "pom_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.15
+            float physics:restitution = 0
+            float physics:staticFriction = 0.2
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "frame" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0.3)
+            float3 physics:diagonalInertia = (0.033910915, 0.020801809, 0.013115286)
+            float physics:mass = 0.43
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Cube "bottom_rail" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/alu>
+                rel material:binding:physics = </screen/Looks/alu_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.8, 0.78)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.45, 0.02)
+                double3 xformOp:translate = (0, 0, 0.01)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "top_rail" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/alu>
+                rel material:binding:physics = </screen/Looks/alu_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.8, 0.78)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.45, 0.02)
+                double3 xformOp:translate = (0, 0, 0.59)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "stile_left" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/alu>
+                rel material:binding:physics = </screen/Looks/alu_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.8, 0.78)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.02, 0.56)
+                double3 xformOp:translate = (0, 0.21500000000000002, 0.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "stile_right" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/alu>
+                rel material:binding:physics = </screen/Looks/alu_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.8, 0.78)]
+                double size = 1
+                float3 xformOp:scale = (0.01, 0.02, 0.56)
+                double3 xformOp:translate = (0, -0.21500000000000002, 0.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "mesh" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/mesh>
+                rel material:binding:physics = </screen/Looks/mesh_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                float3 xformOp:scale = (0.001, 0.41, 0.56)
+                double3 xformOp:translate = (0, 0, 0.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "housing_left" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/pom>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.88)]
+                double size = 1
+                float3 xformOp:scale = (0.002, 0.024, 0.018)
+                double3 xformOp:translate = (-0.006, 0.15, 0.59)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "housing_right" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/pom>
+                color3f[] primvars:displayColor = [(0.92, 0.92, 0.88)]
+                double size = 1
+                float3 xformOp:scale = (0.002, 0.024, 0.018)
+                double3 xformOp:translate = (-0.006, -0.15, 0.59)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Xform "plunger_left" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, 0.15, 0.604)
+                float3 physics:diagonalInertia = (8.3333333e-7, 8.033333e-7, 1.3666667e-7)
+                float physics:mass = 0.01
+                quatf physics:principalAxes = (1, 0, 0, 0)
+
+                def Cube "pin" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </screen/Looks/pom>
+                    rel material:binding:physics = </screen/Looks/pom_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.92, 0.92, 0.88)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.01, 0.03)
+                    double3 xformOp:translate = (0, 0.15, 0.604)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+
+            def Xform "plunger_right" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, -0.15, 0.604)
+                float3 physics:diagonalInertia = (8.3333333e-7, 8.033333e-7, 1.3666667e-7)
+                float physics:mass = 0.01
+                quatf physics:principalAxes = (1, 0, 0, 0)
+
+                def Cube "pin" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </screen/Looks/pom>
+                    rel material:binding:physics = </screen/Looks/pom_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.92, 0.92, 0.88)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.01, 0.03)
+                    double3 xformOp:translate = (0, -0.15, 0.604)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsPrismaticJoint "plunger_left" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 1
+            float drive:linear:physics:maxForce = 50
+            float drive:linear:physics:stiffness = 120
+            float drive:linear:physics:targetPosition = 0.004166667
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </screen/Geometry/frame>
+            rel physics:body1 = </screen/Geometry/frame/plunger_left>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.019
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "plunger_right" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 1
+            float drive:linear:physics:maxForce = 50
+            float drive:linear:physics:stiffness = 120
+            float drive:linear:physics:targetPosition = 0.004166667
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </screen/Geometry/frame>
+            rel physics:body1 = </screen/Geometry/frame/plunger_right>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.019
+            float physics:upperLimit = 0
+        }
+    }
+}
+
