@@ -1,4 +1,4 @@
-# Lower a car's glovebox past its stops with a two-handed squeeze, swap the cabin air filter behind it, and close it back past the stops
+# Squeeze a car's glovebox down past its stops, swap the cabin air filter behind it, and close it back up
 
 A section of a car's passenger-side dashboard is fixed to the table with its glovebox open, resting on its two stops.
 Behind it, in the face of the HVAC housing, the used cabin air filter sits in its slot. The new filter lies on an
