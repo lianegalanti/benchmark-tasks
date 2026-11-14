@@ -1,0 +1,119 @@
+#usda 1.0
+(
+    defaultPrim = "button"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "button"
+{
+    def Scope "Looks"
+    {
+        def Material "button"
+        {
+            token outputs:surface.connect = </button/Looks/button/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.42, 0.42, 0.44)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "pom_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.15
+            float physics:restitution = 0
+            float physics:staticFriction = 0.2
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "mount" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, -0.136, -0.01)
+            float3 physics:diagonalInertia = (0.00001, 0.00001, 0.00001)
+            float physics:mass = 0.05
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+
+            def Xform "button" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, -0.136, 0)
+                float3 physics:diagonalInertia = (0.000001, 0.000001, 0.000001)
+                float physics:mass = 0.01
+                quatf physics:principalAxes = (1, 0, 0, 0)
+
+                def Cube "cap" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </button/Looks/button>
+                    rel material:binding:physics = </button/Looks/pom_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.42, 0.42, 0.44)]
+                    double size = 1
+                    float3 xformOp:scale = (0.014, 0.016, 0.006)
+                    double3 xformOp:translate = (0, -0.136, 0.003)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "stem" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </button/Looks/button>
+                    rel material:binding:physics = </button/Looks/pom_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.42, 0.42, 0.44)]
+                    double size = 1
+                    float3 xformOp:scale = (0.008, 0.0042, 0.0095)
+                    double3 xformOp:translate = (0, -0.12990000000000002, -0.00475)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsPrismaticJoint "button" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 150
+            float drive:linear:physics:targetPosition = -0.01
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </button/Geometry/mount>
+            rel physics:body1 = </button/Geometry/mount/button>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (0, 1, 0, 0)
+            quatf physics:localRot1 = (0, 1, 0, 0)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 0.0075
+        }
+
+        def PhysicsFixedJoint "root_joint"
+        {
+            rel physics:body0 = </button>
+            rel physics:body1 = </button/Geometry/mount>
+        }
+    }
+}
+

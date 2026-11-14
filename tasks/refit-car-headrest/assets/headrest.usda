@@ -1,0 +1,631 @@
+#usda 1.0
+(
+    defaultPrim = "headrest"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "headrest" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0, 0.1934)
+    float3 physics:diagonalInertia = (0.0109496135, 0.0053893635, 0.00710375)
+    float physics:mass = 1
+    quatf physics:principalAxes = (1, 0, 0, 0)
+
+    def Scope "Looks"
+    {
+        def Material "fabric"
+        {
+            token outputs:surface.connect = </headrest/Looks/fabric/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.16, 0.16, 0.17)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "steel"
+        {
+            token outputs:surface.connect = </headrest/Looks/steel/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.78, 0.79, 0.8)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "notch"
+        {
+            token outputs:surface.connect = </headrest/Looks/notch/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.3, 0.3, 0.32)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "fabric_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.6
+            float physics:restitution = 0
+            float physics:staticFriction = 0.7
+        }
+
+        def Material "steel_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.2
+            float physics:restitution = 0
+            float physics:staticFriction = 0.25
+        }
+    }
+
+    def Cube "cushion" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/fabric>
+        rel material:binding:physics = </headrest/Looks/fabric_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.16, 0.16, 0.17)]
+        double size = 1
+        float3 xformOp:scale = (0.105, 0.196, 0.17)
+        double3 xformOp:translate = (0, 0, 0.21500000000000002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "ear_left" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/fabric>
+        rel material:binding:physics = </headrest/Looks/fabric_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.16, 0.16, 0.17)]
+        double size = 1
+        float3 xformOp:scale = (0.064, 0.032, 0.17)
+        double3 xformOp:translate = (0, 0.114, 0.21500000000000002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "ear_right" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/fabric>
+        rel material:binding:physics = </headrest/Looks/fabric_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.16, 0.16, 0.17)]
+        double size = 1
+        float3 xformOp:scale = (0.064, 0.032, 0.17)
+        double3 xformOp:translate = (0, -0.114, 0.21500000000000002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_tip" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.0085, 0.0095)
+        double3 xformOp:translate = (0, 0.10275000000000001, 0.00475)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_core" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.011, 0.1205)
+        double3 xformOp:translate = (0, 0.1015, 0.06975)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_chamfer" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (0.8663245, -0.4994816, 0, 0)
+        float3 xformOp:scale = (0.014, 0.01097725, 0.003)
+        double3 xformOp:translate = (0, 0.09704813942822169, 0.005501554405812558)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_left_land0" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.0245)
+        double3 xformOp:translate = (0, 0.0945, 0.021750000000000002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_land1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, 0.0945, 0.044000000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_ramp1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (-0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, 0.09520710678118655, 0.046792893218813456)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_left_land2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, 0.0945, 0.059000000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_ramp2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (-0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, 0.09520710678118655, 0.061792893218813455)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_left_land3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, 0.0945, 0.07400000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_left_ramp3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (-0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, 0.09520710678118655, 0.07679289321881345)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_left_land4" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.043)
+        double3 xformOp:translate = (0, 0.0945, 0.10850000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_tip" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.0085, 0.0095)
+        double3 xformOp:translate = (0, -0.10275000000000001, 0.00475)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_core" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.011, 0.1205)
+        double3 xformOp:translate = (0, -0.1015, 0.06975)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_chamfer" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (0.8663245, 0.4994816, 0, 0)
+        float3 xformOp:scale = (0.014, 0.01097725, 0.003)
+        double3 xformOp:translate = (0, -0.09704813942822169, 0.005501554405812558)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_right_land0" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.0245)
+        double3 xformOp:translate = (0, -0.0945, 0.021750000000000002)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_land1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, -0.0945, 0.044000000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_ramp1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, -0.09520710678118655, 0.046792893218813456)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_right_land2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, -0.0945, 0.059000000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_ramp2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, -0.09520710678118655, 0.061792893218813455)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_right_land3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.004)
+        double3 xformOp:translate = (0, -0.0945, 0.07400000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "post_right_ramp3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        quatf xformOp:orient = (0.38268343, 0.9238795, 0, 0)
+        float3 xformOp:scale = (0.014, 0.0042426405, 0.002)
+        double3 xformOp:translate = (0, -0.09520710678118655, 0.07679289321881345)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+
+    def Cube "post_right_land4" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/steel>
+        rel material:binding:physics = </headrest/Looks/steel_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        uniform token purpose = "guide"
+        double size = 1
+        float3 xformOp:scale = (0.014, 0.003, 0.043)
+        double3 xformOp:translate = (0, -0.0945, 0.10850000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "tube_left" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.172
+        rel material:binding = </headrest/Looks/steel>
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.007
+        double3 xformOp:translate = (0, 0.1, 0.089)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "tube_left_end" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.003
+        rel material:binding = </headrest/Looks/steel>
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.0055
+        double3 xformOp:translate = (0, 0.1, 0.0015)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "notch_left_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, 0.09315, 0.038000000000000006)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_left_1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, 0.09315, 0.053000000000000005)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_left_2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, 0.09315, 0.068)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_left_3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, 0.09315, 0.083)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "tube_right" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.172
+        rel material:binding = </headrest/Looks/steel>
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.007
+        double3 xformOp:translate = (0, -0.1, 0.089)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "tube_right_end" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.003
+        rel material:binding = </headrest/Looks/steel>
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.0055
+        double3 xformOp:translate = (0, -0.1, 0.0015)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "notch_right_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, -0.09315, 0.038000000000000006)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_right_1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, -0.09315, 0.053000000000000005)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_right_2" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, -0.09315, 0.068)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "notch_right_3" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </headrest/Looks/notch>
+        color3f[] primvars:displayColor = [(0.3, 0.3, 0.32)]
+        double size = 1
+        float3 xformOp:scale = (0.012, 0.0007, 0.008)
+        double3 xformOp:translate = (0, -0.09315, 0.083)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+
