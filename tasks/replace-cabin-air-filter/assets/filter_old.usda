@@ -1,0 +1,317 @@
+#usda 1.0
+(
+    defaultPrim = "filter"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "filter" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (-0.005, 0, 0)
+    float3 physics:diagonalInertia = (0.0005890625, 0.00051125, 0.0010778125)
+    float physics:mass = 0.15
+    quatf physics:principalAxes = (1, 0, 0, 0)
+
+    def Scope "Looks"
+    {
+        def Material "frame"
+        {
+            token outputs:surface.connect = </filter/Looks/frame/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.36, 0.33, 0.28)
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "media"
+        {
+            token outputs:surface.connect = </filter/Looks/media/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.306, 0.2805, 0.238)
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "pp_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.3
+            float physics:restitution = 0
+            float physics:staticFriction = 0.35
+        }
+    }
+
+    def Cube "frame" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/frame>
+        rel material:binding:physics = </filter/Looks/pp_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.2, 0.215, 0.03)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "tab" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/frame>
+        rel material:binding:physics = </filter/Looks/pp_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.035, 0.016, 0.06)
+        double3 xformOp:translate = (-0.11750000000000001, 0, 0.015)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "rib" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/frame>
+        rel material:binding:physics = </filter/Looks/pp_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.2, 0.01, 0.005)
+        double3 xformOp:translate = (0, 0.065, 0.0175)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_0_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.088, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_0_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.088, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_1_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.066, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_1_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.066, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_2_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.044, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_2_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.044, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_3_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.021999999999999992, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_3_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, -0.021999999999999992, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_4_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_4_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_5_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.021999999999999992, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_5_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.021999999999999992, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_6_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.04400000000000001, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_6_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.04400000000000001, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_7_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.066, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_7_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.066, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_8_bottom" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.088, -0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "pleat_8_top" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </filter/Looks/media>
+        color3f[] primvars:displayColor = [(0.36, 0.33, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.18, 0.012, 0.0006)
+        double3 xformOp:translate = (0, 0.088, 0.0153)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+
