@@ -17,5 +17,5 @@
   "reset_notes": "Take the screen out by pushing it up against the plungers, swinging the bottom out of the side tracks and the bottom channel and lowering it. Stand it on the table in front of the sill at its mark (bottom back edge 70 mm in front of the bottom channel's centre line, centred), leaning back against the jambs' stops.",
   "fidelity": "Rigid boxes, 240 Hz physics, 20 Hz control. Screen: floating-base articulation; rails, mesh and lift tabs one rigid link (the mesh's flex plays no part in the mechanism), each plunger pin a sprung prismatic joint (120 N/m, 0.5 N preload, 19 mm travel; spring rates estimated). Window frame: fixed boxes, cropped 20 mm beyond the screen's sides; the screen seats on all four sides (channels at head and sill, side tracks with 2.5 mm play in the jambs). Friction: frame 0.6, tabs 0.5, pins 0.2.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-2ACQKK"
+  "media": "M-VLPY5B"
 }
