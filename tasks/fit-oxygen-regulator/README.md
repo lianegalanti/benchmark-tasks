@@ -84,17 +84,18 @@ the measured joints gives where each hand really is.
 5. **Let go.** Both arms let go and return to the ready pose. The regulator stays clamped.
 
 **Isaac Sim:** the encoder-only demo above reaches 1.0 (success) in 3,016 steps (151 s; the run limit is 4,800). It
-did so in two runs; the submitted video is from the second. Dream-1 scored 0 in a 4,800-step trial (the run limit).
+did so in each of three runs; the submitted video is from the last, and `demo_result.json` in this folder is that
+run's scorer output. Dream-1 scored 0 in a 4,800-step trial (the run limit).
 
 - The window caught the post's end twice. On the third approach, 1.6 mm higher, the yoke slid on.
 - In 14 strokes the T-bar turned 6.56 turns, counted by the left wrist's encoders.
 - There were no violations.
 
-At the end of that run, the scorer measured (`result.json` of the demo):
+At the end of that run, the scorer measured (`demo_result.json`):
 
 | Measure | Value | Needed for full credit |
 |---|---|---|
-| Both pins into their holes | 3.9 mm (fully seated), 0.37 mm off the holes' axes | at least 3 mm |
+| Both pins into their holes | 3.91 mm and 3.90 mm (fully seated), at most 0.37 mm off the holes' axes | at least 3 mm each |
 | Washer to outlet face, all round | 0.01 mm (flat) | within 1 mm |
 | Inlet axis to outlet axis | 0.05 degrees | within 3 degrees |
 | Clamp force | 60 N (the cap) | |

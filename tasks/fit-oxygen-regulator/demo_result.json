@@ -1,0 +1,28 @@
+{
+  "task_score": 1.0,
+  "success": true,
+  "steps": 3016,
+  "violations": [],
+  "fit": {
+    "on_post": true,
+    "pin_depth": 0.0039,
+    "pin_depths": [
+      0.003909473898660093,
+      0.003903865434178434
+    ],
+    "pin_lateral": 0.00037,
+    "pins_in": true,
+    "face_gap": 1e-05,
+    "tilt": 0.00083,
+    "seated": true,
+    "tip_in": true,
+    "overshoot": 0.00049,
+    "clamped": true,
+    "force": 60.0,
+    "torque": 1.55
+  },
+  "worst_ik_mm": {
+    "left": 0.07,
+    "right": 0.09
+  }
+}

@@ -16,5 +16,5 @@
   "reset_notes": "Unscrew the T-handle until its tip is flush with the inside of the yoke's window (about 6.6 turns, T-bar along x), slide the regulator off and stand it back at its start. Check the cylinder sits in both saddles against the end board. Real trials use an empty cylinder with its valve closed (or a valve on an empty, decommissioned cylinder), so no gas is ever released.",
   "fidelity": "Rigid bodies, 240 Hz. Post, pin holes, pins, washer, yoke window and recess are colliders at ISO 407 sizes; round holes (0.6 mm countersink) and the cone recess are square pockets. PhysX has no screw joint: the T-screw is a turn joint on a slide joint, coupled every control step at 1.75 mm per turn, with the clamp force capped at 60 N. Turning resistance rises with clamp force, as damping sized to give 0.75 N m at 28 N and 1.55 N m at 60 N at 100 deg/s. The cylinder lies loose in its cradle.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-2US6YJ"
+  "media": "M-TA4GE5"
 }

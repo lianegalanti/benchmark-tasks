@@ -189,8 +189,8 @@ def fit(p_rc, R_rc, d: float, theta: float) -> dict:
     force = float(min(TIP_FORCE, max(0.0, TIP_STIFFNESS * overshoot)))
     torque = turn_torque(force)
     clamped = bool(seated and tip_in and torque >= HAND_TIGHT)
-    return dict(on_post=on_post, pin_depth=min(depths), pin_lateral=max(lateral), pins_in=pins_in, face_gap=face_gap,
-                tilt=tilt, seated=seated, tip_in=tip_in, overshoot=overshoot, clamped=clamped,
+    return dict(on_post=on_post, pin_depth=min(depths), pin_depths=depths, pin_lateral=max(lateral), pins_in=pins_in,
+                face_gap=face_gap, tilt=tilt, seated=seated, tip_in=tip_in, overshoot=overshoot, clamped=clamped,
                 force=force, torque=torque)
 
 
