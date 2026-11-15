@@ -218,6 +218,21 @@ def Xform "holder"
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
                 }
 
+                def Cube "tab" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </holder/Looks/black>
+                    rel material:binding:physics = </holder/Looks/abs_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.08, 0.08, 0.09)]
+                    double size = 1
+                    float3 xformOp:scale = (0.024, 0.004, 0.03)
+                    double3 xformOp:translate = (-0.028, 0.037000000000000005, 0.07)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
                 def Cube "bar" (
                     prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
                 )
@@ -230,21 +245,6 @@ def Xform "holder"
                     double size = 1
                     float3 xformOp:scale = (0.016, 0.027, 0.008)
                     double3 xformOp:translate = (0.016, 0.025500000000000002, 0.06)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "tail" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.008, 0.0025, 0.028)
-                    double3 xformOp:translate = (0.02, 0.013250000000000001, 0.05)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
                 }
             }
@@ -303,6 +303,21 @@ def Xform "holder"
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
                 }
 
+                def Cube "tab" (
+                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                )
+                {
+                    rel material:binding = </holder/Looks/black>
+                    rel material:binding:physics = </holder/Looks/abs_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.08, 0.08, 0.09)]
+                    double size = 1
+                    float3 xformOp:scale = (0.024, 0.004, 0.03)
+                    double3 xformOp:translate = (-0.028, -0.037000000000000005, 0.07)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
                 def Cube "bar" (
                     prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
                 )
@@ -317,168 +332,6 @@ def Xform "holder"
                     double3 xformOp:translate = (0.016, -0.025500000000000002, 0.06)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
                 }
-
-                def Cube "tail" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.008, 0.0025, 0.028)
-                    double3 xformOp:translate = (0.02, -0.013250000000000001, 0.05)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-            }
-
-            def Xform "trigger" (
-                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
-            )
-            {
-                point3f physics:centerOfMass = (0.01, 0, 0.044)
-                float3 physics:diagonalInertia = (6.6666666e-7, 9.4083333e-7, 9.4083333e-7)
-                float physics:mass = 0.01
-                quatf physics:principalAxes = (1, 0, 0, 0)
-
-                def Cube "pad" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/black>
-                    rel material:binding:physics = </holder/Looks/abs_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.08, 0.08, 0.09)]
-                    double size = 1
-                    float3 xformOp:scale = (0.006, 0.02, 0.02)
-                    double3 xformOp:translate = (-0.003, 0, 0.07)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "stem" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.025, 0.01, 0.042)
-                    double3 xformOp:translate = (0.0125, 0, 0.059)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "crossbar" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.002, 0.056, 0.012)
-                    double3 xformOp:translate = (0.026000000000000002, 0, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "catch_back_left" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.002, 0.005, 0.012)
-                    double3 xformOp:translate = (0.026000000000000002, 0.025500000000000002, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "catch_face_left" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.004, 0.001, 0.012)
-                    double3 xformOp:translate = (0.023, 0.0275, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "catch_chamfer_left" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float xformOp:rotateZ = -45
-                    float3 xformOp:scale = (0.0056568542, 0.0015, 0.012)
-                    double3 xformOp:translate = (0.023530330085889912, 0.025530330085889914, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ", "xformOp:scale"]
-                }
-
-                def Cube "catch_back_right" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.002, 0.005, 0.012)
-                    double3 xformOp:translate = (0.026000000000000002, -0.025500000000000002, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "catch_face_right" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float3 xformOp:scale = (0.004, 0.001, 0.012)
-                    double3 xformOp:translate = (0.023, -0.0275, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
-                }
-
-                def Cube "catch_chamfer_right" (
-                    prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
-                )
-                {
-                    rel material:binding = </holder/Looks/inner>
-                    rel material:binding:physics = </holder/Looks/pom_physics> (
-                        bindMaterialAs = "weakerThanDescendants"
-                    )
-                    color3f[] primvars:displayColor = [(0.85, 0.85, 0.8)]
-                    double size = 1
-                    float xformOp:rotateZ = 45
-                    float3 xformOp:scale = (0.0056568542, 0.0015, 0.012)
-                    double3 xformOp:translate = (0.023530330085889912, -0.025530330085889914, 0.044)
-                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ", "xformOp:scale"]
-                }
             }
         }
     }
@@ -491,7 +344,7 @@ def Xform "holder"
         {
             float drive:linear:physics:damping = 1.5
             float drive:linear:physics:maxForce = 100
-            float drive:linear:physics:stiffness = 80
+            float drive:linear:physics:stiffness = 120
             uniform token drive:linear:physics:type = "force"
             uniform token physics:axis = "Y"
             rel physics:body0 = </holder/Geometry/body>
@@ -510,7 +363,7 @@ def Xform "holder"
         {
             float drive:linear:physics:damping = 1.5
             float drive:linear:physics:maxForce = 100
-            float drive:linear:physics:stiffness = 80
+            float drive:linear:physics:stiffness = 120
             uniform token drive:linear:physics:type = "force"
             custom float newton:mimicCoef0 = 0
             custom float newton:mimicCoef1 = 1
@@ -525,25 +378,6 @@ def Xform "holder"
             quatf physics:localRot1 = (0, 0, 0, 1)
             float physics:lowerLimit = 0
             float physics:upperLimit = 0.018
-        }
-
-        def PhysicsPrismaticJoint "trigger" (
-            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
-        )
-        {
-            float drive:linear:physics:damping = 0.5
-            float drive:linear:physics:maxForce = 100
-            float drive:linear:physics:stiffness = 300
-            uniform token drive:linear:physics:type = "force"
-            uniform token physics:axis = "X"
-            rel physics:body0 = </holder/Geometry/body>
-            rel physics:body1 = </holder/Geometry/body/trigger>
-            point3f physics:localPos0 = (0, 0, 0)
-            point3f physics:localPos1 = (0, 0, 0)
-            quatf physics:localRot0 = (1, 0, 0, 0)
-            quatf physics:localRot1 = (1, 0, 0, 0)
-            float physics:lowerLimit = 0
-            float physics:upperLimit = 0.006
         }
 
         def PhysicsFixedJoint "root_joint"

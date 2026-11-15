@@ -10,7 +10,7 @@ yam_arena's task files spawn single primitives (yaw only) and library assets. Th
 (here :class:`UsdBody` is used for the phone holder and the phone, :class:`Shape` for the dashboard section):
 
 - :class:`UsdBody`: a body loaded from a USD file next to the task file. With ``articulation=True`` it is an
-  articulation (here, the holder: a fixed base with two sprung arms and a sprung trigger) whose joints start at
+  articulation (here, the holder: a fixed base with two sprung arms) whose joints start at
   ``joint_pos``.
 - :class:`Shape`: a fixed box or capsule in any orientation.
 

@@ -1,11 +1,10 @@
 """Writes the task's USD assets from geometry.py:
 
-- assets/holder.usda: the one-touch phone holder, a fixed-base articulation in the holder frame H (see geometry.py).
-  Root link ``body`` (back plate, feet, housing, vent clip) is fixed to the world by ``root_joint``. Child links:
-  ``arm_left`` and ``arm_right`` on prismatic joints along y (positive opens; ``arm_right`` follows ``arm_left``
-  through a mimic constraint, standing in for the rack and pinion that gears them together) and ``trigger`` on a
-  prismatic joint along +x (positive presses it in). Links joined to the root don't collide with it (as in any
-  articulation); the arms and the trigger do collide with each other, which is how the tails meet the catches.
+- assets/holder.usda: the spring-clamp phone holder, a fixed-base articulation in the holder frame H (see geometry.py).
+  Root link ``body`` (back plate, feet, housing, vent clip) is fixed to the world by ``root_joint``. Child links
+  ``arm_left`` and ``arm_right`` slide on prismatic joints along y (positive opens), each with a preloaded spring that
+  pulls it shut at every travel; ``arm_right`` follows ``arm_left`` through a mimic constraint, standing in for the
+  rack and pinion that gears them together. There is no catch or detent: nothing holds the arms open but the user.
 - assets/phone.usda: the phone, one rigid body (aluminium frame, glass faces; a dark screen panel marks the front).
 
     python make_assets.py        # needs usd-core (pip install usd-core); the .usda files are committed
@@ -23,7 +22,7 @@ OUT = HERE / "assets"
 
 BLACK = (0.08, 0.08, 0.09)       # holder plastic
 GREY = (0.35, 0.36, 0.38)        # silicone pads
-INNER = (0.85, 0.85, 0.80)       # POM internals (catch, tails)
+INNER = (0.85, 0.85, 0.80)       # POM internals (the racks)
 FRAME = (0.75, 0.74, 0.70)       # phone: natural aluminium
 SCREEN = (0.02, 0.03, 0.05)
 
@@ -155,26 +154,13 @@ def build_holder(path: Path) -> None:
             if sign < 0:
                 lo, hi = _mirror(lo, hi)
             c, s = _lohi(lo, hi)
-            key = {"pad": "silicone", "lip": "silicone", "tail": "pom", "bar": "pom"}.get(name, "abs")
+            key = {"pad": "silicone", "lip": "silicone", "bar": "pom"}.get(name, "abs")
             rgb, lk = {"silicone": (GREY, look["grey"]), "pom": (INNER, look["inner"])}.get(key, (BLACK, look["black"]))
             _box(stage, f"/holder/Geometry/body/arm_{side}/{name}", c, s, 0.0, rgb, lk, phys[key])
-
-    trig = UsdGeom.Xform.Define(stage, "/holder/Geometry/body/trigger").GetPrim()
-    UsdPhysics.RigidBodyAPI.Apply(trig)
-    _mass(trig, g.TRIG_MASS, (0.01, 0.0, 0.044), (0.027, 0.02, 0.02))
-    for name, lo, hi in g.TRIGGER_BOXES:
-        c, s = _lohi(lo, hi)
-        _box(stage, f"/holder/Geometry/body/trigger/{name}", c, s, 0.0,
-             BLACK if name == "pad" else INNER, look["black"] if name == "pad" else look["inner"],
-             phys["abs"] if name == "pad" else phys["pom"])
-    for side, sign in (("left", 1.0), ("right", -1.0)):
-        for name, c, s, yaw in g.catch_boxes(sign):
-            _box(stage, f"/holder/Geometry/body/trigger/{name}_{side}", c, s, yaw, INNER, look["inner"], phys["pom"])
 
     UsdGeom.Scope.Define(stage, "/holder/Physics")
     _prismatic(stage, "arm_left", "arm_left", "Y", False, g.ARM_STOP, g.ARM_RATE, g.ARM_DAMPING)
     right = _prismatic(stage, "arm_right", "arm_right", "Y", True, g.ARM_STOP, g.ARM_RATE, g.ARM_DAMPING)
-    _prismatic(stage, "trigger", "trigger", "X", False, g.TRIG_STOP, g.TRIG_RATE, g.TRIG_DAMPING)
     # the gearing: arm_right = arm_left (both positive opening). NewtonMimicAPI is not in usd-core: author it raw.
     prim = right.GetPrim()
     prim.SetMetadata("apiSchemas", Sdf.TokenListOp.Create(prependedItems=["PhysicsDriveAPI:linear", "NewtonMimicAPI"]))

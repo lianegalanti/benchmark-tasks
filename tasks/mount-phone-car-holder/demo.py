@@ -5,15 +5,20 @@
 It works from the fixed, known layout (geometry.py) and the arms' own joint encoders only. It never reads where the
 phone is, or the holder's joint positions, from the simulator (the task's monitor state is only printed, as a log).
 
-1. Left arm (cocking): fingers closed, pointing down, it reaches between the holder's closed arms and pushes the left
-   arm outward to its stop, past the catch; the gearing opens the right arm with it. It backs off so the arm settles
-   on the catch, then sweeps to the right arm and does the same there (with the gearing working, that arm is already
-   open and the sweep only checks it), and lifts away.
-2. Right arm, meanwhile: takes the leaning phone across its long edges near its top, gripping along the phone's long
-   axis, slides it up off the dashboard's edge, swings it upright and waits to the right of the holder.
-3. Once the holder is cocked, the right arm brings the phone over the cradle, its back 2.5 mm clear of the trigger,
-   lowers it onto the feet, then presses it back flat onto the plate (aiming 2.5 mm past it): the trigger goes in and
-   the arms snap shut on the phone's edges. The arm lets go and lifts its fingers off the top of the phone; both arms go back to ready.
+The holder's arms are sprung shut and nothing latches them, so one hand holds them open while the other puts the
+phone in:
+
+1. Right arm: takes the leaning phone across its long edges near its top, gripping along the phone's long axis,
+   slides it up off the dashboard's edge, swings it upright and waits above and to the right of the holder.
+2. Left arm, meanwhile: pointing forward and a little down, it pinches the left arm's pull tab (a fin on the arm's
+   front, outside the phone's path) between its fingers and pulls it outward 16 mm; the gearing opens the right arm
+   with it (pads 90 mm apart, lips 5 mm clear of the phone's edges). It keeps holding them open.
+3. The right arm brings the phone over the cradle, 10 cm up, and lowers it straight down between the open arms, its
+   back 2.5 mm in front of the back plate, to 1 mm above the feet, then presses it back flat onto the plate (aiming
+   2.5 mm past it) so its screen is behind the arms' lips, and holds it there.
+4. The left arm eases the tab back in to 1.5 mm short of where the pad meets the phone's edge, opens its fingers and
+   backs away: the springs close both arms on the phone's long edges. Then the right arm opens its fingers, slides
+   them up off the phone's top and both arms go back to ready.
 
 Every arm target is solved with IK on the URDF. A slow integral term on the measured joint error (the arm's own
 encoders) takes out the sag from pushing the sprung arms and carrying the phone.
@@ -39,18 +44,33 @@ import geometry as g  # noqa: E402
 CONTROL_HZ = 20
 DT = 1.0 / CONTROL_HZ
 GRIP_DOWN = 0.030          # TCP this far below the phone's top along its long axis when holding it
-COCK_X = -0.026            # H frame: where the closed fingers' centre goes in the cradle ...
-COCK_Z = 0.070             # ... and the TCP's height (fingertips 13 mm lower, in the arms' 55-85 mm band)
-FINGER_HALF = 0.010        # closed fingers' half thickness in that band
-PUSH_OVER = 0.010          # command the push this far past the arm's stop (the stop takes the overshoot)
-BACK_CLEAR = 0.0025        # phone's back this far in front of the resting trigger pad while lowering
-PRESS = 0.011              # then pressed this far back: 2.5 mm into the back plate, past the trigger's full 6 mm,
-#                            which takes up the arm's lag and loads the phone on the plate (it releases at 3 mm)
-SEAT = 0.001               # phone's bottom 1 mm above the feet while pressed (pressing down on them would let
-#                            the arm's integral term load the feet, and friction there would stall the press)
-LIFT = 0.003               # phone's bottom this far above the feet while it comes in
-FRONT_BACK = -0.045        # phone's back this far in front of the back plate before it comes in
+TAB_PITCH = math.radians(15)   # the left gripper points forward, tilted this far down
+TAB_TIP_X = -0.026         # H frame: the left fingertips' centre stops here, 10 mm short of the jaw's front
+TAB_TIP_Z = 0.070          # ... at the tab's mid-height
+TAB_GRIP = 0.45            # the left fingers' opening (fraction of 94 mm) while they come in around the tab
+TAB_LET = 0.22             # ... and when they let go of it (10 mm each side of the tab)
+PULL = 0.016               # arm travel the left gripper pulls the tab out to (pads 90 mm apart; the stop is at 18)
+EASE = 0.0015              # it eases the tab back to this much short of the phone's edge, then lets go
+BACK = -0.0025             # phone's back this far in front of the back plate while it is lowered and clamped
+PRESS = 0.0025             # then it presses the phone back to the plate, aiming this far past it (the plate stops it)
+SEAT = 0.001               # phone's bottom 1 mm above the feet when the arms close
+HIGH = 0.093               # phone's bottom this high above the feet while it moves over the cradle (8 mm over the arms)
 I_GAIN, I_MAX = 0.08, 0.25
+
+
+def tab_rot() -> np.ndarray:
+    """The left gripper: approach forward (+x) tilted TAB_PITCH down, fingers closing along world y."""
+    from yam_arena.demo import grip_rotation
+
+    return g.rot_y(-(math.pi / 2 - TAB_PITCH)) @ grip_rotation(0.0)
+
+
+def tab_tcp(d: float, back: float = 0.0) -> np.ndarray:
+    """The left TCP (station frame) with the fingertips' centre on the left tab at arm travel ``d``, ``back`` m
+    further back along the approach."""
+    rot = tab_rot()
+    tip = H((TAB_TIP_X, (g.TAB_Y[0] + g.TAB_Y[1]) / 2 + d, TAB_TIP_Z))
+    return tip - (0.013 + back) * rot[:, 2]
 
 
 def grip_rot(lean: float = 0.0) -> np.ndarray:
@@ -167,33 +187,55 @@ class Script:
         self.phone = (g.phone_start(), g.PHONE_R0)
         self.arms = (0.0, 0.0)
         self.holding = False
+        self.pinching = False
+        self.pressing = False
         self.mark: dict = {}
 
     def _carry(self):
         """Keep the expected phone pose with the right gripper while it holds the phone."""
         if self.holding:
-            self.phone = phone_for_tcp(self.right.pos, self.right.rot)
+            c, r = phone_for_tcp(self.right.pos, self.right.rot)
+            if self.pressing:       # the back plate stops the phone's back at its face
+                c = c.copy()
+                c[0] = min(c[0], g.HOLDER[0] - g.PHONE_T / 2)
+            self.phone = (c, r)
 
-    # -- cocking (left arm) -----------------------------------------------------------------------------------------
-    def cock(self):
-        L, R = self.left, grip_rot()
-        yield from L.move(H((COCK_X, 0.06, 0.14)), R, 2.0, grip=0.0)
-        yield from L.move(H((COCK_X, 0.0, 0.13)), R, 1.5)
-        yield from L.move(H((COCK_X, 0.0, COCK_Z)), R, 1.5)
-        lip = g.CLOSED_HALF - 0.003
-        for sign in (1.0, -1.0):
-            push = sign * (lip + g.ARM_STOP + PUSH_OVER - FINGER_HALF)
-            self.mark[f"push_{sign:+.0f}"] = True
-            yield from L.move(H((COCK_X, push, COCK_Z)), R, 2.5)
-            self.arms = (g.ARM_STOP, g.ARM_STOP)
-            yield from wait(2.0)
-            yield from L.move(H((COCK_X, sign * (lip + g.LATCHED - FINGER_HALF - 0.008), COCK_Z)), R, 1.0)
-            self.arms = (g.LATCHED, g.LATCHED)
-            self.mark[f"pushed_{sign:+.0f}"] = True
-            yield from L.move(H((COCK_X, 0.0, COCK_Z)), R, 1.0)
-        yield from L.move(H((COCK_X, 0.0, 0.13)), R, 1.2)
-        yield from L.move(H((COCK_X - 0.03, 0.15, 0.14)), R, 1.5)
-        self.flags["cocked"] = True
+    # -- holding the arms open (left arm) ---------------------------------------------------------------------------
+    def _slide_tab(self, d0: float, d1: float, seconds: float):
+        """Move the pinched tab from arm travel d0 to d1 (the arms follow it, geared)."""
+        from yam_arena import ik
+
+        n = max(1, round(seconds * CONTROL_HZ))
+        for k in range(1, n + 1):
+            d = d0 + ik.smoothstep(k / n) * (d1 - d0)
+            self.left.aim(tab_tcp(d), tab_rot())
+            self.arms = (d, d)
+            yield
+
+    def hold_open(self):
+        L, R = self.left, tab_rot()
+        yield from L.move(tab_tcp(0.0, 0.10) + [0.0, 0.0, 0.05], R, 2.5, grip=TAB_GRIP)
+        yield from L.move(tab_tcp(0.0, 0.05), R, 1.5)
+        self.mark["tab_in"] = True
+        yield from L.move(tab_tcp(0.0), R, 1.5)                       # fingers either side of the tab
+        yield from L.set_grip(0.0, 1.2)
+        self.pinching = True
+        yield from wait(0.4)
+        self.mark["pull"] = True
+        yield from self._slide_tab(0.0, PULL, 2.0)                   # pull the tab out: both arms open
+        yield from wait(0.8)
+        self.flags["open"] = True
+        yield from wait_for(self.flags, "seated")
+        self.mark["ease"] = True
+        ease = g.PHONE_D + EASE
+        yield from self._slide_tab(PULL, ease, 2.0)                 # let the arms come in, under control
+        self.pinching = False
+        yield from L.set_grip(TAB_LET, 0.8)                         # let go: the springs close the last 1.5 mm
+        self.arms = (g.PHONE_D, g.PHONE_D)
+        self.mark["let_go"] = True
+        yield from L.move(tab_tcp(g.PHONE_D, 0.05), R, 1.2)
+        self.flags["closed"] = True
+        yield from L.move(tab_tcp(g.PHONE_D, 0.10) + [0.0, 0.05, 0.05], R, 1.2)
         yield from L.move(L.home[0], L.home[1], 2.0, grip=1.0)
 
     # -- the phone (right arm) -----------------------------------------------------------------------------------------
@@ -215,19 +257,22 @@ class Script:
         # straight up (the phone's back leaves the dashboard's edge), then back toward the robot
         yield from carry(grasp + [0.0, 0.0, 0.04], R, 1.2)
         yield from carry(grasp + [-0.07, 0.0, 0.05], R, 1.5)
-        # upright, in front of the cradle and to its right, its bottom just above the feet's height
-        front = cradle_centre(LIFT, FRONT_BACK)
-        yield from carry(*tcp_for_phone(H(front) + [0.0, -0.19, 0.03]), 2.5)
-        yield from wait_for(self.flags, "cocked")
-        yield from carry(*tcp_for_phone(H(front)), 2.0)
-        back = -g.TRIG_PROUD - BACK_CLEAR
-        yield from carry(*tcp_for_phone(H(cradle_centre(LIFT, back))), 2.0)       # in between the open arms
-        yield from carry(*tcp_for_phone(H(cradle_centre(SEAT, back))), 1.0)       # down onto the feet
-        yield from wait(0.3)
+        # upright, above the cradle's height and to its right
+        above = cradle_centre(HIGH, BACK)
+        yield from carry(*tcp_for_phone(H(above) + [0.0, -0.16, 0.0]), 2.5)
+        yield from wait_for(self.flags, "open")
+        self.mark["over"] = True
+        yield from carry(*tcp_for_phone(H(above)), 2.0)                          # over the open cradle
+        self.mark["lower"] = True
+        yield from carry(*tcp_for_phone(H(cradle_centre(SEAT, BACK))), 2.5)      # straight down between the arms
         self.mark["press"] = True
-        yield from carry(*tcp_for_phone(H(cradle_centre(SEAT, back + PRESS))), 1.5)   # onto the trigger
-        self.arms = (g.PHONE_D, g.PHONE_D)
-        yield from wait(1.2)
+        self.pressing = True
+        yield from carry(*tcp_for_phone(H(cradle_centre(SEAT, PRESS))), 1.0)     # back against the plate
+        yield from wait(0.4)
+        self.mark["seated"] = True
+        self.flags["seated"] = True
+        yield from wait_for(self.flags, "closed")
+        yield from wait(0.5)
         yield from A.set_grip(1.0, 1.0)
         self.holding = False
         yield from wait(0.3)
@@ -238,7 +283,7 @@ class Script:
         yield from A.move(A.home[0], A.home[1], 2.0)
 
     def steps(self):
-        yield from together(self.cock(), self.mount())
+        yield from together(self.hold_open(), self.mount())
 
 
 def plan(max_steps: int = 2400) -> list[dict]:
@@ -250,6 +295,7 @@ def plan(max_steps: int = 2400) -> list[dict]:
         out.append({"left": (s.left.q.copy(), s.left.grip, s.left.pos.copy(), s.left.rot.copy()),
                     "right": (s.right.q.copy(), s.right.grip, s.right.pos.copy(), s.right.rot.copy()),
                     "phone": (s.phone[0].copy(), s.phone[1].copy()), "arms": s.arms, "holding": s.holding,
+                    "pinching": s.pinching, "pressing": s.pressing,
                     "mark": dict(s.mark)})
         if len(out) >= max_steps:
             break
