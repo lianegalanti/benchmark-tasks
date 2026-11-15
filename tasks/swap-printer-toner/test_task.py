@@ -111,7 +111,44 @@ def test_the_assets_match_the_geometry():
         assert root.HasAPI(pxr.UsdPhysics.RigidBodyAPI)
         assert pxr.UsdPhysics.MassAPI(root).GetMassAttr().Get() == pytest.approx(g.MASS[which])
         r = pxr.UsdGeom.Imageable(root).ComputeWorldBound(0, "default").ComputeAlignedRange()
-        assert np.array(r.GetMax()) - np.array(r.GetMin()) == pytest.approx([0.10, 0.367, 0.135], abs=1e-3)
+        assert np.array(r.GetMax()) - np.array(r.GetMin()) == pytest.approx([0.101, 0.367, 0.138], abs=1.5e-3)
+        # the body collides as its box; what is seen of it is the moulded shell inside that box
+        body = st.GetPrimAtPath("/cartridge/body")
+        assert body.HasAPI(pxr.UsdPhysics.CollisionAPI)
+        assert pxr.UsdGeom.Imageable(body).ComputeVisibility(0) == pxr.UsdGeom.Tokens.invisible
+        for name in ("handle", "post_left", "post_right", "boss_left", "boss_right"):
+            assert st.GetPrimAtPath(f"/cartridge/{name}").HasAPI(pxr.UsdPhysics.CollisionAPI)
+        for name in ("shell", "end_cap_l", "end_cap_r", "drum", "front_label", "top_label"):
+            assert not st.GetPrimAtPath(f"/cartridge/{name}").HasAPI(pxr.UsdPhysics.CollisionAPI)
+    # the printer's details (output tray, control panel, vents, bay lining, door recess) are only seen
+    details = stage.GetPrimAtPath("/printer/Geometry/body/details")
+    assert len(details.GetChildren()) > 20
+    for prim in [*details.GetChildren(), stage.GetPrimAtPath("/printer/Geometry/body/door/finger_recess")]:
+        assert not prim.HasAPI(pxr.UsdPhysics.CollisionAPI), prim.GetPath()
+
+
+def test_the_shell_is_inside_the_collision_box():
+    import make_assets
+
+    prof = np.array(make_assets.shell_profile())
+    assert np.all(np.abs(prof) <= np.array([g.C_SIZE[0], g.C_SIZE[2]]) / 2 + 1e-9)
+
+
+def test_the_handle_is_a_carry_loop_on_the_front_edge():
+    """A grip bar along the cartridge's length on two posts, leaning 30 degrees toward the front: 13 cm clear between
+    the posts for a hand (or the 6.8 cm wide gripper fingers), a finger gap of about 2 cm under the bar, standing
+    about 5 cm above the top, in the front half of the top."""
+    boxes = {n: (np.array(c), np.array(sz), p) for n, c, sz, p in g.handle_boxes()}
+    bar_c, bar_s, pitch = boxes["handle"]
+    assert pitch == pytest.approx(-math.radians(30))
+    clear = 2 * (abs(boxes["post_left"][0][1]) - g.POST_W / 2)
+    assert clear == pytest.approx(0.13)
+    cart = {n: (c, rot, h) for n, c, rot, h in g.cartridge_world((0, 0, 0))}
+    c, rot, h = cart["handle"]
+    corners = c + (np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)]) * h) @ rot.T
+    top = g.C_SIZE[2] / 2
+    assert 0.014 < corners[:, 2].min() - top < 0.022 and 0.045 < corners[:, 2].max() - top < 0.05
+    assert -g.C_SIZE[0] / 2 < corners[:, 0].min() and corners[:, 0].max() < 0.0
 
 
 def test_full_size_objects():
@@ -123,7 +160,7 @@ def test_the_old_cartridge_starts_seated_and_the_new_one_clear():
     old = g.cartridge_world(g.OLD_START)
     assert gap(old, g.printer_world()) == pytest.approx(0.0005, abs=2e-4)   # 0.5 mm above the notch floors
     assert gap(old, g.door_world(g.OPEN)) > 0.01
-    assert gap(g.cartridge_world(g.NEW_START), g.printer_world()) > 0.02
+    assert gap(g.cartridge_world(g.NEW_START), g.printer_world()) > 0.015   # beside the printer
     assert M.seated(g.OLD_START, EYE)
 
 
@@ -246,6 +283,22 @@ def test_the_old_one_must_be_out_on_the_table_and_let_go():
     assert not M.out_of_printer(half, EYE)
 
 
+@pytest.mark.parametrize("where", ["bar_end", "boss", "body_end"])
+def test_a_gripper_closed_anywhere_on_the_cartridge_is_not_let_go(where):
+    """Holding the seated new cartridge by the end of its 16 cm grip bar, by a boss or by the body, rather than at the
+    bar's middle, still counts as holding it: no credit for "seated and let go"."""
+    bar_end = M.handle_centre(SEAT, EYE) + [0, 0.07, 0]
+    point = {"bar_end": bar_end, "boss": SEAT + [g.BOSS_X, -(g.C_SIZE[1] / 2 + g.BOSS_OUT), 0.0],
+             "body_end": SEAT + [0.0, g.C_SIZE[1] / 2 + 0.02, 0.0]}[where]
+    arms = far_arms()
+    arms["right"] = dict(arms["right"], grasp=point, opening=0.016)
+    step(old=(OLD_ON_TABLE, EYE), new=(SEAT, EYE), door=0.0, arms=arms)
+    assert M.score(None) == 0.2
+    arms["right"] = dict(arms["right"], opening=0.06)          # fingers open there: let go
+    step(old=(OLD_ON_TABLE, EYE), new=(SEAT, EYE), door=0.0, arms=arms)
+    assert M.score(None) == 0.75
+
+
 @pytest.mark.parametrize("why, kwargs", [
     ("dropped", dict(new=(g.NEW_START + [0, 0, 0.1], EYE))),
     ("tipped", dict(new=(g.NEW_START, ry(math.radians(35))))),
@@ -326,18 +379,20 @@ def test_the_demo_fits_the_run_limit():
 
 
 def _replay(every: int = 2):
-    """Walk the plan, carrying each cartridge with the gripper that holds it; yield (index, step, cartridge poses)."""
+    """Walk the plan, carrying each cartridge with the gripper that holds it (position and turn); yield (index, step,
+    cartridge poses (centre, rotation))."""
     # settled: the old one resting on its notch floors (the printer stands 0.5 mm up until it settles too)
-    pose = {"old": SEAT + [0.0, 0.0, 0.0005], "new": g.NEW_START.copy()}
+    pose = {"old": (SEAT + [0.0, 0.0, 0.0005], EYE), "new": (g.NEW_START.copy(), EYE)}
     off, prev = {}, {"left": None, "right": None}
     for i, s in enumerate(PLAN):
         for side in ("left", "right"):
             held = s["holding"][side]
-            pos = s[side][2]
+            _, _, pos, rot = s[side]
             if held and prev[side] != held:
-                off[side] = pose[held] - pos
+                c, r = pose[held]
+                off[side] = (rot.T @ (c - pos), rot.T @ r)
             if held:
-                pose[held] = pos + off[side]
+                pose[held] = (pos + rot @ off[side][0], rot @ off[side][1])
             prev[side] = held
         if i % every == 0 or i == len(PLAN) - 1:
             yield i, s, pose
@@ -358,11 +413,12 @@ def test_along_the_demo_nothing_runs_into_the_printer():
                 assert d > (-0.007 if side == "left" and (pushing or i > len(PLAN) * 0.6) else 0.02), (i, side, d)
             caps, _ = arm_caps(s[side][0], side)
             assert M.capsules_gap(caps[:-1], printer) > 0.01, (i, side)
-        for name, c in pose.items():
-            cart = g.cartridge_world(c)
+        for name, (c, r) in pose.items():
+            cart = g.cartridge_world(c, r)
             assert gap(cart, g.printer_world()) > 0.0004, (i, name)
             assert gap(cart, g.door_world(s["door"])) > (0.006 if s["door"] == g.OPEN else 0.002), (i, name)
-        assert gap(g.cartridge_world(pose["old"]), g.cartridge_world(pose["new"])) > 0.02
+            assert M.tilt_of(r) < math.radians(0.5), (i, name)               # carried level
+        assert gap(g.cartridge_world(*pose["old"]), g.cartridge_world(*pose["new"])) > 0.02
 
 
 def test_the_demo_grips_only_the_handle():
@@ -371,18 +427,25 @@ def test_the_demo_grips_only_the_handle():
             held = s["holding"][side]
             if held:
                 _, grip, pos, rot = s[side]
-                body = g.cartridge_world(pose[held])[0][1:]
-                assert g.boxes_gap(demo.gripper_boxes(pos, rot, grip)[0], body) > 0.004
+                cart = g.cartridge_world(*pose[held])
+                fingers = demo.gripper_boxes(pos, rot, grip)[0]
+                assert g.boxes_gap(fingers, cart[0][1:]) > 0.004, i                      # clear of the body ...
+                for post in (b for b in cart if b[0].startswith("post")):
+                    assert g.boxes_gap(fingers, post[1:]) > 0.01, i                      # ... and the handle's posts
+                bar = next(b for b in cart if b[0] == "handle")
+                assert g.boxes_gap(fingers, bar[1:]) < 0, i                              # the fingers are on the bar
+                assert np.linalg.norm(pos - M.handle_centre(*pose[held])) < M.HOLD_R / 3, i
 
 
 def test_the_demo_ends_in_a_full_score_state():
     *_, (i, s, pose) = _replay()
-    assert np.linalg.norm(pose["new"] - SEAT) < 0.0025
+    assert np.linalg.norm(pose["new"][0] - SEAT) < 0.0025 and M.tilt_of(pose["new"][1]) < 1e-6
+    assert abs(M.yaw_of(pose["new"][1])) < 1e-6 and abs(M.yaw_of(pose["old"][1])) < 1e-6
     arms = {}
     for side in ("left", "right"):
         caps, tcp = arm_caps(s[side][0], side)
         arms[side] = {"caps": caps, "grasp": tcp, "opening": 0.094}
-    old_rest = pose["old"] - [0, 0, 0.003]          # it is let go 3 mm above the table
+    old_rest = pose["old"][0] - [0, 0, 0.003]       # it is let go 3 mm above the table
     step(old=(old_rest, EYE), new=(SEAT, EYE), door=0.0, arms=arms)
     step(old=(old_rest, EYE), new=(SEAT, EYE), door=0.0, arms=arms)
     assert M.score(None) == 0.75 and M.success(None)

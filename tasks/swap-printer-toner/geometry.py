@@ -9,7 +9,7 @@ Frames (metres):
 - door frame: origin on the hinge axis (bottom front edge of the bay opening). The door turns about the station's -y
   axis by its joint angle ``theta``: 0 is shut, positive swings its top toward the robot, 90 degrees is fully open.
 - cartridge frame: origin at the centre of the cartridge's main body; at rest it is level and square to the
-  printer, its handle on top and its two side bosses toward the back (+x).
+  printer, its carry handle on the front edge of its top and its two side bosses toward the back (+x).
 
 A box is (name, centre, size, pitch, colour) in its frame; ``pitch`` turns it about +y (so its +x end goes down).
 """
@@ -156,19 +156,37 @@ def printer_to_world(p) -> np.ndarray:
 
 # -- cartridges (cartridge frame) -----------------------------------------------------------------------------------
 C_SIZE = (0.10, 0.34, 0.09)             # main body: depth (x), length (y), height (z)
-FIN = ((-0.02, 0.02), 0.008, 0.045)     # handle on top: x range, half thickness (y), height above the body
+# The handle: a moulded carry loop along the front edge of the top, as on common mono laser cartridges. A grip bar
+# (along the cartridge's length) stands on two posts; bar and posts lean toward the front, so fingers hook under the
+# bar from the front. A 20 mm finger gap is left between the bar and the body's top.
+HANDLE_LEAN = math.radians(30.0)        # the loop leans this far from vertical toward the front (-x)
+HANDLE_C = np.array([-0.034, 0.0, 0.079])   # grip bar centre (cartridge frame)
+GRIP_BAR = (0.014, 0.16, 0.024)         # grip bar: thickness, length (over the posts), height along the lean
+POST_W = 0.015                          # the two posts' width (along y); the bar is clear for 13 cm between them
+HANDLE_UP = np.array([-math.sin(HANDLE_LEAN), 0.0, math.cos(HANDLE_LEAN)])   # along the loop's lean
 BOSS_X = 0.035                          # side bosses, toward the back of the body
 BOSS = {"right": (0.010, 0.010), "left": (0.010, 0.018)}   # (x, z) size; bottoms level with each other
 BOSS_OUT = 0.0135                       # how far each boss stands out from the body's end (1.5 mm from the wall)
 MASS = {"new": 0.70, "old": 0.55}       # kg (the used one has less toner left)
-FIN_CENTRE = np.array([0.0, 0.0, C_SIZE[2] / 2 + FIN[2] / 2])
+
+
+def handle_boxes():
+    """The handle loop: grip bar and two posts (cartridge frame), leaning HANDLE_LEAN toward the front."""
+    t, length, h = GRIP_BAR
+    pitch = -HANDLE_LEAN
+    bar_foot = HANDLE_C - HANDLE_UP * h / 2                  # middle of the bar's underside
+    top = C_SIZE[2] / 2 - 0.002                              # the posts start 2 mm inside the body's top
+    post_len = (bar_foot[2] - top) / HANDLE_UP[2]
+    post_c = bar_foot - HANDLE_UP * post_len / 2
+    py = length / 2 - POST_W / 2
+    return [("handle", tuple(HANDLE_C), (t, length, h), pitch),
+            ("post_left", (post_c[0], py, post_c[2]), (t, POST_W, post_len), pitch),
+            ("post_right", (post_c[0], -py, post_c[2]), (t, POST_W, post_len), pitch)]
 
 
 def cartridge_boxes():
     dx, dy, dz = C_SIZE
-    (fx0, fx1), fy, fh = FIN
-    out = [("body", (0.0, 0.0, 0.0), (dx, dy, dz), 0.0),
-           ("handle", ((fx0 + fx1) / 2, 0.0, dz / 2 + fh / 2), (fx1 - fx0, 2 * fy, fh), 0.0)]
+    out = [("body", (0.0, 0.0, 0.0), (dx, dy, dz), 0.0), *handle_boxes()]
     for side, sy in (("left", 1), ("right", -1)):
         bx, bz = BOSS[side]
         out.append((f"boss_{side}", (BOSS_X, sy * (dy / 2 + BOSS_OUT / 2), -0.005 + bz / 2), (bx, BOSS_OUT, bz), 0.0))
@@ -186,7 +204,7 @@ def line_centre(boss_x: float, lift: float = 0.0) -> np.ndarray:
     return np.array([boss_x - BOSS_X, 0.0, rail_top(boss_x) + 0.005 + lift])
 
 
-TABLE_C = {"old": np.array([0.205, 0.40]), "new": np.array([0.205, -0.40])}   # where each one rests on the table
+TABLE_C = {"old": np.array([0.28, 0.40]), "new": np.array([0.28, -0.40])}     # where each one rests on the table
 NEW_START = np.array([*TABLE_C["new"], TABLE + C_SIZE[2] / 2])                 # station
 OLD_START = printer_to_world(SEAT_C + [0.0, 0.0, 0.0005])                      # station: seated in the printer
 

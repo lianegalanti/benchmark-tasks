@@ -1,7 +1,7 @@
 # Swap the toner cartridge in a desktop laser printer and shut its door
 
 A compact desktop laser printer (40 x 36 x 23 cm, 7.5 kg, standing free on the table) has its front door open. In its
-toner bay sits the used cartridge; the new one lies on the table to its right. The robot must:
+toner bay sits the used cartridge; the new one lies on the table beside the printer's right side. The robot must:
 
 1. take the old cartridge out and put it down on the table;
 2. slide the new one in until it is seated;
@@ -9,8 +9,13 @@ toner bay sits the used cartridge; the new one lies on the table to its right. T
 
 It must not touch the transfer roller inside the bay.
 
-The cartridge is full size: a 34 cm long, 10 x 9 cm black body (0.55 kg used, 0.70 kg new) with a single handle on
-top. Two side bosses run in guide rails on the bay's walls, and the rails slope down 15 degrees toward the back with
+The objects are modelled on a common front-loading mono laser printer and its cartridge. The printer has its output
+tray on top (with a printed sheet), a control panel with display and buttons, the paper cassette across the bottom of
+its front, side vents and a dark toner bay. The cartridge is full size: a 34 cm long, 10 x 9 cm black moulded body
+(0.55 kg used, 0.70 kg new), rounded over the toner hopper at the top back, with the green drum showing under its
+bottom back edge and grey end caps. It is carried by its moulded handle along the front edge of its top: a grip bar
+16 cm long, 14 mm thick and 24 mm tall on two posts (13 cm clear between them), the loop leaning 30 degrees toward the
+front over a 2 cm finger gap. Two side bosses run in guide rails on the bay's walls, and the rails slope down 15 degrees toward the back with
 3 mm of play. At their end, each boss drops 12 mm into a seat notch, under the slot's ceiling, which runs on over the notch to the back stop (so the notches can be reached only along the slots, not from above), and the cartridge's front settles on two support ribs on the bay floor. The two bosses differ in height (10 and 18 mm),
 so a cartridge turned end for end does not fit.
 
@@ -33,7 +38,7 @@ The swap (out first, then in) and the door interlock make this task more than a 
 |---|---|
 | `task.py` | The yam_arena task file: objects, the per-step monitor, `success()` and `score()` |
 | `geometry.py` | Dimensions of the printer, door, rails, notches and cartridges, and the box maths the scorer and tests use |
-| `make_assets.py` | Writes `assets/printer.usda` (the printer and its door, one articulation) and the two cartridge files |
+| `make_assets.py` | Writes `assets/printer.usda` (the printer and its door, one articulation) and the two cartridge files; colliders are the boxes of `geometry.py`, details such as the cartridge's rounded shell, the output tray and control panel are visual only |
 | `assets/` | The generated USD files (committed) |
 | `scenekit.py` | USD bodies and articulations for yam_arena task files (hooks yam_arena without modifying it) |
 | `demo.py` | The scripted full-score demo; `plan()` replays it without Isaac Sim for the tests |
@@ -62,15 +67,19 @@ python demo.py task.py demo_out      # writes demo_*_cam.mp4, setup.png and resu
 ```
 
 The demo works from the fixed, known layout and the arms' own joint readings only. It never reads the cartridges' or
-the door's pose from the simulator. Every grip leans 30 degrees forward, which is how the short arms reach into the
-bay at handle height.
+the door's pose from the simulator. Every cartridge grip takes the grip bar between the fingers from front to back,
+square to the handle loop, so it leans 30 degrees forward like the loop; that lean is also how the short arms reach
+into the bay at handle height.
 
-1. **Old cartridge out (left arm).** The arm closes on the old cartridge's handle and lifts the bosses 16 mm, clear
-   of the notches. It draws the cartridge up the rails' slope with the bosses centred in the slots, then on in front
-   of the printer. It lifts the cartridge 3 cm, well clear of the open door, carries it to the left and sets it down on the table 3 mm above it, then lets go.
-2. **New cartridge in (right arm).** Meanwhile the right arm picks up the new cartridge and holds it at the rails'
-   height. Once the old one is clear, it brings the new one in front of the bay, 3 cm above the rails' line, lowers it onto the line just ahead of the rails' lead-in flares and slides it down the rails until
-   the bosses are over the notches. It lowers them in, lets go and backs out.
+1. **Old cartridge out (left arm).** The arm closes on the old cartridge's grip bar and lifts the bosses 15 mm,
+   clear of the notches. It draws the cartridge up the rails' slope with the bosses centred in the slots, then on in
+   front of the printer. It lifts the cartridge 3 cm, well clear of the open door, carries it to the left and out past
+   the printer's front left corner (turning it up to 15 degrees about the vertical, which keeps the wrist in reach)
+   and sets it down level beside the printer, 3 mm above the table, then lets go.
+2. **New cartridge in (right arm).** Meanwhile the right arm picks up the new cartridge by its grip bar, lifts it and
+   holds it beside the printer's front right corner. Once the old one is clear, it brings the new one round the corner
+   to in front of the bay, 3 cm above the rails' line, lowers it onto the line just ahead of the rails' lead-in flares
+   and slides it down the rails until the bosses are over the notches. It lowers them in, lets go and backs out.
 3. **Door (left arm).** The left arm goes round the door's left edge, low and in front of its flange. With its closed
    fingertips on the flange's outer face, it pushes the door up along the hinge's arc in 5-degree steps to 3 degrees
    from shut, then lifts off. The door's weight then carries it shut.
@@ -81,9 +90,9 @@ exactly at their start poses, at rest, and lets them settle for 0.25 s. The tria
 setup, not from wherever the settle nudged them.
 
 Carrying a cartridge makes the soft wrist joints sag. A slow integral term on the measured joint error (the arms'
-encoders) takes this out. The plan takes about 1,000 steps (50 s).
+encoders) takes this out. The plan takes about 1,070 steps (53 s).
 
-Measured on an L40S, the demo reaches 1.0 (success) in 1,025 steps (51 s). The new cartridge ends 1 mm from its seated position and 0.4 degrees from level, and the printer moves 0.3 mm. Dream-1 scored 0 in a 2,400-step trial (the run limit).
+Measured on an L40S, the demo reaches 1.0 (success) in 1,053 steps (53 s). Dream-1 scored 0 in a 2,400-step trial (the run limit).
 
 ## Scoring
 
@@ -109,8 +118,9 @@ The monitor runs after every control step and latches violations; the score at t
 | 0.75 | and the door is shut: within 2 degrees, so the top of its front panel is within 6 mm of the case front |
 | 1.0 | success, held for 1 s: all of the above, every part of both arms at least 3 cm from the door and both cartridges, and the cartridges and the door still |
 
-- **Let go** means no gripper is closed on the cartridge's handle. A gripper holds it while its grasp point is within
-  3 cm of the handle's centre and its fingers are less than 3 cm apart.
+- **Let go** means no gripper is closed on the cartridge. A gripper holds it while its fingers are less than 3 cm
+  apart and its grasp point is within 3 cm of any part of the cartridge (anywhere along the handle's 16 cm grip bar,
+  the body or a boss).
 - **Only the new cartridge counts as seated.** Putting the old one back in scores 0.
 - **Doing nothing, or refusing,** scores 0.
 

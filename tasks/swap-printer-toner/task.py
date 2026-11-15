@@ -1,9 +1,9 @@
 """On the station table, straight ahead of the arms: a compact desktop laser printer (40 cm wide, 36 cm deep, 23 cm
 tall), its front 27 cm in front of the arm bases. Its front door, an L-shaped cover hinged along the bottom of the
 toner bay's opening, stands fully open (80 degrees), leaning toward the robot. In the bay sits the used toner
-cartridge (black, grey handle): a 34 x 10 x 9 cm cartridge whose two side bosses are down in the seat notches at the
-end of the bay's guide rails. The new cartridge (black, orange handle) lies on the table to the right of the printer;
-the table to its left is free.
+cartridge (black, grey carry handle along the front of its top): a 34 x 10 x 9 cm cartridge whose two side bosses are
+down in the seat notches at the end of the bay's guide rails. The new cartridge (black, orange handle) lies on the
+table beside the printer's right side; the table beside its left side is free.
 
 The robot must take the old cartridge out along the rails and put it down on the table, slide the new one in along the
 rails until its bosses drop into the seat notches, and shut the door, which an unseated cartridge blocks.
@@ -54,8 +54,8 @@ ROLLER_TOUCH = 0.003            # m: any arm part this close to the transfer rol
 FALL_V = 0.5                    # m/s: a cartridge no gripper holds falling this fast was dropped (a 1.3 cm free fall)
 TIP = math.radians(30)          # a cartridge tilted this far (toner spills, or it fell)
 OFF_TABLE = 0.02                # m: a cartridge's centre this far below the table top has left it
-HOLD_R = 0.03                   # m: a gripper holds a cartridge when its grasp point is this close to the handle's
-HOLD_OPEN = 0.03                # centre and its fingers are less than this far apart (on the 16 mm handle: 16 mm)
+HOLD_R = 0.03                   # m: a gripper holds a cartridge when its grasp point is this close to any part of it
+HOLD_OPEN = 0.03                # and its fingers are less than this far apart (on the 14 mm grip bar: 14 mm)
 REST = 0.008                    # m: on the table: the cartridge's lowest corner this close to the table top ...
 REST_TILT = math.radians(5)     # ... and level within this
 SEAT_POS = 0.004                # m: seated: the new cartridge's body within this of its seated position ...
@@ -132,7 +132,13 @@ def cart_boxes(pos, rot):
 
 
 def handle_centre(pos, rot) -> np.ndarray:
-    return np.asarray(pos) + rot @ g.FIN_CENTRE
+    return np.asarray(pos) + rot @ g.HANDLE_C
+
+
+def gripper_near(grasp, pos, rot) -> bool:
+    """A grasp point within HOLD_R of any part of the cartridge (its grip bar anywhere along its 16 cm, its body or a
+    boss)."""
+    return any(float(g.point_box_dist(np.asarray(grasp, float), c, r, h)[0]) < HOLD_R for c, r, h in cart_boxes(pos, rot))
 
 
 def lowest_z(pos, rot) -> float:
@@ -214,8 +220,7 @@ def update(printer_pos, printer_rot, door: float, carts: dict, arms: dict) -> No
     status = {}
     for name, (pos, rot, vel) in carts.items():
         vel = np.asarray(vel, float)
-        held = any(np.linalg.norm(a["grasp"] - handle_centre(pos, rot)) < HOLD_R and a["opening"] < HOLD_OPEN
-                   for a in arms.values())
+        held = any(a["opening"] < HOLD_OPEN and gripper_near(a["grasp"], pos, rot) for a in arms.values())
         S["held"][name] = held
         if not held and vel[2] < -FALL_V:
             _flag(f"the {name} cartridge was dropped")

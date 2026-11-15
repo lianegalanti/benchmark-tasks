@@ -7,7 +7,7 @@ cartridges or the door are in the simulator.
 
 1. Left arm: takes the old cartridge by its handle, lifts its bosses out of the seat notches, draws it out along the
    guide rails (up their 15-degree slope), carries it clear to the left and sets it down on the table.
-2. Right arm, meanwhile: picks up the new cartridge from the table to its right and holds it at the rails' height.
+2. Right arm, meanwhile: picks up the new cartridge from beside the printer's right side and holds it there.
    Once the old one is clear, it brings the new one in front of the bay, slides it in along the rails, lowers its
    bosses into the notches, lets go and backs out.
 3. Left arm: pushes the open door up by its top flange, following the hinge's arc, to a few degrees from shut; the
@@ -36,8 +36,10 @@ import geometry as g  # noqa: E402
 
 CONTROL_HZ = 20
 DT = 1.0 / CONTROL_HZ
-PITCH = -30.0            # deg: cartridge grips lean forward 30 degrees (approach toward +x and down)
-GRASP_DZ = 0.079         # TCP above the cartridge body's centre when it holds the handle
+PITCH = -30.0            # deg: cartridge grips lean forward 30 degrees (approach toward +x and down), square to
+                         # the handle loop, which leans 30 degrees toward the front
+GRASP_IN = 0.001         # TCP this far past the grip bar's centre along the approach (fingertips 2 mm past it)
+YAW = {"left": -90.0, "right": 90.0}   # deg: fingers close front-to-back across the grip bar
 LINE_LIFT = 0.0027       # bosses centred in the rail slots
 UNSEAT = 0.0145          # lift out of the notch (the lip is 12 mm; the slot's ceiling 16-24 mm up)
 OUT_BX = -0.045          # printer-frame boss x where the cartridges wait in front of the bay ...
@@ -48,20 +50,34 @@ PUSH_PEN = 0.006         # the fingers press this far into where the door would 
 I_GAIN, I_MAX = 0.08, 0.12   # joint integral: per control step, and clamp (rad)
 
 
-def grip_rot(pitch_deg: float = PITCH) -> np.ndarray:
-    """Fingers closing along world y, approach pointing down and tilted ``-pitch_deg`` toward +x."""
+def grip_rot(pitch_deg: float = PITCH, yaw_deg: float = 0.0) -> np.ndarray:
+    """Approach pointing down and tilted ``-pitch_deg`` toward +x; fingers closing along world y (``yaw_deg`` 0) or,
+    turned 90 degrees, front to back in the vertical x-z plane (square to the leaning handle loop)."""
     from yam_arena.demo import grip_rotation
     from yam_arena.urdf import axis_angle_matrix
 
-    return axis_angle_matrix(np.array([0.0, 1.0, 0.0]), math.radians(pitch_deg)) @ grip_rotation(0.0)
+    return (axis_angle_matrix(np.array([0.0, 1.0, 0.0]), math.radians(pitch_deg))
+            @ grip_rotation(math.radians(yaw_deg)))
+
+
+def rot_z(deg: float) -> np.ndarray:
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+
+
+def cart_rot(side: str, turn: float = 0.0) -> np.ndarray:
+    """The grip on the handle of a level cartridge turned ``turn`` degrees about the vertical, for that arm."""
+    return rot_z(turn) @ grip_rot(PITCH, YAW[side])
 
 
 def world(p) -> np.ndarray:
     return g.printer_to_world(p)
 
 
-def grasp_tcp(centre) -> np.ndarray:
-    return np.asarray(centre, float) + [0.0, 0.0, GRASP_DZ]
+def grasp_tcp(centre, turn: float = 0.0) -> np.ndarray:
+    """TCP holding the handle of a level cartridge whose body is centred at ``centre``, turned ``turn`` degrees
+    about the vertical."""
+    return np.asarray(centre, float) + rot_z(turn) @ (g.HANDLE_C + GRASP_IN * grip_rot()[:, 2])
 
 
 class Arm:
@@ -130,6 +146,19 @@ def together(*gens):
             yield
 
 
+TURN = 15.0              # deg: carried past the printer's side, a cartridge is turned this far (its outer end toward
+                         # the robot), which keeps the arm's wrist in reach
+
+
+def side_path(out, which: str):
+    """(centre, turn) of a cartridge on its way from the bay to its place on the table: in front of the printer at
+    the carrying height, out past the printer's front corner, then beside the printer."""
+    sy = float(np.sign(g.TABLE_C[which][1]))
+    return [(np.array([0.192, sy * 0.30, out[2] + 0.01]), sy * 8.0),
+            (np.array([0.185, sy * 0.37, out[2] + 0.0]), sy * 9.0),
+            (np.array([0.19, sy * 0.40, out[2] - 0.03]), sy * TURN)]
+
+
 class Script:
     """The demo as per-step arm commands. ``door`` is the door angle the script expects (for the tests)."""
 
@@ -141,7 +170,7 @@ class Script:
 
     # -- the old cartridge (left arm) --------------------------------------------------------------------------------
     def remove_old(self):
-        L, R = self.left, grip_rot()
+        L, R = self.left, cart_rot("left")
         seat = world(g.SEAT_C)
         yield from L.move((0.22, 0.30, g.TABLE + 0.25), R, 1.0, grip=1.0)
         yield from L.move((0.20, 0.06, g.TABLE + 0.25), R, 1.5)               # in front of the printer
@@ -157,9 +186,10 @@ class Script:
         yield from L.move(grasp_tcp(world(g.line_centre(ENTRY_BX, LINE_LIFT))), R, 3.0)
         out = world(g.line_centre(OUT_BX, OUT_LIFT))
         yield from L.move(grasp_tcp(out), R, 1.2)
-        aside = np.array([out[0], g.TABLE_C["old"][1], out[2]])
-        yield from L.move(grasp_tcp(aside), R, 3.0)
-        self.flags["old_clear"] = True
+        # to the left in front of the printer, out past its side, then down onto the table beside it
+        for k, (c, turn) in enumerate(side_path(out, "old")):
+            yield from L.move(grasp_tcp(c, turn), cart_rot("left", turn), 2.0 if k == 0 else 1.0)
+            self.flags["old_clear"] = True
         down = np.array([*g.TABLE_C["old"], g.TABLE + g.C_SIZE[2] / 2 + 0.003])
         yield from L.move(grasp_tcp(down), R, 2.0)
         yield from L.set_grip(1.0, 1.0)
@@ -169,7 +199,7 @@ class Script:
 
     # -- the new cartridge (right arm) -------------------------------------------------------------------------------
     def insert_new(self):
-        A, R = self.right, grip_rot()
+        A, R = self.right, cart_rot("right")
         start = g.NEW_START
         yield from A.move(grasp_tcp(start) + [0, 0, 0.05], R, 3.0, grip=1.0)
         yield from A.move(grasp_tcp(start), R, 1.5)
@@ -177,8 +207,13 @@ class Script:
         self.holding["right"] = "new"
         yield from wait(0.6)
         out = world(g.line_centre(OUT_BX, OUT_LIFT))
-        yield from A.move(grasp_tcp([start[0], start[1], out[2]]), R, 2.0)
-        yield from wait_for(self.flags, "old_clear")
+        # up, then in past the printer's side to in front of it, the reverse of the old one's way out
+        yield from A.move(grasp_tcp(start + [0.0, 0.0, 0.06]), R, 1.5)
+        path = side_path(out, "new")
+        yield from A.move(grasp_tcp(*path[-1]), cart_rot("right", path[-1][1]), 1.5)
+        yield from wait_for(self.flags, "old_clear")             # the old one is out and on its way to the left
+        for c, turn in reversed(path[:-1]):
+            yield from A.move(grasp_tcp(c, turn), cart_rot("right", turn), 1.2)
         yield from A.move(grasp_tcp(out), R, 3.0)
         yield from A.move(grasp_tcp(world(g.line_centre(ENTRY_BX, LINE_LIFT))), R, 1.5)
         # along the rails, down their slope, until the bosses are over the notches; then down into the seat
