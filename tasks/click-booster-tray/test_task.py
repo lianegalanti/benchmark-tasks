@@ -76,7 +76,7 @@ def test_it_loads_with_both_parts_loose_and_plain_floats():
 
 def test_full_size():
     assert (g.BOOSTER_W, g.BOOSTER_D, g.BOOSTER_H) == (0.40, 0.33, 0.23)
-    assert (g.TRAY_W, g.TRAY_D) == (0.42, 0.25) and g.TRAY_MASS == 0.45 and g.BOOSTER_MASS == 2.5
+    assert (g.TRAY_W, g.TRAY_D) == (0.46, 0.25) and g.TRAY_MASS == 0.45 and g.BOOSTER_MASS == 2.5
     assert g.ARM_TOP - g.SEAT_TOP == pytest.approx(0.12)         # tray 12 cm above the seat: lap room
     assert [round(g.backrest_gap(n), 3) for n in (1, 2, 3)] == [0.145, 0.12, 0.095]   # tummy room per notch
 
@@ -144,6 +144,58 @@ def test_tray_body_clears_the_booster(offset):
             for c in _aabbs(g.catch_boxes(s, (0, 0, 0)), np.array([offset, 0, tz])):
                 for b in booster_boxes:
                     assert not _overlap(c, b), (offset, c, b)
+
+
+def test_the_tray_shell_is_a_closed_rounded_mesh():
+    pts, tris, normals = g.tray_shell_mesh()
+    edges = {}
+    for t in tris:
+        for i in range(3):
+            e = (t[i], t[(i + 1) % 3])
+            edges[e] = edges.get(e, 0) + 1
+    assert all(edges.get((b, a), 0) == 1 for a, b in edges) and set(edges.values()) == {1}   # closed, consistent
+    v = pts[tris]
+    volume = np.einsum("ij,ij->i", v[:, 0], np.cross(v[:, 1], v[:, 2])).sum() / 6
+    assert volume > 0                                                     # wound outward
+    assert np.allclose(np.linalg.norm(normals, axis=1), 1.0)
+    lo, hi = pts.min(0), pts.max(0)
+    assert np.allclose(hi[:2] - lo[:2], (g.TRAY_D, g.TRAY_W), atol=1e-6)
+    assert hi[2] == pytest.approx(g.PLATE_T + g.RIM_H) and lo[2] == pytest.approx(0.0)
+    # rounded in plan: no point near the bounding box's corners
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            corner = np.array([sx * g.TRAY_D / 2, sy * g.TRAY_W / 2])
+            assert np.min(np.linalg.norm(pts[:, :2] - corner, axis=1)) > 0.008
+    # smooth in section: neighbouring vertex normals of the swept rim turn less than 20 degrees
+    prof = g._rim_profile()
+    n = len(g.outline()[0])
+    for j in range(len(prof) - 1):
+        assert np.dot(normals[j * n], normals[(j + 1) * n]) > math.cos(math.radians(20))
+
+
+def test_the_hidden_colliders_match_the_rounded_shell():
+    def dist(p):
+        d = [g.point_box_distance(p, b[0], b[1], b[3] if len(b) > 3 else None) for b in g.TRAY_HIDDEN_BOXES]
+        d += [g.point_zcyl_distance(p, c[0], c[1], c[2]) for c in g.TRAY_CYLINDERS]
+        return min(d)
+
+    base, nrm = g.outline(24)
+    for (x, y), (nx, ny) in zip(base, nrm):
+        assert dist((x - 0.0005 * nx, y - 0.0005 * ny, g.PLATE_T / 2)) <= 0.0       # deck reaches the edge
+        assert dist((x + 0.001 * nx, y + 0.001 * ny, g.PLATE_T / 2)) >= 0.0007      # and no further
+        rim_z = g.PLATE_T + g.RIM_H / 2
+        assert dist((x - g.RIM_T / 2 * nx, y - g.RIM_T / 2 * ny, rim_z)) < 0.0      # rim wall all round
+        assert dist((x + 0.001 * nx, y + 0.001 * ny, rim_z)) >= 0.0005        # (segments overlap 0.3 mm)
+        assert dist((x - (g.RIM_T + 0.001) * nx, y - (g.RIM_T + 0.001) * ny, rim_z)) >= 0.0006
+
+
+def test_grip_skirts_and_lugs_fit_the_rounded_outline():
+    assert g.GRIP_Y + 0.01 <= g.TRAY_W / 2 - g.R_FRONT                         # the grip is on the straight front rim
+    assert g.outline_halfwidth(-g.TRAY_D / 2) == pytest.approx(g.TRAY_W / 2 - g.R_FRONT)
+    for x in np.linspace(*g.SKIRT_X, 30):
+        assert g.SKIRT[1] <= g.outline_halfwidth(x)                           # skirts stay under the deck
+    for x in (g.CATCH_X - 0.008, g.CATCH_X + 0.008):
+        assert g.LUG[1] - g.outline_halfwidth(x) >= 0.01                       # lugs stick out at least 1 cm to pull
 
 
 def test_rails_and_skirts_leave_room():

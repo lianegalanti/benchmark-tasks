@@ -1,7 +1,7 @@
 # Click a booster seat's tray onto both armrests at its second notch
 
 A toddler's booster seat (40 x 33 x 23 cm, 2.5 kg) stands on the table on its rubber feet, facing the robot, as it
-would on a dining chair. Its feeding tray (42 x 25 cm, 0.45 kg) lies flat on the table in front of it. The robot is
+would on a dining chair. Its feeding tray (46 x 25 cm, 0.45 kg) lies flat on the table in front of it. The robot is
 asked to put the tray on at its middle setting, locked at the second notch. The setting fits the tray to the child:
 at notch 2 the tray's back edge is 12 cm from the backrest (14.5 cm at notch 1, 9.5 cm at notch 3), and the tray
 stands 12 cm above the seat.
@@ -22,6 +22,11 @@ What makes it hard is physical. Knowing which notch is wanted is easy; stopping 
   straps. Shoving it more than 3 cm, or tipping it, fails the trial. Its feet hold about 20 N, so a careless push
   moves it.
 
+The tray is shaped like a moulded one: a 6 mm deck with rounded corners (3 cm radius on the robot's side, 4 cm on
+the child's side) and a rounded lower edge, overhanging the seat by 3 cm each side, and a raised rim all round, 4 mm
+thick and 3 cm tall, with a rounded top and a cove into the deck. Cameras see a smooth mesh; the physics uses matching
+hidden colliders (boxes, corner cylinders and short rim segments that follow the curves within 0.3 mm).
+
 Unlike sliding one carriage along a rail until it clicks, here two catches must reach the same notch, and the stop is
 a 25 mm window, not an end stop. The task does not need two arms: one arm pushing the tray's centre could do it.
 
@@ -32,9 +37,9 @@ Parents and childcare workers do this at every meal on boosters and high chairs.
 | File | What |
 |---|---|
 | `task.py` | The yam_arena task file: the two parts, the per-step monitor, `success()`, `score()` and the scripted demo (`demo()`) |
-| `geometry.py` | Dimensions of the seat, tray and ratchet, the scoring tests, and the demo's grip poses |
-| `partkit.py` | Rigid parts built from boxes (optionally rotated), with spring-loaded sliders along any axis. Also adds per-part friction combining and robot link helpers |
-| `test_task.py` | Offline checks: ratchet geometry, fit and clearances, every scoring level and violation, demo reach and timing |
+| `geometry.py` | Dimensions of the seat, tray and ratchet; the tray's rounded shell mesh and its matching colliders; the scoring tests; the demo's grip poses |
+| `partkit.py` | Builds the USD for each part at spawn: box and cylinder colliders (optionally rotated or hidden), smooth visual meshes, and spring-loaded sliders along any axis. Also adds per-part friction combining and robot link helpers |
+| `test_task.py` | Offline checks: ratchet geometry, fit and clearances, the rounded shell (closed, smooth, matched by its colliders), every scoring level and violation, demo reach and timing |
 
 `partkit.py` hooks `yam_arena.scene` and the embodiment's step and reset without modifying yam_arena. The task
 therefore runs with the standard `yam_arena` embodiment and the `task_score` scorer.
@@ -62,7 +67,8 @@ inspect-robots run --embodiment yam_arena --policy yam_scripted \
 ```
 
 The demo is open loop on the fixed layout and reads no simulator state. Both arms move together, mirrored:
-1. Each arm grips the tray's front rim 19 cm from the centre, fingers closing along x across the 4 mm rim. The pad
+1. Each arm grips the tray's front rim 19 cm from the centre, on its straight run just inboard of the rounded
+   corner, fingers closing along x across the 4 mm rim. The pad
    tips stay 7 mm above the plate.
 2. The arms lift the tray 4.2 cm above its seated height. Held by its front rim, it pivots about 7 degrees in the
    grips, back edge down. They carry it until its back edge is 4 cm over the armrests' flat tops, then set it down

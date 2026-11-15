@@ -57,16 +57,26 @@ def notch_window(n: int) -> tuple[float, float]:
     return tooth_start(n - 1) + TOOTH_ROOT - 0.004, tooth_start(n) + 0.001
 
 
-# -- the tray (rigid polypropylene, 42 x 25 cm, 0.45 kg) -------------------------------------------------------------
-TRAY_W, TRAY_D = 0.42, 0.25
+# -- the tray (rigid polypropylene, 46 x 25 cm, 0.45 kg) -------------------------------------------------------------
+TRAY_W, TRAY_D = 0.46, 0.25     # 3 cm wider than the seat on each side, as moulded trays overhang
 TRAY_MASS = 0.45
 PLATE_T = 0.006
-FRONT_RIM = (0.004, 0.030)      # the front rim (the robot's side): 4 mm thick, 3 cm above the plate's top
-SIDE_RIM_H = 0.020
+# Outline and rim, as on moulded booster trays: a rounded-rectangle deck whose corners are radiused 3 cm on the front
+# (robot's) side and 4 cm on the child's side (the catches sit inside those corners), with a raised rim all
+# round: a 4 mm wall standing 3 cm above the deck, its top rounded over (2 mm radius), a 6 mm cove where it meets
+# the deck, and the deck's lower outer edge rounded 3 mm.
+R_FRONT = 0.03
+R_BACK = 0.04
+RIM_T = 0.004
+RIM_H = 0.030
+EDGE_R = 0.003
+COVE_R = 0.006
+FRONT_RIM = (RIM_T, RIM_H)      # the rim on the front (robot's) side, which the demo grips
 RAIL_IN = (0.1285, 0.1335)      # rail walls under the plate, just inboard of each armrest (1.5 mm clearance)
 RAIL_X = (-0.10, 0.12)
 RAIL_DEPTH = 0.032              # rails and skirts reach 3.2 cm below the plate
-SKIRT = (0.205, 0.209)          # outer skirt at each end, open around the catch
+SKIRT = (0.222, 0.226)          # outer skirt at each end, 4 mm inside the tray end, open around the catch
+SKIRT_X = (-0.10, 0.088)        # its length: inside the rounded corners, open around the catch
 # The catch: a sprung slide in each tray end, moving along y. At rest its 8 mm wide, round-nosed tip reaches in to 2 mm
 # off the armrest's face; it rides 6 mm out over a tooth (10 mm travel), and a 1.6 cm lug outside the tray end pulls it out.
 CATCH_X = 0.10                  # tray x of the catches
@@ -76,7 +86,7 @@ CATCH_Z = (-0.031, -0.017)      # tray z of the tip (7 mm under the lip, inside 
 CATCH_TRAVEL = 0.010
 CATCH_RATE = 600.0              # N/m: 3.6 N at the crest, about 12 N in all to click the tray on
 CATCH_MASS = 0.02
-LUG = (0.205, 0.218)
+LUG = (0.226, 0.240)
 CATCH_REST_Y = 0.19             # |y| of the slide's frame
 
 # -- the start and the notch-2 pose ----------------------------------------------------------------------------------
@@ -209,20 +219,113 @@ def booster_boxes(shell, rack):
     return out
 
 
-def tray_boxes(color, rim):
-    """The tray body as boxes in the tray frame (the catches are separate sliders)."""
+def _corners():
+    """The deck outline's four corner arcs: (centre x, centre y, radius, start angle) in the tray frame, counter-
+    clockwise from the back left corner."""
     hx, hy = TRAY_D / 2, TRAY_W / 2
-    top = PLATE_T
-    out = [
-        _mm_box(-hx, hx, -hy, hy, 0.0, top, color),                                              # plate
-        _mm_box(-hx, -hx + FRONT_RIM[0], -hy, hy, top, top + FRONT_RIM[1], rim),                  # front rim
-        _mm_box(hx - 0.004, hx, -hy + 0.004, hy - 0.004, top, top + 0.010, color),               # back lip
+    return ((hx - R_BACK, hy - R_BACK, R_BACK, 0.0), (-hx + R_FRONT, hy - R_FRONT, R_FRONT, math.pi / 2),
+            (-hx + R_FRONT, -hy + R_FRONT, R_FRONT, math.pi), (hx - R_BACK, -hy + R_BACK, R_BACK, 1.5 * math.pi))
+
+
+def outline(n_arc: int = 12, inset: float = 0.0):
+    """The deck's outline, inset by ``inset``: points (N, 2) counter-clockwise seen from above, and their outward
+    normals. Each corner is ``n_arc`` segments; straight edges join them."""
+    pts, nrm = [], []
+    for cx, cy, r, a0 in _corners():
+        for k in range(n_arc + 1):
+            a = a0 + (math.pi / 2) * k / n_arc
+            n = (math.cos(a), math.sin(a))
+            pts.append((cx + (r - inset) * n[0], cy + (r - inset) * n[1]))
+            nrm.append(n)
+    return np.array(pts), np.array(nrm)
+
+
+def outline_halfwidth(x: float) -> float:
+    """|y| of the deck's outer edge at tray x ``x``."""
+    hx, hy = TRAY_D / 2, TRAY_W / 2
+    for cx, r in ((-hx + R_FRONT, R_FRONT), (hx - R_BACK, R_BACK)):
+        if abs(x - cx) <= r and (x - cx) * cx > 0:
+            return hy - r + math.sqrt(r * r - (x - cx) ** 2)
+    return hy if abs(x) <= hx else 0.0
+
+
+def _rim_profile(n: int = 6):
+    """The cross-section swept round the outline: (inset from the outer edge, z), from the deck's underside round the
+    lower edge, up the outer wall, over the rounded top, down the inner wall and through the cove onto the deck."""
+    top = PLATE_T + RIM_H
+    r_t = RIM_T / 2
+    prof = [(EDGE_R - EDGE_R * math.sin(a), EDGE_R - EDGE_R * math.cos(a))
+            for a in np.linspace(0, math.pi / 2, n + 1)]                                  # lower outer edge
+    prof += [(r_t - r_t * math.cos(a), top - r_t + r_t * math.sin(a)) for a in np.linspace(0, math.pi, 2 * n + 1)]
+    prof += [(RIM_T + COVE_R - COVE_R * math.cos(a), PLATE_T + COVE_R - COVE_R * math.sin(a))
+             for a in np.linspace(0, math.pi / 2, n + 1)]                                 # cove onto the deck
+    return prof
+
+
+def tray_shell_mesh(n_arc: int = 12):
+    """The deck and rim as one closed, smooth triangle mesh in the tray frame (what the cameras see): points (M, 3),
+    triangles (K, 3) wound outward, and per-vertex normals (M, 3)."""
+    base, nrm = outline(n_arc)
+    prof = _rim_profile()
+    n, m = len(base), len(prof)
+    pts = [(bx - d * nx, by - d * ny, z) for d, z in prof for (bx, by), (nx, ny) in zip(base, nrm)]
+    tris = []
+    for j in range(m - 1):
+        for i in range(n):
+            a, b = j * n + i, j * n + (i + 1) % n
+            c, d = a + n, b + n
+            tris += [(a, b, d), (a, d, c)]
+    lo, hi = len(pts), len(pts) + 1
+    pts += [(0.0, 0.0, 0.0), (0.0, 0.0, PLATE_T)]
+    for i in range(n):                                   # underside (first ring) and deck (last ring), fanned
+        tris.append((lo, (i + 1) % n, i))
+        tris.append((hi, (m - 1) * n + i, (m - 1) * n + (i + 1) % n))
+    pts, tris = np.array(pts), np.array(tris)
+    normals = np.zeros_like(pts)
+    face = np.cross(pts[tris[:, 1]] - pts[tris[:, 0]], pts[tris[:, 2]] - pts[tris[:, 0]])
+    for k in range(3):
+        np.add.at(normals, tris[:, k], face)
+    normals /= np.linalg.norm(normals, axis=1, keepdims=True)
+    return pts, tris, normals
+
+
+def _z_box(cx, cy, length, width, z0, z1, angle, color):
+    """A box centred on (cx, cy) in plan, ``length`` along the direction ``angle`` (rad), between heights z0, z1."""
+    return ((cx, cy, (z0 + z1) / 2), (length, width, z1 - z0), color, _rot("z", math.degrees(angle)))
+
+
+def tray_colliders(color):
+    """The deck and rim as colliders (hidden under :func:`tray_shell_mesh`): boxes, and cylinders for the deck's
+    rounded corners. The rim follows the outline in straight segments, 6 per corner (within 0.3 mm of the arc)."""
+    hx, hy = TRAY_D / 2, TRAY_W / 2
+    t, top = PLATE_T, PLATE_T + RIM_H - RIM_T / 2      # rim colliders stop where its rounded top begins to narrow
+    boxes = [
+        _mm_box(-hx + R_FRONT, hx - R_BACK, -hy, hy, 0.0, t, color),                          # deck, full width
+        _mm_box(-hx, -hx + R_FRONT, -(hy - R_FRONT), hy - R_FRONT, 0.0, t, color),            # deck, front strip
+        _mm_box(hx - R_BACK, hx, -(hy - R_BACK), hy - R_BACK, 0.0, t, color),                 # deck, back strip
     ]
+    cyls = [((cx, cy, t / 2), r, t, color) for cx, cy, r, _ in _corners()]
+    pts, nrm = outline(6, inset=RIM_T / 2)                  # the rim wall's centre line
+    for i in range(len(pts)):
+        p, q = pts[i], pts[(i + 1) % len(pts)]
+        seg = q - p
+        length = float(np.hypot(*seg))
+        if length < 1e-9:
+            continue
+        ext = 0.0006                                      # neighbouring segments overlap at their 15-degree joints
+        mid = (p + q) / 2
+        boxes.append(_z_box(float(mid[0]), float(mid[1]), length + ext, RIM_T, t, top,
+                            math.atan2(seg[1], seg[0]), color))
+    return boxes, cyls
+
+
+def tray_boxes(color, rim=None):
+    """The visible boxes of the tray body (under the deck: the rail walls and end skirts), in the tray frame. The
+    deck and rim are :func:`tray_shell_mesh` (seen) over :func:`tray_colliders` (felt); the catches are sliders."""
+    out = []
     for s in (1, -1):
-        out.append(_mm_box(-hx + FRONT_RIM[0], hx - 0.004, *_span(s, hy - 0.004, hy), top, top + SIDE_RIM_H, color))
         out.append(_mm_box(*RAIL_X, *_span(s, *RAIL_IN), -RAIL_DEPTH, 0.0, color))              # rail wall
-        for xa, xb in ((RAIL_X[0], CATCH_X - 0.012), (CATCH_X + 0.012, RAIL_X[1])):
-            out.append(_mm_box(xa, xb, *_span(s, *SKIRT), -RAIL_DEPTH, 0.0, color))           # skirt
+        out.append(_mm_box(*SKIRT_X, *_span(s, *SKIRT), -RAIL_DEPTH, 0.0, color))              # skirt
     return out
 
 
@@ -251,23 +354,32 @@ def point_box_distance(p, centre, size, rot_wxyz=None) -> float:
     return float(np.linalg.norm(np.maximum(q, 0.0)) + min(max(q[0], q[1], q[2]), 0.0))
 
 
-TRAY_BOXES_PLAIN = tray_boxes((0, 0, 0), (0, 0, 0))
+def point_zcyl_distance(p, centre, radius, height) -> float:
+    d = np.asarray(p, float) - np.asarray(centre, float)
+    q = np.array([math.hypot(d[0], d[1]) - radius, abs(d[2]) - height / 2])
+    return float(np.linalg.norm(np.maximum(q, 0.0)) + min(max(q[0], q[1]), 0.0))
+
+
+TRAY_HIDDEN_BOXES, TRAY_CYLINDERS = tray_colliders((0, 0, 0))
+TRAY_BOXES_PLAIN = tray_boxes((0, 0, 0)) + TRAY_HIDDEN_BOXES     # every box collider of the tray body
 
 
 def tray_clearance(points, tray_pos, tray_quat) -> float:
-    """Smallest distance from any of ``points`` (world) to the tray's boxes (catches included at rest)."""
+    """Smallest distance from any of ``points`` (world) to the tray's colliders (catches included at rest)."""
     rt = quat_matrix(tray_quat)
     boxes = TRAY_BOXES_PLAIN + [b for s in (1, -1) for b in catch_boxes(s, (0, 0, 0))]
     best = math.inf
     for p in points:
         local = rt.T @ (np.asarray(p, float) - np.asarray(tray_pos, float))
         for b in boxes:
-            best = min(best, point_box_distance(local, b[0], b[1]))
+            best = min(best, point_box_distance(local, b[0], b[1], b[3] if len(b) > 3 else None))
+        for c in TRAY_CYLINDERS:
+            best = min(best, point_zcyl_distance(local, c[0], c[1], c[2]))
     return best
 
 
 # -- the demo's grip (both arms, fingers closing along x across the front rim) ---------------------------------------
-GRIP_Y = 0.19            # |y| of each grip on the front rim
+GRIP_Y = 0.19            # |y| of each grip on the front rim's straight run (it curves away from |y| = 0.20)
 GRIP_YAW = math.pi / 2   # fingers close along x
 RIM_X = -TRAY_D / 2 + FRONT_RIM[0] / 2   # tray x of the front rim's centre
 GRIP_BELOW_RIM_TOP = 0.010               # TCP 1 cm below the rim's top: pad tips 7 mm above the plate

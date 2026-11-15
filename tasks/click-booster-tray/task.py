@@ -29,7 +29,6 @@ INSTRUCTION = "Put the tray on the booster seat at its middle setting, locked at
 SHELL = (0.93, 0.93, 0.90)   # white shell
 RACK = (0.35, 0.62, 0.85)    # light-blue armrest inserts (notches)
 TRAY = (0.95, 0.62, 0.20)    # orange tray
-RIM = (0.85, 0.50, 0.12)
 CATCH = (0.20, 0.25, 0.30)   # dark grey catches
 
 
@@ -43,8 +42,9 @@ def _catch(s: int) -> Slider:
 BOOSTER = part("booster", pos=(*g.BOOSTER_XY, g.TABLE + 0.001), mass=g.BOOSTER_MASS,
                boxes=g.booster_boxes(SHELL, RACK), color=SHELL, friction=0.9)
 TRAY_PART = part("tray", pos=(g.BOOSTER_XY[0] + g.START_OFFSET, g.BOOSTER_XY[1], g.TABLE + g.RAIL_DEPTH + 0.001),
-                 mass=g.TRAY_MASS, boxes=g.tray_boxes(TRAY, RIM), sliders=(_catch(1), _catch(-1)), color=TRAY,
-                 friction=0.4, friction_min=True)
+                 mass=g.TRAY_MASS, boxes=g.tray_boxes(TRAY), hidden_boxes=g.tray_colliders(TRAY)[0],
+                 hidden_cylinders=g.tray_colliders(TRAY)[1], meshes=((*g.tray_shell_mesh(), TRAY),),
+                 sliders=(_catch(1), _catch(-1)), color=TRAY, friction=0.4, friction_min=True)
 OBJECTS = [BOOSTER, TRAY_PART]
 
 # -- monitor and scoring ---------------------------------------------------------------------------------------------

@@ -17,7 +17,8 @@ A box may carry a fourth element, its rotation in the part frame as a (w, x, y, 
 A slider may have its own ``friction`` and a part may set ``friction_min``: that material then wins its contacts
 (PhysX's "min" combine mode).
 
-This copy also has ``friction_min``, :func:`arm_joints` and :func:`robot_links`.
+This copy also has ``friction_min``, :func:`arm_joints`, :func:`robot_links`, and smooth visual meshes over hidden
+colliders (``meshes``, ``hidden_boxes``, ``hidden_cylinders``) for rounded parts.
 
 Importing this module hooks ``yam_arena.scene`` (and the embodiment's step and reset) without modifying yam_arena: ``success()/score()`` receive a :class:`PartState` (the body origin's pose, not the bounding-box centre that
 yam_arena reports for primitives, plus slider positions). ``on_step`` and ``on_reset`` register callbacks that run
@@ -74,6 +75,9 @@ class Part(Box):
     boxes: tuple[BoxSpec, ...] = ()
     cylinders: tuple[CylSpec, ...] = ()
     sliders: tuple[Slider, ...] = ()
+    hidden_boxes: tuple[BoxSpec, ...] = ()      # colliders that are felt but not seen (under a visual mesh)
+    hidden_cylinders: tuple[CylSpec, ...] = ()
+    meshes: tuple = field(default=(), compare=False, hash=False)  # visual only: (points, triangles, normals, colour)
     friction: float = 0.8
     friction_min: bool = False  # combine with "min", so this part's friction rules its contacts
     meta: dict = field(default_factory=dict, compare=False, hash=False)
@@ -99,20 +103,22 @@ def _box(spec):
 
 
 def part(name, pos, boxes, mass, yaw=0.0, sliders=(), color=(0.5, 0.5, 0.5), friction=0.8, cylinders=(),
-         friction_min=False) -> Part:
+         friction_min=False, hidden_boxes=(), hidden_cylinders=(), meshes=()) -> Part:
     """Build a Part; ``size`` is filled in from the shapes' extent."""
     def cyl_half(spec):
         r, h, axis = spec[1], spec[2], spec[4] if len(spec) > 4 else "Z"
         return np.array([h / 2 if axis == "X" else r, h / 2 if axis == "Y" else r, h / 2 if axis == "Z" else r])
 
-    half = [np.abs(_quat_matrix(q)) @ (np.array(s) / 2) for _, s, _, q in map(_box, boxes)]
-    half += [cyl_half(c) for c in cylinders]
-    centres = [np.array(b[0]) for b in boxes] + [np.array(c[0]) for c in cylinders]
+    all_boxes, all_cyls = tuple(boxes) + tuple(hidden_boxes), tuple(cylinders) + tuple(hidden_cylinders)
+    half = [np.abs(_quat_matrix(q)) @ (np.array(s) / 2) for _, s, _, q in map(_box, all_boxes)]
+    half += [cyl_half(c) for c in all_cyls]
+    centres = [np.array(b[0]) for b in all_boxes] + [np.array(c[0]) for c in all_cyls]
     lo = np.min([c - h for c, h in zip(centres, half)], axis=0)
     hi = np.max([c + h for c, h in zip(centres, half)], axis=0)
     return Part(name=name, pos=tuple(float(v) for v in pos), size=tuple((hi - lo).tolist()), mass=mass, color=color,
                 yaw=float(yaw), boxes=tuple(boxes), cylinders=tuple(cylinders), sliders=tuple(sliders),
-                friction=friction, friction_min=friction_min)
+                friction=friction, friction_min=friction_min, hidden_boxes=tuple(hidden_boxes),
+                hidden_cylinders=tuple(hidden_cylinders), meshes=tuple(meshes))
 
 
 @dataclass(frozen=True)
@@ -198,30 +204,49 @@ def _spawn_part(prim_path: str, cfg, translation=None, orientation=None, **kwarg
         bind_physics_material(str(prim.GetPath()), material, stage=stage)
         bind_visual_material(str(prim.GetPath()), look(color), stage=stage)
 
-    def boxes(path: str, specs, offset=(0.0, 0.0, 0.0), material=phys):
+    def boxes(path: str, specs, offset=(0.0, 0.0, 0.0), material=phys, hidden=False, tag="box"):
         for i, (centre, size, color, rot) in enumerate(map(_box, specs)):
-            cube = UsdGeom.Cube.Define(stage, f"{path}/box_{i}")
+            cube = UsdGeom.Cube.Define(stage, f"{path}/{tag}_{i}")
             cube.CreateSizeAttr(1.0)
             cube.AddTranslateOp().Set(Gf.Vec3d(*(np.array(centre) - np.array(offset))))
             if rot != (1.0, 0.0, 0.0, 0.0):
                 cube.AddOrientOp().Set(Gf.Quatf(*rot))
             cube.AddScaleOp().Set(Gf.Vec3f(*size))
             collide(cube.GetPrim(), color, material)
+            if hidden:
+                cube.MakeInvisible()
 
-    def cylinders(path: str, specs, offset=(0.0, 0.0, 0.0), material=phys):
+    def cylinders(path: str, specs, offset=(0.0, 0.0, 0.0), material=phys, hidden=False, tag="cyl"):
         for i, spec in enumerate(specs):
             centre, radius, height, color = spec[:4]
-            cyl = UsdGeom.Cylinder.Define(stage, f"{path}/cyl_{i}")
+            cyl = UsdGeom.Cylinder.Define(stage, f"{path}/{tag}_{i}")
             cyl.CreateAxisAttr(spec[4] if len(spec) > 4 else "Z")
             cyl.CreateRadiusAttr(radius)
             cyl.CreateHeightAttr(height)
             cyl.AddTranslateOp().Set(Gf.Vec3d(*(np.array(centre) - np.array(offset))))
             collide(cyl.GetPrim(), color, material)
+            if hidden:
+                cyl.MakeInvisible()
+
+    def meshes(path: str, specs):
+        for i, (points, tris, normals, color) in enumerate(specs):
+            mesh = UsdGeom.Mesh.Define(stage, f"{path}/mesh_{i}")
+            mesh.CreatePointsAttr([Gf.Vec3f(*map(float, p)) for p in points])
+            mesh.CreateFaceVertexCountsAttr([3] * len(tris))
+            mesh.CreateFaceVertexIndicesAttr([int(v) for t in tris for v in t])
+            mesh.CreateNormalsAttr([Gf.Vec3f(*map(float, n)) for n in normals])
+            mesh.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
+            mesh.CreateSubdivisionSchemeAttr(UsdGeom.Tokens.none)
+            mesh.CreateDoubleSidedAttr(False)
+            bind_visual_material(str(mesh.GetPath()), look(color), stage=stage)   # seen only: no CollisionAPI
 
     main = f"{prim_path}/body"
     body(main, (0.0, 0.0, 0.0), spec.mass)
     boxes(main, spec.boxes)
     cylinders(main, spec.cylinders)
+    boxes(main, spec.hidden_boxes, hidden=True, tag="hidden_box")
+    cylinders(main, spec.hidden_cylinders, hidden=True, tag="hidden_cyl")
+    meshes(main, spec.meshes)
     for s in spec.sliders:
         path = f"{prim_path}/{s.name}"
         body(path, s.rest, s.mass)
