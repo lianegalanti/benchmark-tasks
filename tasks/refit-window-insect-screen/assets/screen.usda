@@ -50,6 +50,19 @@ def Xform "screen"
             }
         }
 
+        def Material "nylon"
+        {
+            token outputs:surface.connect = </screen/Looks/nylon/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.1, 0.1, 0.1)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
         def Material "alu_physics" (
             prepend apiSchemas = ["PhysicsMaterialAPI"]
         )
@@ -76,6 +89,15 @@ def Xform "screen"
             float physics:restitution = 0
             float physics:staticFriction = 0.2
         }
+
+        def Material "nylon_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.4
+            float physics:restitution = 0
+            float physics:staticFriction = 0.5
+        }
     }
 
     def Scope "Geometry"
@@ -84,8 +106,8 @@ def Xform "screen"
             prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
         )
         {
-            point3f physics:centerOfMass = (0, 0, 0.3)
-            float3 physics:diagonalInertia = (0.033910915, 0.020801809, 0.013115286)
+            point3f physics:centerOfMass = (-0.0004651163, 0, 0.29651162)
+            float3 physics:diagonalInertia = (0.03374176, 0.02050643, 0.013250655)
             float physics:mass = 0.43
             quatf physics:principalAxes = (1, 0, 0, 0)
             custom bool physxArticulation:enabledSelfCollisions = 0
@@ -162,6 +184,36 @@ def Xform "screen"
                 double size = 1
                 float3 xformOp:scale = (0.001, 0.41, 0.56)
                 double3 xformOp:translate = (0, 0, 0.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "tab_left" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/nylon>
+                rel material:binding:physics = </screen/Looks/nylon_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.1, 0.1, 0.1)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.016, 0.006)
+                double3 xformOp:translate = (-0.019999999999999997, 0.215, 0.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "tab_right" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </screen/Looks/nylon>
+                rel material:binding:physics = </screen/Looks/nylon_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.1, 0.1, 0.1)]
+                double size = 1
+                float3 xformOp:scale = (0.03, 0.016, 0.006)
+                double3 xformOp:translate = (-0.019999999999999997, -0.215, 0.15)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
 

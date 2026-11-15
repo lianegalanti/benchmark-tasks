@@ -1,7 +1,8 @@
 """Writes the task's USD asset from geometry.py:
 
 - assets/screen.usda: the insect screen, a floating-base articulation in the screen frame S (see geometry.py). Root
-  link ``frame``: the four aluminium rails and the mesh panel (one rigid body). Child links ``plunger_left`` and
+  link ``frame``: the four aluminium rails, the mesh panel and the two nylon lift tabs on the stiles (one rigid
+  body). Child links ``plunger_left`` and
   ``plunger_right``: the two spring plunger pins on the top rail, each on a prismatic joint along S's z axis
   (0 = at rest against its stop, negative = pushed in, down to flush). A drive with stiffness on each joint is the
   plunger's spring. Links joined to the root don't collide with it (as in any articulation).
@@ -25,8 +26,9 @@ OUT = HERE / "assets"
 FRAME = (0.80, 0.80, 0.78)       # natural anodised aluminium
 MESH = (0.12, 0.12, 0.13)        # charcoal fibreglass mesh
 PIN = (0.92, 0.92, 0.88)         # POM pins
+TAB = (0.10, 0.10, 0.10)         # black nylon lift tabs
 
-FRICTION = {"alu": (0.6, 0.5), "mesh": (0.6, 0.5), "pom": (0.2, 0.15)}
+FRICTION = {"alu": (0.6, 0.5), "mesh": (0.6, 0.5), "pom": (0.2, 0.15), "nylon": (0.5, 0.4)}
 
 
 def _material(stage, path: str, rgb, opacity: float = 1.0):
@@ -76,9 +78,11 @@ def frame_inertia():
     vols = [np.prod(hi - lo) for lo, hi in boxes]
     # the mesh weighs about 60 g (fibreglass mesh, 0.21 m2 at ~120 g/m2 plus spline); the rest is the rails
     mesh_m = 0.06
-    rail_m = g.FRAME_MASS - mesh_m
+    tab_m = 0.005                     # each lift tab
+    rail_m = g.FRAME_MASS - mesh_m - 2 * tab_m
     parts = [(rail_m * v / sum(vols), lo, hi) for v, (lo, hi) in zip(vols, boxes)]
     parts.append((mesh_m, np.asarray(g.MESH[0], float), np.asarray(g.MESH[1], float)))
+    parts += [(tab_m, np.asarray(lo, float), np.asarray(hi, float)) for lo, hi in g.TABS.values()]
     m = sum(p[0] for p in parts)
     com = sum(p[0] * (p[1] + p[2]) / 2 for p in parts) / m
     inertia = np.zeros(3)
@@ -112,7 +116,8 @@ def build_screen(path: Path) -> None:
     UsdGeom.Scope.Define(stage, "/screen/Looks")
     look = {"alu": _material(stage, "/screen/Looks/alu", FRAME),
             "mesh": _material(stage, "/screen/Looks/mesh", MESH, opacity=0.55),
-            "pom": _material(stage, "/screen/Looks/pom", PIN)}
+            "pom": _material(stage, "/screen/Looks/pom", PIN),
+            "nylon": _material(stage, "/screen/Looks/nylon", TAB)}
     phys = {k: _physics_material(stage, f"/screen/Looks/{k}_physics", *v) for k, v in FRICTION.items()}
     UsdGeom.Scope.Define(stage, "/screen/Geometry")
 
@@ -125,6 +130,8 @@ def build_screen(path: Path) -> None:
     for name, (lo, hi) in g.RAILS.items():
         _box(stage, f"/screen/Geometry/frame/{name}", lo, hi, FRAME, look["alu"], phys["alu"])
     _box(stage, "/screen/Geometry/frame/mesh", *g.MESH, MESH, look["mesh"], phys["mesh"])
+    for name, (lo, hi) in g.TABS.items():
+        _box(stage, f"/screen/Geometry/frame/{name}", lo, hi, TAB, look["nylon"], phys["nylon"])
     # the plungers' housings on the top rail's face (visual only: they are part of the rail)
     for sign, side in ((1.0, "left"), (-1.0, "right")):
         y = sign * g.PIN_Y

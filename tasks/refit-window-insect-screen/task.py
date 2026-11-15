@@ -1,10 +1,11 @@
 """On the station table, straight ahead of the arms: a cropped section of a small window frame, fixed upright, with
-a deep top channel in its head and a shallow bottom channel in its sill. Its insect screen (450 x 600 mm, aluminium
-frame, two spring plungers on its top edge) stands on the table in front of it, leaning back against the jambs, as
-left after cleaning.
+a deep top channel in its head, a shallow bottom channel in its sill and a side track (a rabbet) in each jamb. Its
+insect screen (450 x 600 mm, aluminium frame, two spring plungers on its top edge, two lift tabs on its stiles) stands
+on the table in front of it, leaning back against the jambs' stops, as left after cleaning.
 
 The robot must put the screen back: push its top edge up into the top channel, compressing the plungers, swing the
-bottom in over the sill's lip, and let it down into the bottom channel; then let go. The plungers then hold it.
+bottom in over the sill's lip and between the jambs, square to the opening so both side edges enter their side
+tracks, and let it down into the bottom channel; then let go. The plungers then hold it, seated on all four sides.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py -E object_jitter=0 --scorer task_score ...
 Demo:    python demo.py task.py demo_out
@@ -27,7 +28,7 @@ SCENE = "station"
 SCORE_OVER = "end"
 SUCCESS_HOLD_S = 1.0
 
-INSTRUCTION = "Put the insect screen back in the window, then let go of it."
+INSTRUCTION = "Put the insect screen back in the window, seated on all four sides, then let go of it."
 
 # -- objects -------------------------------------------------------------------------------------------------------
 _O0, _R0 = g.start_pose()
@@ -53,10 +54,10 @@ SEAT_Z = (-0.003, 0.004)        # m: fitted: bottom edge's corners this close to
 OVER_Z = (-0.003, 0.024)        # m: 0.5: bottom edge's corners between the floor and 24 mm above it ...
 BOT_X = g.BOT_HALF + 0.001      # m: ... and within this of the channel's centre line (inside its lips, 1 mm slack)
 TOP_X = g.TOP_HALF + 0.001      # m: top edge's corners within this of the top channel's centre line
+SIDE_SLACK = 0.001              # m: side edges: within the side tracks, 1 mm slack (see sides_in)
 UPRIGHT = math.radians(3)       # fitted: the screen within 3 degrees of the window's plane
 OVER_TILT = math.radians(6)     # 0.5
 PUSH_TILT = math.radians(15)    # 0.25
-CENTRE_Y = 0.015                # m: fitted: centred on the opening within 15 mm
 CLEAR = 0.02                    # m: every part of both grippers this far from the screen (let go)
 STILL_V, STILL_W = 0.01, 0.1    # m/s and rad/s: the screen still
 STILL_PIN = 0.0005              # m per control step (1 cm/s): plungers still
@@ -126,14 +127,37 @@ def bottom_ok(o, r, zr) -> bool:
     return bool(zr[0] <= bot[:, 2].min() and bot[:, 2].max() <= zr[1] and np.abs(bot[:, 0]).max() <= BOT_X)
 
 
+def side_margins(o, r) -> dict:
+    """For each side edge, its points beside the jamb (below the top channel's mouth): (outward, inward, room, back)
+    in m, how far the furthest point lies outward of the side wall's face, inward of the stop's inner edge, room-side
+    of the side wall's front and behind the stop's face. All <= SIDE_SLACK: the edge is in its track."""
+    out = {}
+    for name, pts in g.side_points(o, r).items():
+        s = 1.0 if float(pts[:, 1].mean()) >= 0.0 else -1.0     # the jamb this edge is beside
+        pts = pts[pts[:, 2] <= g.MOUTH]
+        y = s * pts[:, 1]
+        out[name] = (float(y.max() - g.SIDE_Y), float((g.SCREEN_W / 2 - g.STOP_LAP) - y.min()),
+                     float(g.SIDE_FRONT - pts[:, 0].min()), float(pts[:, 0].max() - g.STOP_X))
+    return out
+
+
+def sides_in(o, r) -> bool:
+    """Both side edges seated in their side tracks over their whole height beside the jambs: every sampled point on
+    each side edge's corners (bottom edge up to the top channel's mouth) between its jamb's side wall and the stop's
+    inner edge, and between the side wall's room-side front and the stop's face (1 mm slack each way). The screen is
+    rigid and 5 mm narrower than the opening, so this holds only with it centred within 3.5 mm and square to the
+    opening."""
+    return all(max(m) <= SIDE_SLACK for m in side_margins(o, r).values())
+
+
 def stage(o, r, press) -> tuple[bool, bool, bool]:
     """(pushed, over, fitted) for the screen pose (o, R) in W and the plungers' press (left, right; positive = in)."""
     t = tilt(r)
     inside = top_in(o, r)
+    sides = sides_in(o, r)
     pushed = inside and t <= PUSH_TILT and min(press) >= PUSHED
-    over = inside and t <= OVER_TILT and bottom_ok(o, r, OVER_Z)
-    fitted = (inside and t <= UPRIGHT and bottom_ok(o, r, SEAT_Z) and abs(float(o[1])) <= CENTRE_Y
-              and min(press) >= HOLDING)
+    over = inside and t <= OVER_TILT and bottom_ok(o, r, OVER_Z) and sides
+    fitted = inside and t <= UPRIGHT and bottom_ok(o, r, SEAT_Z) and sides and min(press) >= HOLDING
     return pushed, over, fitted
 
 
@@ -142,7 +166,8 @@ def level_of(pushed: bool, over: bool, fitted: bool) -> float:
 
 
 def forced_depth(o, r) -> float:
-    """How far any part of the screen's frame (rails) lies inside the window frame (the deepest sample point)."""
+    """How far any part of the screen's frame (rails, lift tabs) lies inside the window frame (the deepest sample
+    point)."""
     frame = list(g.frame_boxes_w().values())
     deepest = 0.0
     for name, box in g.screen_boxes(o, r, pins=False, mesh=False).items():
@@ -215,12 +240,14 @@ def update(screen_pos, screen_rot, joints: dict, vel, w, arms: dict) -> None:
              and abs(press[0] - p0[0]) < STILL_PIN and abs(press[1] - p0[1]) < STILL_PIN)
     bot = g.edge_corners(o, r, 0.0)
     top = g.edge_corners(o, r, g.SCREEN_H)
+    sm = side_margins(o, r)
     S.update(level=lvl, fitted=fitted, clear=clear, still=still, press=press,
              info={"press_mm": [round(p * 1000, 1) for p in press], "tilt_deg": round(math.degrees(tilt(r)), 2),
                    "top_mm": [round((top[:, 2].min() - g.MOUTH) * 1000, 1), round(np.abs(top[:, 0]).max() * 1000, 1)],
                    "bottom_mm": [round(bot[:, 2].min() * 1000, 1), round(bot[:, 2].max() * 1000, 1),
                                  round(np.abs(bot[:, 0]).max() * 1000, 1)],
-                   "y_mm": round(float(o[1]) * 1000, 1), "forced_mm": round(depth * 1000, 1)})
+                   "y_mm": round(float(o[1]) * 1000, 1), "forced_mm": round(depth * 1000, 1),
+                   "sides_mm": {k: [round(v * 1000, 1) for v in m] for k, m in sm.items()}})
 
 
 @on_step
@@ -236,16 +263,19 @@ def violation() -> bool:
 
 
 def success(objects) -> bool:
-    """No violation so far; the screen fitted (top edge in the top channel, bottom edge down in the bottom channel,
-    within 3 degrees of the window's plane, centred, both plungers bearing on the channel's ceiling); every part of
-    both grippers at least 2 cm from the screen; the screen and its plungers still. Held for 1 s."""
+    """No violation so far; the screen fitted, seated on all four sides (top edge in the top channel, bottom edge down
+    in the bottom channel, both side edges in their side tracks, within 3 degrees of the window's plane, both plungers
+    bearing on the channel's ceiling); every part of both grippers at least 2 cm from the screen; the screen and its
+    plungers still. Held for 1 s."""
     S = _STATE
     return bool(not violation() and S["fitted"] and S["clear"] and S["still"])
 
 
 def score(objects) -> float:
     """0 after any violation: the screen dropped (its centre falling faster than 0.5 m/s with no gripper within 2 cm),
-    left the table (a corner 2 cm below its top) or was forced into the window frame (4 mm). Otherwise the stage at the end: 0.25 the top edge in the top channel with both plungers pushed in
-    8 mm or more; 0.5 the top edge in the channel and the bottom edge over the bottom channel, inside its lips; 0.75
-    fitted but still touched or held. Success (fitted, released, still, held 1 s) scores 1."""
+    left the table (a corner 2 cm below its top) or was forced into the window frame (4 mm into the head, sill, lips,
+    jambs or their stops). Otherwise the stage at the end: 0.25 the top edge in the top channel with both plungers
+    pushed in 8 mm or more; 0.5 the top edge in the channel, the bottom edge over the bottom channel, inside its lips,
+    and both side edges in their side tracks; 0.75 fitted (seated on all four sides) but still touched or held.
+    Success (fitted, released, still, held 1 s) scores 1."""
     return 0.0 if violation() else float(_STATE["level"])

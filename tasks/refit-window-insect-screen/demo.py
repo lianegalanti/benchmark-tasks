@@ -5,22 +5,25 @@
 It works from the fixed, known layout (geometry.py) and the arms' own joint encoders only. It never reads where the
 screen is, or its plungers' joints, from the simulator (the task's monitor state is only printed, as a log).
 
-Both arms work together throughout; each holds one stile, so the screen moves as one rigid piece between them.
+Both arms work together throughout; each holds one of the screen's two lift tabs, so the screen moves as one rigid
+piece between them. (The screen's side edges end up in the jambs' side tracks, so nothing can reach around them:
+the tabs on the room-side face are what a person pulls on too.)
 
-1. Each arm comes in from outside the screen's side, its fingers part open and pointing inward and down at 45
-   degrees in the screen's plane, and pinches its stile across the frame's 10 mm thickness, 9 cm above the bottom
-   edge (one finger in front, one behind the screen).
-2. They lift the screen 12 mm off the table, bring its top edge forward under the top channel (leaning 6 degrees,
+1. Each arm comes in square to the screen's face, fingers part open above and below its lift tab, and pinches the
+   tab across its 6 mm thickness (fingertips 12 mm short of the stile's face).
+2. They lift the screen 12 mm off the table (and 2 mm off the jambs' stops), bring its top edge forward under the top channel (leaning 6 degrees,
    bottom toward the room) and raise it to 8 mm below the channel's mouth.
 3. They push it straight up until its top edge is 1.5 mm under the channel's ceiling: the plungers go in 17.5 mm,
    and the bottom edge rises 6.5 mm above the sill's front lip.
-4. Holding the top up, they swing the bottom in, about the top edge, until the screen stands in the window's plane,
-   right over the bottom channel.
+4. Holding the top up and the screen square to the opening and centred (the side edges have 2.5 mm play each side
+   between the jambs), they swing the bottom in, about the top edge, until the screen stands in the window's plane,
+   right over the bottom channel, its side edges in the jambs' side tracks.
 5. They let it down until its bottom edge is 1 mm above the channel's floor, open their fingers (the plungers push it
    down onto the floor), and draw back along their approach, then go back to ready.
 
 Every arm target is solved with IK on the URDF. A slow integral term on the measured joint error (the arm's own
-encoders) takes out the sag from carrying the screen and pushing against the plungers.
+encoders) takes out the sag from carrying the screen and pushing against the plungers; once the screen is let down it
+is bled off, still holding (the two arms' terms otherwise end up pushing against each other through the screen).
 
 :func:`plan` runs the same script without Isaac Sim, for the tests (reach, joint limits, clearances).
 """
@@ -42,28 +45,28 @@ import geometry as g  # noqa: E402
 
 CONTROL_HZ = 20
 DT = 1.0 / CONTROL_HZ
-GRIP_Z = 0.090             # TCP this far up the stile from the bottom edge (S z) ...
-GRIP_IN = 0.004            # ... and this far in from the screen's side edge (the fingertips reach 13 mm further)
-APPROACH = math.radians(45)    # fingers point inward and down this far below horizontal, in the screen's plane
-OPEN = 0.45                # finger opening while coming in and letting go (42 mm across a 10 mm frame)
+TIP_CLEAR = 0.012          # fingertips this far short of the stile's face (the TCP is 13 mm behind the tips)
+OPEN = 0.45                # finger opening while coming in and letting go (42 mm across a 6 mm tab)
 BACK_OFF = 0.07            # m: come in from, and draw back to, this far along the approach
-LIFT = 0.012               # m: first lift off the table
+LIFT = 0.012               # m: first lift off the table ...
+LIFT_OFF = 0.002           # m: ... and off the jambs' stops it leans on
 LEAN_IN = math.radians(6)  # lean while the top goes in and up
 BELOW_MOUTH = 0.008        # m: top edge this far under the channel's mouth before going up
 UNDER_CEIL = 0.0015        # m: pushed up until the top edge is this far under the ceiling
 SEAT_ABOVE = 0.001         # m: let down until the bottom edge is this far above the floor, then let go
 I_GAIN, I_MAX = 0.08, 0.25
+SETTLE_DECAY = 0.85        # per step: the integral term's decay once the screen is let down, before letting go
 SIGNS = {"left": 1.0, "right": -1.0}
 
 
 def grip_in_screen(side: str):
-    """The TCP's position and rotation in the screen frame S for one arm: fingers closing along the screen's normal,
-    approach in its plane, pointing inward (toward the screen's centre line) and down by APPROACH."""
+    """The TCP's position and rotation in the screen frame S for one arm, holding its lift tab: approach along the
+    screen's normal (+x, from the room side), fingers closing along the stiles (S z), across the tab's thickness."""
     sy = SIGNS[side]
-    a = np.array([0.0, -sy * math.cos(APPROACH), -math.sin(APPROACH)])
-    x = np.array([1.0, 0.0, 0.0])
+    a = np.array([1.0, 0.0, 0.0])
+    x = np.array([0.0, 0.0, 1.0])
     rot = np.column_stack([x, np.cross(a, x), a])
-    pos = np.array([0.0, sy * (g.SCREEN_W / 2 - GRIP_IN), GRIP_Z])
+    pos = np.array([-g.FRAME_T / 2 - TIP_CLEAR - 0.013, sy * g.TAB_Y, g.TAB_Z])
     return pos, rot
 
 
@@ -136,7 +139,7 @@ def waypoints() -> dict:
     pivot0 = o0 + r0 @ g.TOP
     return {
         "start": (pivot0, g.START_LEAN),
-        "lifted": (pivot0 + [0.0, 0.0, LIFT], g.START_LEAN),
+        "lifted": (pivot0 + [-LIFT_OFF, 0.0, LIFT], g.START_LEAN),
         "forward": (np.array([0.0, 0.0, pivot0[2] + LIFT]), LEAN_IN),
         "under": (np.array([0.0, 0.0, g.MOUTH - BELOW_MOUTH]), LEAN_IN),
         "up": (np.array([0.0, 0.0, g.CEIL - UNDER_CEIL]), LEAN_IN),
@@ -202,7 +205,10 @@ class Script:
         yield from wait(0.5)
         self.mark["down"] = True
         yield from self.carry("down", 1.5)
-        yield from wait(0.5)
+        # the two arms hold one rigid screen, so their integral terms end up pushing against each other; bleed them
+        # off while still holding, so neither arm springs sideways (dragging the screen) as the fingers open
+        self.mark["settle"] = True
+        yield from wait(1.0)
 
         def release(arm):
             yield from arm.set_grip(OPEN, 1.0)
@@ -271,9 +277,12 @@ def run(task_path: str, out_dir: str, max_steps: int = 2400, record: bool = True
                 frames.setdefault(cam, []).append(np.asarray(img))
 
     def command(side, arm):
-        # proprioceptive correction: the arm's measured joints toward the planned ones
+        # proprioceptive correction: the arm's measured joints toward the planned ones (bled off once settled)
         q = arm_joints(emb._env, side, ARM_JOINTS)
-        integ[side] = np.clip(integ[side] + I_GAIN * (arm.q - q), -I_MAX, I_MAX)
+        if script.mark.get("settle"):
+            integ[side] = integ[side] * SETTLE_DECAY
+        else:
+            integ[side] = np.clip(integ[side] + I_GAIN * (arm.q - q), -I_MAX, I_MAX)
         return np.r_[arm.q + integ[side], arm.grip]
 
     snap(obs)

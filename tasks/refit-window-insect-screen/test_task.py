@@ -1,5 +1,5 @@
-"""Offline checks (no Isaac Sim): the layout, the window's channels and the plungers, every scoring level and
-violation, and the demo (reach, joint limits, clearances, end state).
+"""Offline checks (no Isaac Sim): the layout, the window's channels, side tracks and the plungers, every scoring level
+and violation, and the demo (reach, joint limits, clearances, end state).
 
     python -m pytest -q test_task.py      # in Arena's venv, from this folder
 """
@@ -59,28 +59,37 @@ def fresh():
 def test_screen_full_size():
     assert (g.SCREEN_W, g.SCREEN_H, g.FRAME_T, g.RAIL_B) == (0.45, 0.6, 0.01, 0.02)
     assert 0.4 <= g.SCREEN_MASS <= 0.55
-    # the screen covers the opening between the jambs and overlaps each jamb
-    assert g.SCREEN_W / 2 - g.RAIL_B > g.JAMB_Y[0] and g.SCREEN_W / 2 > g.JAMB_Y[1]
+    # the screen covers the glazed opening and overlaps each jamb's stop; it fits between the jambs' side walls
+    assert g.SCREEN_W / 2 - g.RAIL_B > g.JAMB_Y0
+    assert g.SCREEN_W / 2 - g.STOP_LAP < g.SCREEN_W / 2 - g.SIDE_PLAY and g.SIDE_Y > g.SCREEN_W / 2
+    # the lift tabs sit on the stiles' room-side face
+    for lo, hi in g.TABS.values():
+        assert hi[0] == pytest.approx(-g.FRAME_T / 2)
+        assert g.SCREEN_W / 2 - g.RAIL_B <= abs(lo[1]) and abs(hi[1]) <= g.SCREEN_W / 2
 
 
-def test_start_pose_leans_on_jambs_and_clears_sill_and_head():
+def test_start_pose_leans_on_jamb_stops_and_clears_sill_and_head():
     o, r = g.start_pose()
     corners = g.box_corners(*g.lohi((-g.FRAME_T / 2, -g.SCREEN_W / 2, 0.0), (g.FRAME_T / 2, g.SCREEN_W / 2,
                                                                             g.SCREEN_H)))
     pts = o + corners @ r.T
     assert pts[:, 2].min() == pytest.approx(-g.SILL_H + g.REST_GAP, abs=1e-6)
-    assert pts[:, 0].max() == pytest.approx(g.JAMB_X - g.REST_GAP, abs=1e-6)
-    # stable: its centre of mass lies between its foot and the jambs, leaning back about 7 degrees
+    assert pts[:, 0].max() == pytest.approx(g.STOP_X - g.REST_GAP, abs=1e-6)
+    # stable: its centre of mass lies between its foot and the stops, leaning back about 7.4 degrees
     com = o + r @ np.array([0.0, 0.0, g.SCREEN_H / 2])
-    assert g.START_BOTTOM_X < com[0] < g.JAMB_X and 9.5 < math.degrees(g.START_LEAN) < 11.5
+    assert g.START_BOTTOM_X < com[0] < g.STOP_X and 7.0 < math.degrees(g.START_LEAN) < 8.0
+    # its top is below the head's lips (it isn't in the top channel)
+    assert pts[:, 2].max() < g.MOUTH - 0.03
     boxes = g.screen_boxes(o, r)
     for name, fb in FRAME_W.items():
         gap = min(g.boxes_gap(b, fb) for b in boxes.values())
-        if name.startswith("jamb"):
-            # the top back edge rests on the jamb's face (checked at the jamb's middle)
-            y = sum(g.JAMB_Y) / 2 * (1 if name.endswith("left") else -1)
+        if name.startswith("jamb_stop"):
+            # the top back edge rests on the stop's face (checked at the stop's middle)
+            y = (g.SCREEN_W / 2 - g.STOP_LAP / 2) * (1 if name.endswith("left") else -1)
             p = o + r @ np.array([g.FRAME_T / 2, y, g.SCREEN_H])
             assert float(g.point_box_dist(p[None], *fb)[0]) < 0.001
+        elif name.startswith("jamb_wall"):
+            assert gap >= g.SIDE_PLAY - 1e-4, name          # centred between the side walls
         else:
             assert gap > 0.006, name
 
@@ -171,9 +180,55 @@ def test_success_released_and_still():
 
 def test_fitted_with_play_still_counts():
     o, r, press = FITTED
-    step(o + [0.0025, 0.012, 0.0], g.rot_y(math.radians(-0.8)), press)
-    step(o + [0.0025, 0.012, 0.0], g.rot_y(math.radians(-0.8)), press)
-    assert M.success({})
+    for d, rr in (([0.0025, 0.0025, 0.0], g.rot_y(math.radians(-0.8))), ([-0.0025, -0.0025, 0.0], EYE),
+                  ([0.0, 0.0, 0.0], g.rot_x(math.radians(0.2)))):
+        M.reset_state()
+        step(o + d, rr, press)
+        step(o + d, rr, press)
+        assert M.success({}), d
+
+
+def test_side_tracks_bound_the_screen():
+    # 2.5 mm play each side between the jambs' side walls; fitted, every side-edge point is in its track
+    assert g.SIDE_Y - g.SCREEN_W / 2 == pytest.approx(0.0025)
+    o, r, _ = FITTED
+    assert M.sides_in(o, r)
+    for side, pts in g.side_points(o, r).items():
+        s = 1 if side == "left" else -1
+        assert np.all(s * pts[:, 1] < g.SIDE_Y) and np.all(s * pts[:, 1] > g.SCREEN_W / 2 - g.STOP_LAP)
+        assert np.all(pts[:, 0] > g.SIDE_FRONT) and np.all(pts[:, 0] < g.STOP_X)
+    walls = [b for k, b in FRAME_W.items() if k.startswith("jamb_wall")]
+    stops = [b for k, b in FRAME_W.items() if k.startswith("jamb_stop")]
+    assert min(g.boxes_gap(b, w, 9) for b in g.screen_boxes(o, r).values() for w in walls) >= 0.0024
+    assert min(g.boxes_gap(b, w, 9) for b in g.screen_boxes(o, r).values() for w in stops) >= 0.0024
+    # the side walls (and the head's end pieces) close both channels' ends: the screen can't slide out sideways
+    ends = {k: b for k, b in FRAME_W.items() if k.startswith(("jamb_wall", "head_end"))}
+    for side in ("left", "right"):
+        lo = min(b[0][0] - b[2][0] for k, b in ends.items() if k.endswith(side))
+        assert lo <= -g.TOP_HALF - g.LIP_T + 1e-9
+        for k, b in ends.items():
+            assert abs(b[0][1]) - b[2][1] == pytest.approx(g.SIDE_Y)
+    # shifted sideways 7 mm: forced 4.5 mm into a jamb
+    step(o + [0, 0.007, 0], r, (g.SEAT_PRESS,) * 2)
+    assert M.violation() and M._STATE["why"] == ["the screen was forced into the window frame"]
+
+
+def test_sides_out_of_their_tracks_is_not_fitted_or_over():
+    o, r, press = FITTED
+    cases = [(o + [0, 0.004, 0], r)]                    # 4 mm off centre: a side edge 1.5 mm into its jamb
+    # racked in the window's plane 0.5 degree about the top edge: the bottom edge 5 mm sideways (still in the bottom
+    # channel, between its ends), the side edges out of their tracks
+    rr = g.rot_x(math.radians(0.5))
+    oo = np.array([0.0, 0.0, g.SCREEN_H]) - rr @ g.TOP
+    cases.append((oo, rr))
+    for oo, rr in cases:
+        assert not M.sides_in(oo, rr)
+        assert M.top_in(oo, rr) and M.bottom_ok(oo, rr, M.SEAT_Z)
+        for pr in (press, (g.PIN_PROUD - 0.0015,) * 2):
+            M.reset_state()
+            step(oo, rr, pr)
+            step(oo, rr, pr)
+            assert not M.success({}) and M.score({}) < 0.5
 
 
 def test_not_fitted_cases():
@@ -181,7 +236,7 @@ def test_not_fitted_cases():
     cases = [
         (o + [0, 0, 0.009], r, press),                      # bottom edge resting on the front lip
         (o, g.rot_z(math.radians(5)), press),               # twisted 5 degrees out of the window's plane
-        (o + [0, 0.02, 0], r, press),                       # 20 mm off centre
+        (o + [0, 0.004, 0], r, press),                      # 4 mm off centre (a side edge out of its track)
         (o, r, (0.0, g.SEAT_PRESS)),                        # a plunger not bearing on the ceiling
     ]
     for oo, rr, pp in cases:
@@ -248,12 +303,11 @@ def test_carried_or_gently_set_down_is_fine():
     assert not M.violation()
 
 
-def test_turned_front_to_back_still_fits():
+def test_turned_front_to_back_tabs_hit_the_stops():
+    # the lift tabs face the room; turned round, they would stand in the jambs' stops
     o, r, press = FITTED
     rr = g.rot_z(math.pi)
-    step(o, rr, press)
-    step(o, rr, press)
-    assert M.success({})
+    assert M.sides_in(o, rr) and M.forced_depth(o, rr) > M.FORCED
 
 
 def test_end_state_counts():
@@ -292,23 +346,31 @@ def test_grippers_clear_frame_and_each_other():
         assert M.gap_to(grips(st, "left"), grips(st, "right")) > 0.1
 
 
-def test_grippers_clear_end_stops_by_15mm():
-    stops = [b for k, b in frame_station().items() if k.startswith("stop")]
-    assert len(stops) == 4
+def test_grippers_stay_out_of_the_side_tracks():
+    jambs = [b for k, b in frame_station().items() if k.startswith("jamb")]
+    assert len(jambs) == 6
+    jambs += [b for k, b in frame_station().items() if k.startswith("head_end")]
     for st in STEPS:
         for side in ("left", "right"):
-            assert M.gap_to(grips(st, side), stops) >= 0.015, side
+            assert M.gap_to(grips(st, side), jambs) >= 0.005, side
 
 
-def test_end_stops_bound_the_screen():
-    # 3 mm play at each end; the screen can't slide out sideways or come in from the side
-    assert g.STOP_Y[0] - g.SCREEN_W / 2 == pytest.approx(0.003)
-    o, r, _ = FITTED
-    for k, fb in FRAME_W.items():
-        if k.startswith("stop"):
-            assert min(g.boxes_gap(b, fb, 9) for b in g.screen_boxes(o, r).values()) >= 0.0029
-            assert min(g.boxes_gap(b, fb, 9) for b in g.screen_boxes(o + [0, 0.006, 0], r).values()) == 0.0 \
-                or "right" in k
+def test_swing_in_needs_the_screen_square_and_centred():
+    # pushed up, the swing about the top edge carries the side edges into the side tracks: centred and square, every
+    # pose of the swing clears the jambs by the 2.5 mm play; 4 mm off centre, or racked 0.5 degrees, it strikes a jamb
+    walls = [b for k, b in FRAME_W.items() if k.startswith("jamb")]
+    z = g.CEIL - demo.UNDER_CEIL
+
+    def worst(dy=0.0, rack=0.0):
+        gaps = []
+        for lean in np.linspace(math.radians(6), 0.0, 13):
+            r = g.rot_y(lean) @ g.rot_x(rack)
+            o = np.array([0.0, dy, z]) - r @ g.TOP
+            gaps.append(min(g.boxes_gap(b, w, 9) for b in g.screen_boxes(o, r, pins=False).values() for w in walls))
+        return min(gaps)
+
+    assert worst() >= 0.0024
+    assert worst(dy=0.004) == 0.0 and worst(rack=math.radians(0.5)) == 0.0
 
 
 def test_arm_links_clear_frame():
@@ -399,7 +461,7 @@ def test_demo_end_state_scores_and_is_released():
     opened = [st for st in rel if st["left"][1] >= demo.OPEN - 1e-9][0]
     for side in ("left", "right"):
         b = grips(opened, side)
-        assert M.gap_to([b[0], b[2]], screen_station(opened)) > 0.015
+        assert M.gap_to([b[0], b[2]], screen_station(opened)) > 0.010
 
 
 def test_demo_does_not_read_sim_objects():
