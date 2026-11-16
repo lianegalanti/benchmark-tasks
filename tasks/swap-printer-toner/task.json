@@ -17,5 +17,5 @@
   "reset_notes": "Put the old cartridge back: slide it in along the rails and lower its bosses into the notches. Put the new one back upright at its mark on the table, open the door to its 80-degree stop, and check the printer is inside its taped outline. Use dummy cartridges (empty shells weighted to 0.55 and 0.70 kg) so no toner can spill; the printer stays unplugged.",
   "fidelity": "Rigid bodies, 240 Hz physics, 20 Hz control. Printer is a free articulation on rubber feet (friction 0.9); case, rails and door are ABS (0.3); door hinge lightly damped, stops at 0 and 80 degrees, no latch, held shut by its weight. Rails, notches, bosses and the handle loop are boxes with 3 mm play; the cartridge body collides as its 34x10x9 cm box (rounded shell is visual); the roller is a fixed cylinder. Contacts are judged from link capsules, like a video check. No toner or electronics.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-89VRL2"
+  "media": "M-64PV6X"
 }
