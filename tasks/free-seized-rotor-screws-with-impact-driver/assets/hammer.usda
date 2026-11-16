@@ -1,0 +1,113 @@
+#usda 1.0
+(
+    defaultPrim = "hammer"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "hammer" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxContactReportAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0.04757258, 0.0087096775)
+    float3 physics:diagonalInertia = (0.006286977, 0.00054730626, 0.006286977)
+    float physics:mass = 0.62
+    quatf physics:principalAxes = (1, 0, 0, 0)
+    custom float physxContactReport:threshold = 0
+
+    def Scope "Looks"
+    {
+        def Material "head"
+        {
+            token outputs:surface.connect = </hammer/Looks/head/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.78, 0.79, 0.8)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "handle"
+        {
+            token outputs:surface.connect = </hammer/Looks/handle/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.78, 0.6, 0.36)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "hard_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.15
+            float physics:restitution = 0
+            float physics:staticFriction = 0.2
+        }
+
+        def Material "grip_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+        }
+    }
+
+    def Cube "handle" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </hammer/Looks/handle>
+        rel material:binding:physics = </hammer/Looks/grip_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.6, 0.36)]
+        double size = 1
+        float3 xformOp:scale = (0.022, 0.323, 0.03)
+        double3 xformOp:translate = (0, 0.17350000000000002, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "face" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.065
+        rel material:binding = </hammer/Looks/head>
+        rel material:binding:physics = </hammer/Looks/hard_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.0145
+        double3 xformOp:translate = (0, 0, 0.0275)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "peen" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.035
+        rel material:binding = </hammer/Looks/head>
+        rel material:binding:physics = </hammer/Looks/hard_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+        double radius = 0.012
+        double3 xformOp:translate = (0, 0, -0.0225)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+

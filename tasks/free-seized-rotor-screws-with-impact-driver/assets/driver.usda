@@ -1,0 +1,445 @@
+#usda 1.0
+(
+    defaultPrim = "driver"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "driver"
+{
+    def Scope "Looks"
+    {
+        def Material "black"
+        {
+            token outputs:surface.connect = </driver/Looks/black/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.12, 0.12, 0.13)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "chrome"
+        {
+            token outputs:surface.connect = </driver/Looks/chrome/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.78, 0.79, 0.8)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "knurl_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+        }
+
+        def Material "steel_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.35
+            float physics:restitution = 0
+            float physics:staticFriction = 0.4
+        }
+
+        def Material "hard_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.15
+            float physics:restitution = 0
+            float physics:staticFriction = 0.2
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "body" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysxContactReportAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0.11)
+            float3 physics:diagonalInertia = (0.0006405, 0.0006405, 0.000081)
+            float physics:mass = 0.5
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+            custom float physxContactReport:threshold = 0
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Cube "facet_0" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (0.015, 0, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "facet_1" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.9659258, 0, 0, 0.25881904)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (0.01299038105676658, 0.007499999999999999, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_2" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.8660254, 0, 0, 0.5)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (0.0075000000000000015, 0.012990381056766578, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_3" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.70710677, 0, 0, 0.70710677)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (9.184850993605148e-19, 0.015, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_4" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.5, 0, 0, 0.8660254)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-0.007499999999999997, 0.01299038105676658, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_5" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.25881904, 0, 0, 0.9659258)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-0.01299038105676658, 0.007499999999999999, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_6" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (6.123234e-17, 0, 0, 1)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-0.015, 1.8369701987210296e-18, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_7" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.25881904, 0, 0, -0.9659258)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-0.012990381056766582, -0.007499999999999996, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_8" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.5, 0, 0, -0.8660254)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-0.007500000000000007, -0.012990381056766575, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_9" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.70710677, 0, 0, -0.70710677)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (-2.7554552980815444e-18, -0.015, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_10" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.8660254, 0, 0, -0.5)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (0.0075000000000000015, -0.012990381056766578, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cube "facet_11" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                rel material:binding = </driver/Looks/black>
+                rel material:binding:physics = </driver/Looks/knurl_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double size = 1
+                quatf xformOp:orient = (0.9659258, 0, 0, -0.25881904)
+                float3 xformOp:scale = (0.006, 0.009839094, 0.105)
+                double3 xformOp:translate = (0.012990381056766575, -0.007500000000000007, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Cylinder "core" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.105
+                rel material:binding = </driver/Looks/black>
+                color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+                double radius = 0.011999999999999999
+                double3 xformOp:translate = (0, 0, 0.10250000000000001)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.015000000000000013
+                rel material:binding = </driver/Looks/chrome>
+                rel material:binding:physics = </driver/Looks/hard_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                double radius = 0.0195
+                double3 xformOp:translate = (0, 0, 0.1625)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Xform "slider" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0, 0, 0.04)
+                float3 physics:diagonalInertia = (0.000002, 0.000002, 0.000002)
+                float physics:mass = 0.02
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                def Xform "anvil" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0, 0, 0.035)
+                    float3 physics:diagonalInertia = (0.00002, 0.00002, 0.000008)
+                    float physics:mass = 0.13
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    double3 xformOp:translate = (0, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cylinder "tip1" (
+                        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                    )
+                    {
+                        uniform token axis = "Z"
+                        double height = 0.0012
+                        rel material:binding = </driver/Looks/chrome>
+                        rel material:binding:physics = </driver/Looks/steel_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                        double radius = 0.001
+                        double3 xformOp:translate = (0, 0, 0.0006)
+                        uniform token[] xformOpOrder = ["xformOp:translate"]
+                    }
+
+                    def Cylinder "tip2" (
+                        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                    )
+                    {
+                        uniform token axis = "Z"
+                        double height = 0.0012
+                        rel material:binding = </driver/Looks/chrome>
+                        rel material:binding:physics = </driver/Looks/steel_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                        double radius = 0.0019
+                        double3 xformOp:translate = (0, 0, 0.0018)
+                        uniform token[] xformOpOrder = ["xformOp:translate"]
+                    }
+
+                    def Cylinder "tip3" (
+                        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                    )
+                    {
+                        uniform token axis = "Z"
+                        double height = 0.0012000000000000001
+                        rel material:binding = </driver/Looks/chrome>
+                        rel material:binding:physics = </driver/Looks/steel_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                        double radius = 0.0028
+                        double3 xformOp:translate = (0, 0, 0.003)
+                        uniform token[] xformOpOrder = ["xformOp:translate"]
+                    }
+
+                    def Cylinder "shank" (
+                        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                    )
+                    {
+                        uniform token axis = "Z"
+                        double height = 0.0264
+                        rel material:binding = </driver/Looks/chrome>
+                        rel material:binding:physics = </driver/Looks/steel_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                        double radius = 0.004
+                        double3 xformOp:translate = (0, 0, 0.0168)
+                        uniform token[] xformOpOrder = ["xformOp:translate"]
+                    }
+
+                    def Cylinder "nose" (
+                        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+                    )
+                    {
+                        uniform token axis = "Z"
+                        double height = 0.020000000000000004
+                        rel material:binding = </driver/Looks/chrome>
+                        rel material:binding:physics = </driver/Looks/steel_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.78, 0.79, 0.8)]
+                        double radius = 0.011
+                        double3 xformOp:translate = (0, 0, 0.04)
+                        uniform token[] xformOpOrder = ["xformOp:translate"]
+                    }
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsPrismaticJoint "stroke" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 5
+            float drive:linear:physics:maxForce = 1000
+            float drive:linear:physics:stiffness = 5000
+            float drive:linear:physics:targetPosition = -0.004
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </driver/Geometry/body>
+            rel physics:body1 = </driver/Geometry/body/slider>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 0.003
+        }
+
+        def PhysicsRevoluteJoint "cam" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.0034906585
+            float drive:angular:physics:maxForce = 50
+            float drive:angular:physics:stiffness = 0.34906584
+            float drive:angular:physics:targetPosition = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </driver/Geometry/body/slider>
+            rel physics:body1 = </driver/Geometry/body/slider/anvil>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+        }
+    }
+}
+

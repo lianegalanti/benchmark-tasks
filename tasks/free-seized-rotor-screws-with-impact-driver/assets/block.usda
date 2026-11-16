@@ -1,0 +1,113 @@
+#usda 1.0
+(
+    defaultPrim = "block"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "block" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+)
+{
+    def Scope "Looks"
+    {
+        def Material "wood"
+        {
+            token outputs:surface.connect = </block/Looks/wood/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.62, 0.45, 0.28)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "wood_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.5
+            float physics:restitution = 0
+            float physics:staticFriction = 0.6
+        }
+    }
+
+    def Cube "floor" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </block/Looks/wood>
+        rel material:binding:physics = </block/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.08, 0.08, 0.015)
+        double3 xformOp:translate = (0, 0, 0.007500000000000003)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_xp" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </block/Looks/wood>
+        rel material:binding:physics = </block/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.025, 0.08, 0.055)
+        double3 xformOp:translate = (0.0275, 0, 0.04250000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_xm" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </block/Looks/wood>
+        rel material:binding:physics = </block/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.025, 0.08, 0.055)
+        double3 xformOp:translate = (-0.0275, 0, 0.04250000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_yp" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </block/Looks/wood>
+        rel material:binding:physics = </block/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.03, 0.025, 0.055)
+        double3 xformOp:translate = (0, 0.0275, 0.04250000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "wall_ym" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </block/Looks/wood>
+        rel material:binding:physics = </block/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.03, 0.025, 0.055)
+        double3 xformOp:translate = (0, -0.0275, 0.04250000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+

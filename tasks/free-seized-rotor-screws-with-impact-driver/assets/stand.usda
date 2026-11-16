@@ -1,0 +1,68 @@
+#usda 1.0
+(
+    defaultPrim = "stand"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "stand" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+)
+{
+    def Scope "Looks"
+    {
+        def Material "wood"
+        {
+            token outputs:surface.connect = </stand/Looks/wood/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.62, 0.45, 0.28)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "wood_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.5
+            float physics:restitution = 0
+            float physics:staticFriction = 0.6
+        }
+    }
+
+    def Cube "lower" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </stand/Looks/wood>
+        rel material:binding:physics = </stand/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.07, 0.1, 0.1)
+        double3 xformOp:translate = (0, 0.020000000000000004, 0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "upper" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </stand/Looks/wood>
+        rel material:binding:physics = </stand/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.62, 0.45, 0.28)]
+        double size = 1
+        float3 xformOp:scale = (0.07, 0.04, 0.045)
+        double3 xformOp:translate = (0, 0.05, 0.1225)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+
