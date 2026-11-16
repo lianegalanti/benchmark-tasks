@@ -36,9 +36,16 @@ def star_angle(clicks: float) -> float:
     return g.TIGHTEN * clicks * g.PITCH
 
 
-def step(clicks=0.0, spoon=(g.SPOON_START, g.YAW90), vel=(0.0, 0.0, 0.0), grips=None, drum=0.0):
-    return M.update(g.B0, EYE, drum, star_angle(clicks), spoon[0], spoon[1], np.asarray(vel, float),
-                    FAR if grips is None else grips)
+def shoe_joints(clicks: float, extra_mm: float = 0.0):
+    """The shoes' joint positions a rigid, round drum allows after ``clicks`` (each stopped at the drum once it gets
+    there; ``extra_mm`` more travel, e.g. a sim's penetration)."""
+    u = min(g.target_mm(math.floor(clicks + 0.5)), g.C0_MM) / 1000 + extra_mm / 1000
+    return [sign * u for _, _, sign, _ in g.SHOES]
+
+
+def step(clicks=0.0, spoon=(g.SPOON_START, g.YAW90), vel=(0.0, 0.0, 0.0), grips=None, drum=0.0, shoes=None):
+    return M.update(g.B0, EYE, drum, star_angle(clicks), shoe_joints(clicks) if shoes is None else shoes, spoon[0],
+                    spoon[1], np.asarray(vel, float), FAR if grips is None else grips)
 
 
 def click_to(n: int, **kw):
@@ -56,8 +63,8 @@ def click_to(n: int, **kw):
 def test_it_loads_with_a_fixed_corner_and_a_loose_spoon():
     assert TASK.names == ("corner", "spoon")
     assert TASK.score_over == "end" and M.SUCCESS_HOLD_S == 1.0
-    assert dict(M.CORNER.joint_pos) == {"drum": 0.0, "star": 0.0}
-    assert not M.CORNER.self_collisions
+    assert dict(M.CORNER.joint_pos) == {"drum": 0.0, "star": 0.0, "shoe_primary": 0.0, "shoe_secondary": 0.0}
+    assert M.CORNER.self_collisions          # the linings must be able to touch the drum
     assert M.SPOON.mass == pytest.approx(g.SPOON_MASS)
     for spec in M.OBJECTS:
         assert all(type(v) is float for v in spec.pos) and all(type(v) is float for v in spec.rot_xyzw)
@@ -76,6 +83,20 @@ def test_the_assets_match_the_geometry():
     assert drum.GetAxisAttr().Get() == "Y" and star.GetAxisAttr().Get() == "X"
     assert np.array(star.GetLocalPos0Attr().Get()) == pytest.approx(g.SW, abs=1e-6)
     assert star.GetLowerLimitAttr().Get() == pytest.approx(-math.degrees((g.N_MAX + 0.5) * g.PITCH), abs=1e-3)
+    for side, _, sign, _ in g.SHOES:
+        j = UsdPhysics.PrismaticJoint(st.GetPrimAtPath(f"/corner/Physics/{side}"))
+        assert j.GetAxisAttr().Get() == "X"
+        lo, hi = j.GetLowerLimitAttr().Get(), j.GetUpperLimitAttr().Get()
+        assert sign * lo <= 0 or sign * hi <= 0                    # can retract a little
+        assert max(sign * lo, sign * hi) >= g.target_mm(g.N_MAX) / 1000   # and reach past the drum (it stops them)
+        pads = [p for p in st.GetPrimAtPath(f"/corner/Geometry/base/{side}").GetChildren()
+                if p.HasAPI(UsdPhysics.CollisionAPI)]
+        assert sorted(p.GetName() for p in pads) == ["pad_0", "pad_1", "pad_2"]   # only the pads collide
+    mat = st.GetPrimAtPath("/corner/Looks/lining_physics")
+    assert UsdPhysics.MaterialAPI(mat).GetDynamicFrictionAttr().Get() == pytest.approx(g.MU_LINING)
+    assert mat.GetAttribute("physxMaterial:frictionCombineMode").Get() == "min"
+    band = [p for p in st.GetPrimAtPath("/corner/Geometry/base/drum").GetChildren() if p.GetName().startswith("band")]
+    assert len(band) == g.N_BAND
     teeth = [p for p in st.GetPrimAtPath("/corner/Geometry/base/star").GetChildren() if p.GetName().startswith("tooth")]
     assert len(teeth) == g.N_TEETH
     r = UsdGeom.Imageable(st.GetPrimAtPath("/corner/Geometry/base/drum")).ComputeWorldBound(0, "default")
@@ -182,17 +203,60 @@ def test_lever_ratio_keeps_the_hand_force_small():
 # -- the adjuster's model ----------------------------------------------------------------------------------------------
 
 
-def test_clicks_clearance_and_drag():
-    assert g.clearance_mm(g.N_FREE) == pytest.approx(0.40)
-    assert g.clearance_mm(g.N_TIGHT) == pytest.approx(0.10)
-    assert g.clearance_mm(g.N_LOCK) == pytest.approx(0.0, abs=1e-9)
-    assert g.drag_torque(g.clearance_mm(0)) == pytest.approx(g.T_FREE)
-    assert 0.25 <= g.drag_torque(g.clearance_mm(g.N_FREE)) <= 0.35          # light drag starts
-    assert g.drag_torque(g.clearance_mm(g.N_TIGHT)) == pytest.approx(0.8)    # and ends
-    assert g.drag_torque(g.clearance_mm(g.N_TIGHT + 1)) > 4.0                 # dragging brake
-    assert math.isinf(g.drag_torque(g.clearance_mm(g.N_LOCK)))
-    assert g.drum_damping(g.clearance_mm(g.N_LOCK)) == g.LOCK_DAMPING
-    assert g.drum_damping(1.0) * g.OMEGA_REF == pytest.approx(g.T_FREE)
+def test_the_shoes_reach_the_drum_through_their_pads():
+    """Each lining's three contact spheres sit C0_MM inside the 228.6 mm bore, on the lining's face; the band's
+    segments are round to 0.01 mm, so contact starts within a fifth of a click of the nominal count."""
+    for side, mid, sign, half in g.SHOES:
+        for _, c, rad in g.shoe_pads(side):
+            c = np.asarray(c)
+            assert math.hypot(c[0], c[2]) + rad == pytest.approx(g.DRUM_R_IN - g.C0_MM / 1000, abs=1e-9)
+            assert g.SHOE_Y[0] < c[1] < g.SHOE_Y[1]
+            ang = math.atan2(c[2], c[0])
+            assert abs((ang - mid + math.pi) % (2 * math.pi) - math.pi) < half      # within the lining's arc
+            assert sign * c[0] > 0
+    band = g.drum_boxes()
+    da = 2 * math.pi / g.N_BAND
+    assert g.DRUM_R_IN / math.cos(da / 2) - g.DRUM_R_IN < 0.00001
+    assert all(math.hypot(c[0], c[2]) - s[0] / 2 == pytest.approx(g.DRUM_R_IN) for _, c, s, _ in band)
+    assert g.N_CONTACT == pytest.approx(g.C0_MM / g.CLICK_MM)
+
+
+def test_calibration_numbers():
+    """The light-drag window comes from the cited data: 69 N at a wheel stud (on the 114.3 mm circle) is the most
+    drag a manual accepts; the lining's friction is the middle of edge code FF."""
+    assert g.T_HI == pytest.approx(69.0 * g.STUD_ARM, abs=0.05)
+    assert 0.35 <= g.MU_LINING <= 0.45
+    assert g.T_LO >= 6 * g.T_BEAR
+    assert 2 * g.DRUM_R_IN == pytest.approx(9.0 * 0.0254)
+
+
+def test_click_count_to_torque_table():
+    """Clicks -> clearance -> torque with a rigid, round drum (the README's table): free up to 19 clicks, touching at
+    20, light drag 22-28, dragging at 29-30, driven on from 31."""
+    assert g.ideal_torque(19) == pytest.approx(g.T_BEAR)
+    assert g.T_BEAR < g.ideal_torque(20) < g.ideal_torque(21) < g.T_LO
+    for n in range(22, 29):
+        assert g.T_LO + 0.1 <= g.ideal_torque(n) <= g.T_HI - 0.1, n
+    for n in (29, 30):
+        assert g.T_HI + 0.1 <= g.ideal_torque(n) <= g.T_LOCK - 0.1, n
+    assert g.ideal_torque(31) > g.T_LOCK
+    # each click past contact adds the same: 2 x K x 0.05 mm x mu x r
+    step_nm = 2 * g.K_SHOE * g.CLICK_MM / 1000 * g.MU_LINING * g.DRUM_R_IN
+    assert g.ideal_torque(25) - g.ideal_torque(24) == pytest.approx(step_nm)
+
+
+def test_torque_comes_from_the_measured_shoe_positions():
+    """The monitor reads each shoe's measured travel; a shoe the drum stops short of its command presses on it."""
+    click_to(25)
+    assert M._STATE["torque"] == pytest.approx(g.ideal_torque(25))
+    assert M._STATE["clear_mm"] == pytest.approx((0.0, 0.0), abs=1e-9)
+    # the same 25 clicks with the shoes free to reach their command (no drum): no drag at all
+    step(25, shoes=[s * g.target_mm(25) / 1000 for _, _, s, _ in g.SHOES])
+    assert M._STATE["torque"] == pytest.approx(g.T_BEAR) and M.score(None) == 0.5
+    # one shoe on the drum, the other short of it: only one presses
+    step(25, shoes=[g.C0_MM / 1000, -g.target_mm(25) / 1000])
+    f = g.shoe_force(g.target_mm(25) / 1000, g.C0_MM / 1000)
+    assert M._STATE["forces"] == pytest.approx((f, 0.0), abs=0.01)
 
 
 def test_the_wheel_clicks_past_half_a_tooth_and_the_pawl_stops_it_turning_back():
@@ -216,14 +280,18 @@ def test_doing_nothing_scores_0():
     assert M.score(None) == 0.0 and not M.success(None)
 
 
-def test_partial_credit_rises_with_the_clicks():
-    click_to(11)
-    assert M.score(None) == pytest.approx(0.25)
-    click_to(21)
-    assert M.score(None) == pytest.approx(0.5 * 21 / 22, abs=1e-3)
+def test_partial_credit_rises_with_the_shoes_travel():
+    scores = []
+    for n in (5, 10, 15, 19, 20, 21):
+        M.reset_state()
+        click_to(n)
+        scores.append(M.score(None))
+    assert scores == sorted(scores) and len(set(scores)) == len(scores)
+    assert scores[0] == pytest.approx(0.5 * 0.25 / M.TRAVEL_LO_MM, abs=1e-3)
+    assert 0.45 < scores[-1] < 0.5
 
 
-@pytest.mark.parametrize("n", [g.N_FREE, 25, g.N_TIGHT])
+@pytest.mark.parametrize("n", [22, 25, 28])
 def test_light_drag_with_the_spoon_down_and_let_go_is_success(n):
     click_to(n)
     assert M.success(None) and M.score(None) == 0.75
@@ -257,16 +325,51 @@ def test_moving_spoon_or_turning_drum_is_not_success():
     assert M.success(None)
 
 
-def test_one_click_past_the_window_is_a_dragging_brake():
-    click_to(g.N_TIGHT + 1)
-    assert M.score(None) == 0.25 and not M.success(None)
+@pytest.mark.parametrize("n", [29, 30])
+def test_past_the_window_is_a_dragging_brake(n):
+    click_to(n)
+    for _ in range(30):
+        step(n)
+    assert M.score(None) == 0.25 and not M.success(None) and not M.violation()
 
 
 def test_driving_the_shoes_onto_the_drum_scores_0_for_good():
-    click_to(g.N_LOCK)
+    click_to(31)
+    for _ in range(M.LOCK_STEPS):
+        step(31)
     assert M.score(None) == 0.0 and M.violation()
     step(25)              # even if the wheel were somehow back in the window
     assert M.score(None) == 0.0 and not M.success(None)
+
+
+def test_driven_on_at_the_end_scores_0_before_the_latch():
+    """Torque over 4.8 N m when the trial ends scores 0 even before the 0.5 s latch."""
+    click_to(31)
+    assert M._STATE["torque"] > g.T_LOCK and not M.violation()
+    assert M.score(None) == 0.0 and not M.success(None)
+
+
+def test_a_momentary_spike_does_not_latch():
+    click_to(25)
+    hard = [s * (g.C0_MM - 1.0) / 1000 for _, _, s, _ in g.SHOES]     # shoes pushed 1 mm back for a moment
+    for _ in range(M.LOCK_STEPS - 1):
+        step(25, shoes=hard)
+    assert M._STATE["torque"] > g.T_LOCK
+    step(25)
+    assert not M.violation() and M.success(None)
+
+
+def test_the_drag_window_is_read_from_torque_not_clicks():
+    """Same 25 clicks, but a drum 0.1 mm larger in radius (the shoes stop 0.1 mm further out): a lighter 1.6 N m, still
+    light drag; 0.2 mm smaller: a dragging brake (4.2 N m). The score follows the torque, not the count."""
+    click_to(25, shoes=shoe_joints(25, extra_mm=0.1))
+    t = M._STATE["torque"]
+    assert g.T_LO < t < g.ideal_torque(25) and M.success(None)
+    M.reset_state()
+    click_to(25, shoes=shoe_joints(25, extra_mm=-0.2))
+    for _ in range(5):
+        step(25, shoes=shoe_joints(25, extra_mm=-0.2))
+    assert M._STATE["torque"] > g.T_HI and M.score(None) == 0.25
 
 
 def test_spoon_off_the_table_scores_0():
@@ -316,7 +419,8 @@ def test_demo_reach_and_limits():
 def test_demo_fits_the_run_limit_and_makes_clicks_in_the_window():
     run_limit = 4800
     assert len(STEPS) + 3 * demo.CONTROL_HZ + 60 < run_limit
-    assert g.N_FREE + 3 <= STEPS[-1]["clicks"] == g.DEMO_CLICKS <= g.N_TIGHT - 3
+    assert STEPS[-1]["clicks"] == g.DEMO_CLICKS == 25
+    assert g.T_LO + 1.0 < g.ideal_torque(g.DEMO_CLICKS) < g.T_HI - 1.0
 
 
 def test_demo_does_not_read_simulator_objects():
@@ -335,7 +439,7 @@ def _near(boxes, centre, reach=0.25):
 
 
 def test_grippers_clear_the_corner_and_the_table():
-    corner = g.corner_boxes_world()
+    corner = g.corner_boxes_world(band=False)       # the band: as a cylinder below
     band = g.drum_world_cylinders()[0]
     for k, st in enumerate(STEPS[::3]):
         for side in ("left", "right"):

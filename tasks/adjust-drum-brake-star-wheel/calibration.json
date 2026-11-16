@@ -1,0 +1,212 @@
+[
+ {
+  "clicks": 0,
+  "clearance_mm": [
+   0.975,
+   0.975
+  ],
+  "forces_n": [
+   0.0,
+   0.0
+  ],
+  "torque_from_forces_nm": 0.15,
+  "probe_breakaway_nm": 0.1,
+  "probe_turn_deg": 1.5,
+  "torque_from_forces_after_nm": 0.15
+ },
+ {
+  "clicks": 10,
+  "clearance_mm": [
+   0.475,
+   0.475
+  ],
+  "forces_n": [
+   0.0,
+   0.0
+  ],
+  "torque_from_forces_nm": 0.15,
+  "probe_breakaway_nm": 0.1,
+  "probe_turn_deg": 1.5,
+  "torque_from_forces_after_nm": 0.15
+ },
+ {
+  "clicks": 19,
+  "clearance_mm": [
+   0.025,
+   0.025
+  ],
+  "forces_n": [
+   0.0,
+   0.0
+  ],
+  "torque_from_forces_nm": 0.15,
+  "probe_breakaway_nm": 0.1,
+  "probe_turn_deg": 1.5,
+  "torque_from_forces_after_nm": 0.15
+ },
+ {
+  "clicks": 20,
+  "clearance_mm": [
+   -0.0078,
+   -0.0078
+  ],
+  "forces_n": [
+   1.6,
+   1.6
+  ],
+  "torque_from_forces_nm": 0.296,
+  "probe_breakaway_nm": 0.25,
+  "probe_turn_deg": 0.3,
+  "torque_from_forces_after_nm": 0.328
+ },
+ {
+  "clicks": 21,
+  "clearance_mm": [
+   -0.0045,
+   -0.0045
+  ],
+  "forces_n": [
+   6.56,
+   6.56
+  ],
+  "torque_from_forces_nm": 0.75,
+  "probe_breakaway_nm": 0.7,
+  "probe_turn_deg": 0.1,
+  "torque_from_forces_after_nm": 0.767
+ },
+ {
+  "clicks": 22,
+  "clearance_mm": [
+   -0.0028,
+   -0.0028
+  ],
+  "forces_n": [
+   11.37,
+   11.36
+  ],
+  "torque_from_forces_nm": 1.189,
+  "probe_breakaway_nm": 1.15,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 1.201
+ },
+ {
+  "clicks": 23,
+  "clearance_mm": [
+   -0.0018,
+   -0.0018
+  ],
+  "forces_n": [
+   16.11,
+   16.11
+  ],
+  "torque_from_forces_nm": 1.623,
+  "probe_breakaway_nm": 1.6,
+  "probe_turn_deg": 0.3,
+  "torque_from_forces_after_nm": 1.624
+ },
+ {
+  "clicks": 25,
+  "clearance_mm": [
+   -0.0024,
+   -0.0024
+  ],
+  "forces_n": [
+   25.36,
+   25.35
+  ],
+  "torque_from_forces_nm": 2.468,
+  "probe_breakaway_nm": 2.4,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 2.456
+ },
+ {
+  "clicks": 27,
+  "clearance_mm": [
+   -0.0045,
+   -0.0046
+  ],
+  "forces_n": [
+   34.46,
+   34.45
+  ],
+  "torque_from_forces_nm": 3.3,
+  "probe_breakaway_nm": 3.2,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 3.272
+ },
+ {
+  "clicks": 28,
+  "clearance_mm": [
+   -0.0082,
+   -0.0083
+  ],
+  "forces_n": [
+   38.76,
+   38.75
+  ],
+  "torque_from_forces_nm": 3.694,
+  "probe_breakaway_nm": 3.55,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 3.667
+ },
+ {
+  "clicks": 29,
+  "clearance_mm": [
+   -0.0119,
+   -0.0118
+  ],
+  "forces_n": [
+   43.07,
+   43.08
+  ],
+  "torque_from_forces_nm": 4.089,
+  "probe_breakaway_nm": 4.15,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 4.119
+ },
+ {
+  "clicks": 30,
+  "clearance_mm": [
+   -0.0087,
+   -0.0086
+  ],
+  "forces_n": [
+   48.01,
+   48.03
+  ],
+  "torque_from_forces_nm": 4.541,
+  "probe_breakaway_nm": 4.6,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 4.564
+ },
+ {
+  "clicks": 31,
+  "clearance_mm": [
+   -0.0064,
+   -0.0062
+  ],
+  "forces_n": [
+   52.88,
+   52.9
+  ],
+  "torque_from_forces_nm": 4.986,
+  "probe_breakaway_nm": 5.0,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 4.998
+ },
+ {
+  "clicks": 32,
+  "clearance_mm": [
+   -0.0054,
+   -0.0052
+  ],
+  "forces_n": [
+   57.62,
+   57.64
+  ],
+  "torque_from_forces_nm": 5.42,
+  "probe_breakaway_nm": 5.4,
+  "probe_turn_deg": 0.2,
+  "torque_from_forces_after_nm": 5.424
+ }
+]

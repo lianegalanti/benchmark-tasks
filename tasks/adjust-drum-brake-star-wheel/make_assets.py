@@ -1,9 +1,11 @@
 """Writes the task's USD assets from geometry.py:
 
 - assets/corner.usda: the rear drum-brake corner, one USD articulation fixed to the world by ``root_joint``. Root link
-  ``base``: the bench stand and axle stub, the backing plate (with its adjusting slot and dust lip), both shoes, the
-  wheel cylinder, anchor pin, and the adjusting screw and socket. Child links:
-  ``drum`` on the revolute joint ``drum`` about the axle (B's y axis), free (its drag is a damping the task sets);
+  ``base``: the bench stand and axle stub, the backing plate (with its adjusting slot and dust lip), the wheel
+  cylinder, anchor pin, and the adjusting screw and socket. Child links:
+  ``drum`` on the revolute joint ``drum`` about the axle (B's y axis), free but for the hub's drag (a damping);
+  ``shoe_primary`` and ``shoe_secondary`` on prismatic joints along B's x (outward), driven by the task toward the
+  adjuster's setting; each lining touches the drum through three contact spheres (lining friction 0.40);
   ``star`` (the star wheel: hub and ten teeth) on the revolute joint ``star`` about the adjusting screw's axis (B's
   x axis), limited to the screw's travel; the task drives it toward its detent notches.
 - assets/spoon.usda: the brake adjusting spoon, one rigid body: a moulded handle and a flat steel blade.
@@ -31,7 +33,8 @@ BRASS = (0.80, 0.62, 0.25)        # star wheel (as on many adjusters: easy to se
 HANDLE = (0.85, 0.12, 0.10)       # red moulded handle
 BLADE = (0.70, 0.72, 0.74)
 
-FRICTION = {"steel": (0.40, 0.35), "iron": (0.45, 0.40), "grip": (1.0, 0.9)}
+FRICTION = {"steel": (0.40, 0.35), "iron": (0.45, 0.40), "grip": (1.0, 0.9),
+            "lining": (g.MU_LINING, g.MU_LINING)}   # the lining's own friction rules its contacts ("min")
 
 
 def _material(stage, path: str, rgb):
@@ -46,24 +49,30 @@ def _material(stage, path: str, rgb):
     return mat
 
 
-def _physics_material(stage, path: str, static: float, dynamic: float):
-    from pxr import UsdPhysics, UsdShade
+def _physics_material(stage, path: str, static: float, dynamic: float, combine_min: bool = False):
+    from pxr import Sdf, UsdPhysics, UsdShade
 
     mat = UsdShade.Material.Define(stage, path)
     api = UsdPhysics.MaterialAPI.Apply(mat.GetPrim())
     api.CreateStaticFrictionAttr(static)
     api.CreateDynamicFrictionAttr(dynamic)
     api.CreateRestitutionAttr(0.0)
+    if combine_min:   # PhysX: "min" outranks the default "average", so the pair's friction is this material's
+        prim = mat.GetPrim()
+        prim.AddAppliedSchema("PhysxMaterialAPI")
+        prim.CreateAttribute("physxMaterial:frictionCombineMode", Sdf.ValueTypeNames.Token).Set("min")
     return mat
 
 
 def _bind(prim, look, phys) -> None:
+    """Bind the look; with a physics material, the prim also collides (``phys`` None: looks only)."""
     from pxr import UsdPhysics, UsdShade
 
-    UsdPhysics.CollisionAPI.Apply(prim)
     api = UsdShade.MaterialBindingAPI.Apply(prim)
     api.Bind(look)
-    api.Bind(phys, UsdShade.Tokens.weakerThanDescendants, "physics")
+    if phys is not None:
+        UsdPhysics.CollisionAPI.Apply(prim)
+        api.Bind(phys, UsdShade.Tokens.weakerThanDescendants, "physics")
 
 
 def _box(stage, path: str, centre, size, rot, rgb, look, phys) -> None:
@@ -96,6 +105,16 @@ def _cyl(stage, path: str, centre, radius, length, axis, rgb, look, phys) -> Non
     elif axis == "x":
         cyl.AddRotateYOp().Set(90.0)
     _bind(cyl.GetPrim(), look, phys)
+
+
+def _sphere(stage, path: str, centre, radius, rgb, look, phys) -> None:
+    from pxr import Gf, UsdGeom
+
+    sp = UsdGeom.Sphere.Define(stage, path)
+    sp.CreateRadiusAttr(float(radius))
+    sp.CreateDisplayColorAttr([Gf.Vec3f(*rgb)])
+    sp.AddTranslateOp().Set(Gf.Vec3d(*[float(v) for v in centre]))
+    _bind(sp.GetPrim(), look, phys)
 
 
 def _stage(root: str):
@@ -136,19 +155,19 @@ def build_corner(path: Path) -> None:
     stage = _stage("corner")
     looks = {k: _material(stage, f"/corner/Looks/{k}", v) for k, v in
              (("steel", STEEL), ("iron", IRON), ("lining", LINING), ("bright", BRIGHT), ("brass", BRASS))}
-    phys = {k: _physics_material(stage, f"/corner/Looks/{k}_physics", *v) for k, v in FRICTION.items()}
+    phys = {k: _physics_material(stage, f"/corner/Looks/{k}_physics", *v, combine_min=(k == "lining"))
+            for k, v in FRICTION.items()}
     UsdGeom.Scope.Define(stage, "/corner/Geometry")
 
     base = _link(stage, "/corner/Geometry/base")
     UsdPhysics.ArticulationRootAPI.Apply(base)
-    base.CreateAttribute("physxArticulation:enabledSelfCollisions", Sdf.ValueTypeNames.Bool).Set(False)
+    # self-collisions on: the shoes' linings must touch the drum (parent-child pairs stay filtered)
+    base.CreateAttribute("physxArticulation:enabledSelfCollisions", Sdf.ValueTypeNames.Bool).Set(True)
     _mass(base, 12.0, (0.0, -0.02, -0.03), (0.15, 0.25, 0.15))
     for name, c, s, r in g.plate_boxes() + g.stand_boxes():
         _box(stage, f"/corner/Geometry/base/{name}", c, s, r, STEEL, looks["steel"], phys["steel"])
-    for name, c, s, r in g.shoe_boxes():
-        key = "lining" if name.startswith("lining") else "steel"
-        _box(stage, f"/corner/Geometry/base/{name}", c, s, r, LINING if key == "lining" else STEEL, looks[key],
-             phys["steel"])
+    for name, c, s, r in g.base_boxes():
+        _box(stage, f"/corner/Geometry/base/{name}", c, s, r, STEEL, looks["steel"], phys["steel"])
     for name, c, rad, length, ax in g.shoe_cylinders():
         _cyl(stage, f"/corner/Geometry/base/{name}", c, rad, length, ax, BRIGHT, looks["bright"], phys["steel"])
     for name, c, rad, length, ax in g.stand_cylinders():
@@ -165,6 +184,18 @@ def build_corner(path: Path) -> None:
         stud = name.startswith("stud")
         _cyl(stage, f"/corner/Geometry/base/drum/{name}", c, rad, length, ax, BRIGHT if stud else IRON,
              looks["bright" if stud else "iron"], phys["steel" if stud else "iron"])
+
+    # the shoes: each a link on a prismatic joint along B's x (outward), its lining touching the drum through three
+    # contact spheres; lining, table and web are looks only
+    for side, _, _, _ in g.SHOES:
+        shoe = _link(stage, f"/corner/Geometry/base/{side}")
+        _mass(shoe, g.SHOE_MASS, (0.0, 0.037, 0.0), (2e-3, 2e-3, 2e-3))
+        for name, c, s, r in g.shoe_visual_boxes(side):
+            lining = name.startswith("lining")
+            _box(stage, f"/corner/Geometry/base/{side}/{name}", c, s, r, LINING if lining else STEEL,
+                 looks["lining" if lining else "steel"], None)
+        for name, c, rad in g.shoe_pads(side):
+            _sphere(stage, f"/corner/Geometry/base/{side}/{name}", c, rad, LINING, looks["lining"], phys["lining"])
 
     star = _link(stage, "/corner/Geometry/base/star", g.SW)
     _mass(star, g.SW_MASS, (0.0, 0.0, 0.0), (4e-6, 4e-6, 4e-6))
@@ -183,8 +214,25 @@ def build_corner(path: Path) -> None:
     drive = UsdPhysics.DriveAPI.Apply(j.GetPrim(), "angular")
     drive.CreateTypeAttr("force")
     drive.CreateStiffnessAttr(0.0)
-    drive.CreateDampingAttr(float(g.drum_damping(g.C0_MM) * math.pi / 180))
+    drive.CreateDampingAttr(float(g.BEAR_DAMPING * math.pi / 180))
     drive.CreateMaxForceAttr(1.0e6)
+
+    for side, _, sign, _ in g.SHOES:
+        j = UsdPhysics.PrismaticJoint.Define(stage, f"/corner/Physics/{side}")
+        j.CreateBody0Rel().SetTargets([Sdf.Path("/corner/Geometry/base")])
+        j.CreateBody1Rel().SetTargets([Sdf.Path(f"/corner/Geometry/base/{side}")])
+        j.CreateAxisAttr("X")
+        j.CreateLocalPos0Attr(Gf.Vec3f(0.0, 0.0, 0.0))
+        j.CreateLocalPos1Attr(Gf.Vec3f(0.0, 0.0, 0.0))
+        lo, hi = -0.001, 0.003            # outward travel limits (m): the screw's full travel is 2 mm
+        j.CreateLowerLimitAttr(float(min(sign * lo, sign * hi)))
+        j.CreateUpperLimitAttr(float(max(sign * lo, sign * hi)))
+        drive = UsdPhysics.DriveAPI.Apply(j.GetPrim(), "linear")
+        drive.CreateTypeAttr("force")
+        drive.CreateStiffnessAttr(float(g.K_SHOE))
+        drive.CreateDampingAttr(float(g.D_SHOE))
+        drive.CreateMaxForceAttr(float(g.SHOE_FORCE_MAX))
+        drive.CreateTargetPositionAttr(0.0)
 
     j = UsdPhysics.RevoluteJoint.Define(stage, "/corner/Physics/star")
     j.CreateBody0Rel().SetTargets([Sdf.Path("/corner/Geometry/base")])

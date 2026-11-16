@@ -2,13 +2,13 @@
 running across the table (along y), 18 cm above it. The backing plate faces the robot's right arm; the 9 in brake
 drum, with its five wheel studs, faces the left arm. Below the axle, the backing plate's adjusting slot is open (its
 rubber plug is out); through it the brass star wheel of the self-adjuster is in reach. The shoes are new and the
-adjuster is run in: they sit 1.5 mm inside the drum, so the brake would need a long pedal stroke. A brake adjusting
+adjuster is run in: they sit about 1 mm inside the drum, so the brake would need a long pedal stroke. A brake adjusting
 spoon (red handle, flat steel blade, 22.5 cm) lies on the table in front of the right arm, blade toward the corner.
 
 The robot must put the spoon through the slot onto the star wheel's teeth and lever it round a click at a time,
-turning the drum with the other hand to feel the drag, and stop when the drum turns with a light drag (shoes 0.1 to
-0.4 mm from the drum); then put the spoon down. One click too many past that puts the shoes on the drum: they lock it,
-and the self-adjuster's lever stops the wheel being turned back.
+turning the drum with the other hand to feel the drag, and stop when the drum turns with a light drag: the linings
+pressed on the drum just enough that turning it takes 1.0 to 3.9 N m; then put the spoon down. Each click past that
+presses the shoes harder, and the self-adjuster's lever stops the wheel being turned back.
 
 Run it:  inspect-robots run --embodiment yam_arena -E task=task.py -E object_jitter=0 --scorer task_score ...
 Demo:    python demo.py task.py demo_out
@@ -23,7 +23,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import numpy as np  # noqa: E402
-from scenekit import UsdBody, on_reset, on_step, set_damping, set_target, write_joint  # noqa: E402
+from scenekit import UsdBody, on_reset, on_step, set_target, write_joint  # noqa: E402
 
 import geometry as g  # noqa: E402
 
@@ -35,10 +35,12 @@ INSTRUCTION = "Adjust the rear brake so the drum turns with a light drag, then p
 
 # -- objects -------------------------------------------------------------------------------------------------------
 CORNER = UsdBody("corner", usd="assets/corner.usda", pos=tuple(float(v) for v in g.B0), size=(0.29, 0.27, 0.27),
-                 articulation=True, joint_pos=(("drum", 0.0), ("star", 0.0)),
-                 drives=(("drum", 0.0, g.drum_damping(g.C0_MM)),
-                         ("star", g.DETENT_K, g.DETENT_D, g.CLICK_TORQUE)),
-                 usd_materials=True, self_collisions=False, solver_iters=32, contact_offset=0.001)
+                 articulation=True,
+                 joint_pos=(("drum", 0.0), ("star", 0.0), ("shoe_primary", 0.0), ("shoe_secondary", 0.0)),
+                 drives=(("drum", 0.0, g.BEAR_DAMPING),
+                         ("star", g.DETENT_K, g.DETENT_D, g.CLICK_TORQUE),
+                         ("shoe_.*", g.K_SHOE, g.D_SHOE, g.SHOE_FORCE_MAX)),
+                 usd_materials=True, self_collisions=True, solver_iters=32, contact_offset=0.001)
 SPOON = UsdBody("spoon", usd="assets/spoon.usda", pos=tuple(float(v) for v in g.SPOON_START),
                 rot_xyzw=tuple(float(v) for v in g.quat_xyzw(g.YAW90)),
                 size=(g.SPOON_LEN, g.HANDLE[1], g.HANDLE[2]), mass=g.SPOON_MASS, usd_materials=True,
@@ -51,6 +53,7 @@ DOWN_Z = 0.03                   # m: set down: every part of the spoon within th
 CLEAR = 0.02                    # m: let go: every part of both grippers this far from the spoon and the drum
 STILL_V = 0.01                  # m/s: the spoon still ...
 STILL_DRUM = math.radians(0.2)  # ... and the drum turning less than this per control step (4 deg/s)
+LOCK_STEPS = 10                 # over T_LOCK for 0.5 s: the brake was driven on hard (latched)
 
 _STATE: dict = {}
 
@@ -104,22 +107,29 @@ def adjuster_step(star_angle: float, clicks: int):
     return clicks, g.TIGHTEN * clicks * g.PITCH, stop
 
 
-def level(clicks: int, done: bool) -> float:
-    """Score from the clicks counted (clearance = 1.5 mm - 0.05 mm per click) and whether the spoon is down, let go
-    and everything is still (``done``)."""
-    if clicks >= g.N_LOCK or clicks <= 0:
+def level(torque: float, travel_mm: float, done: bool) -> float:
+    """Score from the drum's turning torque (N m, measured), the shoes' mean outward travel (mm, measured) and whether
+    the spoon is down, let go and everything is still (``done``)."""
+    if torque > g.T_LOCK:                      # driven on (even if the trial ends before the 0.5 s latch)
         return 0.0
-    if clicks > g.N_TIGHT:                    # 0 < clearance < 0.10 mm: a dragging brake
+    if torque > g.T_HI:                        # a dragging brake
         return 0.25
-    if clicks >= g.N_FREE:                    # 0.10 .. 0.40 mm: light drag
+    if torque >= g.T_LO:                       # light drag
         return 1.0 if done else 0.75
-    return round(0.5 * clicks / g.N_FREE, 4)  # partial: the clearance taken up so far, toward 0.40 mm
+    # partial: how far the shoes have been set toward light drag: their measured travel plus, once on the drum, the
+    # stretch of their springs that the drag shows; TRAVEL_LO_MM of it gives T_LO
+    progress = max(0.0, travel_mm) + 1000 * (torque - g.T_BEAR) / (2 * g.MU_LINING * g.DRUM_R_IN * g.K_SHOE)
+    return round(0.5 * min(1.0, progress / TRAVEL_LO_MM), 4)
+
+
+TRAVEL_LO_MM = g.C0_MM + (g.T_LO - g.T_BEAR) / (2 * g.MU_LINING * g.DRUM_R_IN * g.K_SHOE) * 1000
 
 
 def reset_state() -> None:
     _STATE.clear()
-    _STATE.update(why=[], violation=False, clicks=0, damping=None, down=False, clear=False, still=False,
-                  drum=0.0, level=0.0, gaps=None)
+    _STATE.update(why=[], violation=False, clicks=0, down=False, clear=False, still=False, drum=0.0, level=0.0,
+                  gaps=None, torque=g.T_BEAR, forces=(0.0, 0.0), clear_mm=(g.C0_MM, g.C0_MM), travel_mm=0.0,
+                  over=0, peak_torque=g.T_BEAR)
 
 
 reset_state()
@@ -131,18 +141,29 @@ def _flag(why: str) -> None:
         _STATE["why"].append(why)
 
 
-def update(corner_pos, corner_rot, drum_angle: float, star_angle: float, spoon_pos, spoon_rot, spoon_vel,
+def update(corner_pos, corner_rot, drum_angle: float, star_angle: float, shoes, spoon_pos, spoon_rot, spoon_vel,
            grips) -> dict:
-    """One control step of the monitor, on measured values (station frame). ``grips``: each gripper as boxes. Returns
-    what to write to the sim: the star wheel's drive target, a stop angle (or None) and the drum's damping."""
+    """One control step of the monitor, on measured values (station frame). ``shoes``: each shoe joint's measured
+    position (m, joint sign, in g.SHOES order); ``grips``: each gripper as boxes. Returns what to write to the sim: the
+    star wheel's drive target, a stop angle (or None) and each shoe's drive target (m, joint sign)."""
     S = _STATE
     cp, cr = np.asarray(corner_pos, float), np.asarray(corner_rot, float)
     clicks, target, stop = adjuster_step(star_angle, S["clicks"])
     S["clicks"] = clicks
-    if clicks >= g.N_LOCK:
-        _flag("over-adjusted: the shoes were driven onto the drum and lock it")
-    c = g.clearance_mm(clicks)
-    damping = g.drum_damping(c)
+    # the brake: each lining's normal force on the drum is its drive spring's stretch (commanded minus measured
+    # travel); the drum's turning torque follows from the forces
+    t_m = g.target_mm(clicks) / 1000
+    travel = [sign * float(q) for (_, _, sign, _), q in zip(g.SHOES, shoes)]
+    forces = [g.shoe_force(t_m, u) for u in travel]
+    torque = g.turning_torque(*forces)
+    S["forces"] = tuple(round(f, 2) for f in forces)
+    S["clear_mm"] = tuple(round(g.C0_MM - u * 1000, 4) for u in travel)
+    S["travel_mm"] = float(np.mean(travel)) * 1000
+    S["torque"] = torque
+    S["peak_torque"] = max(S["peak_torque"], torque)
+    S["over"] = S["over"] + 1 if torque > g.T_LOCK else 0
+    if S["over"] >= LOCK_STEPS:
+        _flag(f"over-adjusted: the shoes were driven onto the drum (over {g.T_LOCK} N m to turn it)")
 
     sp, sr = np.asarray(spoon_pos, float), np.asarray(spoon_rot, float)
     if sp[2] < g.TABLE - OFF_TABLE:
@@ -153,8 +174,8 @@ def update(corner_pos, corner_rot, drum_angle: float, star_angle: float, spoon_p
     S["clear"] = all(min(gp) >= CLEAR for gp in gaps)
     S["still"] = bool(float(np.linalg.norm(spoon_vel)) < STILL_V and abs(drum_angle - S["drum"]) < STILL_DRUM)
     S["drum"] = float(drum_angle)
-    S["level"] = 0.0 if S["violation"] else level(clicks, S["down"] and S["clear"] and S["still"])
-    return {"target": target, "stop": stop, "damping": damping}
+    S["level"] = 0.0 if S["violation"] else level(torque, S["travel_mm"], S["down"] and S["clear"] and S["still"])
+    return {"target": target, "stop": stop, "shoes": [sign * t_m for _, _, sign, _ in g.SHOES]}
 
 
 def _grips(environment):
@@ -183,14 +204,14 @@ def _monitor(environment) -> None:
     st = object_states(environment, ["corner", "spoon"])
     co, sp = st["corner"], st["spoon"]
     star = float(co.joints.get("star", 0.0))
-    out = update(co.pos, _rot(co.quat_xyzw), float(co.joints.get("drum", 0.0)), star, sp.pos, _rot(sp.quat_xyzw),
-                 sp.lin_vel, _grips(environment))
+    shoes = [float(co.joints.get(name, 0.0)) for name, _, _, _ in g.SHOES]
+    out = update(co.pos, _rot(co.quat_xyzw), float(co.joints.get("drum", 0.0)), star, shoes, sp.pos,
+                 _rot(sp.quat_xyzw), sp.lin_vel, _grips(environment))
     set_target(environment, "corner", "star", out["target"])
+    for (name, _, _, _), t in zip(g.SHOES, out["shoes"]):
+        set_target(environment, "corner", name, t)
     if out["stop"] is not None:
         write_joint(environment, "corner", "star", out["stop"])
-    if _STATE["damping"] is None or abs(out["damping"] - _STATE["damping"]) > 1e-3 * out["damping"]:
-        set_damping(environment, "corner", "drum", out["damping"])
-        _STATE["damping"] = out["damping"]
 
 
 def violation() -> bool:
@@ -198,15 +219,15 @@ def violation() -> bool:
 
 
 def success(objects) -> bool:
-    """The adjuster 22 to 28 clicks out (shoes 0.10 to 0.40 mm from the drum: it turns with a light drag), never
-    over-adjusted; the spoon lying on the table, every part of both grippers 2 cm from it and from the drum, the spoon
+    """Light drag: turning the drum takes 1.0 to 3.9 N m (from the linings' measured normal forces on it); never driven
+    on over 4.8 N m; the spoon lying on the table, every part of both grippers 2 cm from it and from the drum, the spoon
     and the drum still. Held for 1 s."""
     return bool(not violation() and _STATE["level"] >= 1.0)
 
 
 def score(objects) -> float:
-    """0 after any violation (the shoes driven onto the drum: 30 clicks or more; the spoon off the table). Otherwise,
-    at the end, from the clicks counted: 0 for none; 0.5 x clicks / 22 below 22 (shoes still more than 0.4 mm off:
-    the drum turns freely); 0.75 at 22 to 28 (0.10 to 0.40 mm: light drag) with the spoon not yet down and let go;
-    0.25 at 29 (0.05 mm: a dragging brake). Success scores 1."""
+    """0 after any violation (the shoes driven onto the drum: over 4.8 N m to turn it for 0.5 s; the spoon off the
+    table). Otherwise, at the end, from the drum's turning torque: under 1.0 N m, 0.5 x the shoes' travel toward light
+    drag (none: 0); 1.0 to 3.9 N m (light drag), 0.75 with the spoon not yet down and let go; 3.9 to 4.8 N m (a dragging
+    brake), 0.25; over 4.8 N m, 0. Success scores 1."""
     return 0.0 if violation() else min(0.75, float(_STATE["level"]))

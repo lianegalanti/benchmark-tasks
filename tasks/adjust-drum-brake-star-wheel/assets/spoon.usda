@@ -63,7 +63,7 @@ def Xform "spoon" (
     }
 
     def Cube "handle" (
-        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
     )
     {
         rel material:binding = </spoon/Looks/handle>
@@ -78,7 +78,7 @@ def Xform "spoon" (
     }
 
     def Cube "blade" (
-        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
     )
     {
         rel material:binding = </spoon/Looks/blade>

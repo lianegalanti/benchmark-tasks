@@ -4,9 +4,10 @@
 
 It works open loop from the fixed, known layout (geometry.py) and the arms' own joint readings only: it never reads
 the spoon's, the drum's or the star wheel's state from the simulator. It does not stop by feel: it makes a fixed
-number of lever strokes (``--clicks``, 25: one click each, 0.25 mm), in the middle of the 22-28 click window. While
-it does, the left hand turns the drum to and fro by a wheel stud, and the demo logs that arm's joint tracking error
-(its encoders) on each turn, which rises with the drum's drag; it is printed, not used.
+number of lever strokes (``--clicks``, 25: one click each), in the middle of the 22-28 clicks that give a light drag
+on this brake. Until the shoes are a click or two onto the drum (22 clicks), the left hand turns the drum to and fro
+by a wheel stud, and the demo logs that arm's joint tracking error (its encoders) on each turn, which rises with the
+drum's drag; it is printed, not used. From then on the left hand holds the drum still by the stud.
 
 1. Right arm: picks up the spoon by its handle (a top grip, fingers across the handle), lifts it, and brings it in
    front of the adjusting slot, blade along the axle.
@@ -16,7 +17,8 @@ it does, the left hand turns the drum to and fro by a wheel stud, and the demo l
    bottom edge, so the blade's end lifts that tooth up past the wheel's axis, past half a tooth: the wheel clicks on
    one notch. It levels the blade, slides it back clear of the teeth, raises the handle and slides it in again under
    the next tooth.
-4. Left arm, meanwhile: takes hold of the top wheel stud and turns the drum 20 degrees back and forth.
+4. Left arm, meanwhile: takes hold of the top wheel stud and turns the drum 20 degrees back and forth, until 22
+   strokes are made; then it holds it.
 5. After the last stroke the right arm draws the spoon out, lays it on the table where it was and lets go; the left
    hand brings the drum back, lets go of the stud and backs off. Both arms go back to their ready pose.
 
@@ -45,6 +47,7 @@ CONTROL_HZ = 20
 DT = 1.0 / CONTROL_HZ
 I_GAIN, I_MAX = 0.08, 0.12     # joint integral: per control step, and clamp (rad)
 TURN = math.radians(20.0)      # how far the left hand turns the drum each way
+TURN_UNTIL = 22                # ... while fewer strokes than this are made
 STROKE_S = 2.5                 # handle down: the lever stroke (s)
 SETTLE_S = 0.4                 # pause with the blade's end under the tooth before each stroke (s)
 STUD_DY = 0.030                # left TCP this far outboard of the drum's face: fingertips 17 mm from it
@@ -246,7 +249,7 @@ class Script:
         yield from L.set_grip(0.0, 1.0)            # closing on the stud centres it between the fingers
         yield from wait(0.5)
         step = 0
-        while not self.flags.get("out"):
+        while not self.flags.get("out") and self.clicks < TURN_UNTIL:
             for th in (TURN, 0.0, -TURN, 0.0):
                 poses = [stud_pose(t) for t in np.linspace(self.drum, th, 9)]
                 start = self.drum
@@ -255,9 +258,10 @@ class Script:
                     yield
                 self.drum = th
                 self.turns.append((start, th))
-                if self.flags.get("out") and th == 0.0:
+                if (self.flags.get("out") or self.clicks >= TURN_UNTIL) and th == 0.0:
                     break
             yield from wait(0.2)
+        yield from wait_for(self.flags, "out")
         yield from L.set_grip(STUD_OPEN, 0.8)
         yield from L.move(p0 + back, r0, 1.2)
         yield from L.move(p0 + back + [0.0, 0.0, 0.06], r0, 1.0)
@@ -345,6 +349,7 @@ def run(task_path: str, out_dir: str, max_steps: int = 4800, record: bool = True
         if steps % 50 == 0:
             S = task._STATE
             print(f"step {steps} score {info.get('score')} clicks {S['clicks']} (script {script.clicks}) "
+                  f"torque {S['torque']:.3f} forces {S['forces']} clear_mm {S['clear_mm']} "
                   f"down {S['down']} clear {S['clear']} gaps_mm {S['gaps']} why {S['why']}", flush=True)
         if res.terminated:
             success = res.termination_reason == "success"
@@ -355,7 +360,8 @@ def run(task_path: str, out_dir: str, max_steps: int = 4800, record: bool = True
     score = 1.0 if success else float(info.get("score", 0.0) or 0.0)
     result = {"task_score": score, "success": success, "steps": steps, "violations": list(S["why"]),
               "clicks": S["clicks"], "script_strokes": script.clicks,
-              "clearance_mm": round(g.clearance_mm(S["clicks"]), 3), "feel_left_err_rad": feel,
+              "torque_nm": round(S["torque"], 3), "peak_torque_nm": round(S["peak_torque"], 3),
+              "shoe_forces_n": S["forces"], "clearance_mm": S["clear_mm"], "feel_left_err_rad": feel,
               "worst_ik_mm": {"left": round(script.left.worst_mm, 2), "right": round(script.right.worst_mm, 2)}}
     if record:
         import imageio
@@ -370,6 +376,74 @@ def run(task_path: str, out_dir: str, max_steps: int = 4800, record: bool = True
     return result
 
 
+CAL_CLICKS = (0, 10, 19, 20, 21, 22, 23, 25, 27, 28, 29, 30, 31, 32)
+PROBE_RATE = 1.0               # N m/s: the torque probe's ramp
+PROBE_MOVE = math.radians(2.0) # rad/s: the drum has broken away once it turns this fast
+PROBE_MAX = 8.0                # N m
+
+
+def calibrate(task_path: str, out_dir: str) -> list:
+    """In Isaac Sim, with the arms parked: set the adjuster to each count in CAL_CLICKS (the star joint written a
+    notch at a time), let the shoes settle, read the shoes' measured clearance and normal forces, and the drum's
+    turning torque the task computes from them; then ramp a torque probe on the drum joint until the drum breaks away,
+    and record that torque. Writes calibration.json."""
+    from inspect_robots import Scene
+    from inspect_robots.types import Action
+    from inspect_robots_yam.packing import pack
+    from yam_arena.inspect_embodiment import yam_arena_embodiment
+
+    from scenekit import set_effort, set_target, write_joint
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    emb = yam_arena_embodiment(task=str(Path(task_path).resolve()), object_jitter=0, control_hz=CONTROL_HZ,
+                               cam_width=320, cam_height=176)
+    task = emb.task.module
+    emb.reset(Scene(id="calibrate", instruction=task.INSTRUCTION))
+    left, right = Arm("left"), Arm("right")
+    hold = Action(data=pack(left.command(), right.command()))
+    env = emb._env
+
+    def drum():
+        from yam_arena.scene import object_states
+
+        return float(object_states(env, ["corner"])["corner"].joints["drum"])
+
+    rows = []
+    n_now = 0
+    for n in CAL_CLICKS:
+        while n_now < n:                     # a notch at a time, as the spoon does
+            n_now += 1
+            write_joint(env, "corner", "star", g.TIGHTEN * n_now * g.PITCH)
+            set_target(env, "corner", "star", g.TIGHTEN * n_now * g.PITCH)
+            emb.step(hold)
+        for _ in range(40):
+            emb.step(hold)
+        S = task._STATE
+        row = {"clicks": S["clicks"], "clearance_mm": S["clear_mm"], "forces_n": S["forces"],
+               "torque_from_forces_nm": round(S["torque"], 3)}
+        a0, prev, tau, broke = drum(), drum(), 0.0, None
+        while tau < PROBE_MAX:
+            tau += PROBE_RATE / CONTROL_HZ
+            set_effort(env, "corner", "drum", tau)
+            emb.step(hold)
+            a = drum()
+            if abs(a - prev) * CONTROL_HZ >= PROBE_MOVE:
+                broke = tau
+                break
+            prev = a
+        set_effort(env, "corner", "drum", 0.0)
+        for _ in range(40):
+            emb.step(hold)
+        row["probe_breakaway_nm"] = None if broke is None else round(broke, 3)
+        row["probe_turn_deg"] = round(math.degrees(drum() - a0), 1)
+        row["torque_from_forces_after_nm"] = round(task._STATE["torque"], 3)
+        rows.append(row)
+        print("CAL", json.dumps(row), flush=True)
+    (out / "calibration.json").write_text(json.dumps(rows, indent=1))
+    return rows
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("task")
@@ -377,8 +451,13 @@ if __name__ == "__main__":
     ap.add_argument("--max-steps", type=int, default=4800)
     ap.add_argument("--clicks", type=int, default=g.DEMO_CLICKS)
     ap.add_argument("--no-record", action="store_true")
+    ap.add_argument("--calibrate", action="store_true", help="run the torque-probe sweep instead of the demo")
     ap.add_argument("--cam-width", type=int, default=640)
     ap.add_argument("--cam-height", type=int, default=352)
     a = ap.parse_args()
+    flag = HERE / "calibrate.flag"
+    if a.calibrate or (flag.exists() and flag.read_text().strip() == "on"):
+        calibrate(a.task, a.out)
+        sys.exit(0)
     run(a.task, a.out, a.max_steps, record=not a.no_record, cam_width=a.cam_width, cam_height=a.cam_height,
         clicks=a.clicks)

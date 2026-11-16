@@ -42,7 +42,8 @@ STUD_PCD_R = 0.05715
 STUD_LEN = 0.045
 N_STUDS = 5
 DRUM_MASS = 6.0          # kg (cast-iron 9 in drum)
-N_SEG = 24               # the drum's band as 24 flat segments
+N_SEG = 24               # the dust lip as 24 segments
+N_BAND = 240             # the drum's braking band as 240 flat segments (1.5 deg: 0.01 mm from round)
 
 # Star wheel: the self-adjuster's toothed wheel on the adjusting screw, which spans the shoes' lower ends across the
 # bottom of the brake. Its axis runs along x (tangent at the bottom), 42 mm outboard of the plate.
@@ -62,50 +63,60 @@ SLOT_HX = 0.011
 SLOT_Z = (SW[2] - 0.0012, SW[2] - 0.0012 + 0.016)
 
 # Shoes (fixed in the model; see fidelity): two 50 mm wide shoes, lining 5 mm, table 2 mm, web 4 mm.
-SHOE_SPAN = math.radians(62.0)   # each shoe from -62 to +62 degrees about its side (+x and -x)
-SHOE_Y = (0.012, 0.062)
+# Ford's linings: 1.75 in wide; primary 6.10 in and secondary 8.65 in long (arcs of 78 and 111 degrees at the drum)
+SHOE_Y = (0.0145, 0.059)
 WEB_Y = (0.035, 0.039)
 WEB_R0 = 0.075
 
-# -- the adjuster's model --------------------------------------------------------------------------------------------
+# -- the adjuster's model and the brake's calibration --------------------------------------------------------------
+# The real assembly: a 1979-1993 Ford Mustang 9 in duo-servo rear drum brake (drum bore 9.000 in, 1.75 in linings;
+# Ford workshop manual). Sources for every number are in the README ("Calibration").
 TIGHTEN = -1.0           # sign of the star joint's angle (about B's +x) that spreads the shoes: tip pushes teeth up
-C0_MM = 1.5              # shoe-to-drum clearance at the start (mm, at the lining centres)
-CLICK_MM = 0.05          # clearance taken up per click (one tooth): 20 clicks per mm
-N_FREE = 22              # clicks at which the clearance is 0.40 mm: from here light drag ...
-N_TIGHT = 28             # ... to 0.10 mm (full credit between, inclusive)
-N_LOCK = 30              # 0.00 mm: the shoes are on the drum (it can't be turned by hand)
+C0_MM = 0.975            # shoe-to-drum clearance at the start (mm, each lining's crown to the drum)
+CLICK_MM = 0.05          # each click moves each shoe's lining 0.05 mm out (the drive target): 20 clicks per mm
+N_CONTACT = 19.5         # clicks at which the linings reach the drum (C0_MM / CLICK_MM): touching at 20
 N_MAX = 40               # the screw's travel (joint limit)
-DEMO_CLICKS = 25         # the demo's fixed count: 0.25 mm
+DEMO_CLICKS = 25         # the demo's fixed count
 
 
-def clearance_mm(n: float) -> float:
-    """Shoe-to-drum clearance after ``n`` clicks (mm)."""
-    return C0_MM - CLICK_MM * n
+def target_mm(n: float) -> float:
+    """Each shoe's commanded outward travel after ``n`` clicks (mm): where the adjuster would put the lining if the
+    drum weren't there."""
+    return CLICK_MM * n
 
 
-T_FREE = 0.15            # N m: hub bearing and seal drag, shoes clear
-T_LIGHT = 0.80           # N m: at 0.10 mm the shoes' high spots brush the drum firmly
-T_HEAVY = 8.0            # N m: at 0 mm (shoes on the drum)
-DRAG_ONSET_MM = 0.5      # the lining's high spots start to brush the drum below this clearance
-OMEGA_REF = math.radians(30.0)   # drag is modelled as damping, sized at a hand-turning speed of 30 deg/s
-LOCK_DAMPING = 2000.0    # N m s/rad once the shoes are on the drum: locked
+# The shoes are pressed onto the drum through a compliance (the shoe, its lining and the return springs): each
+# shoe's drive is a spring K_SHOE toward its commanded travel. Once a lining touches the drum, the drum stops it and
+# the spring's stretch is the normal force N on the drum (read in the sim from the shoe joint's measured position).
+# The drum's turning torque is MU x R x (N_lead + N_trail) plus the hub's own drag.
+MU_LINING = 0.40         # organic drum lining, SAE J866 edge code "FF" (0.35-0.45): the middle
+K_SHOE = 93.0e3          # N/m per shoe: model compliance, sized so the light-drag window spans 7 clicks
+D_SHOE = 300.0           # N s/m
+SHOE_FORCE_MAX = 600.0   # N: the drive's cap
+T_BEAR = 0.15            # N m: hub bearing and seal drag (shoes clear), as the drum joint's damping at OMEGA_REF
+OMEGA_REF = math.radians(30.0)
+BEAR_DAMPING = T_BEAR / OMEGA_REF
+# Light drag, as a turning torque at the drum (or a pull at a wheel stud, on the 114.3 mm circle):
+T_LO = 1.0               # N m (17.5 N at a stud): clearly felt: over six times the hub's free drag
+T_HI = 3.9               # N m (69 N at a stud): the most residual drag a service manual accepts
+T_LOCK = 4.8             # N m: past this the brake is dragging hard; latched (the pawl stops it backing off)
+STUD_ARM = 0.05715       # m: torque = pull at a stud x this
 
 
-def drag_torque(c_mm: float) -> float:
-    """Torque (N m) to turn the drum by hand at the reference speed with the shoes ``c_mm`` from it."""
-    if c_mm >= DRAG_ONSET_MM:
-        return T_FREE
-    if c_mm >= 0.1:
-        return T_FREE + (DRAG_ONSET_MM - c_mm) / (DRAG_ONSET_MM - 0.1) * (T_LIGHT - T_FREE)
-    if c_mm > 0.0:
-        return T_LIGHT + (0.1 - c_mm) / 0.1 * (T_HEAVY - T_LIGHT)
-    return math.inf
+def turning_torque(f_lead: float, f_trail: float) -> float:
+    """Torque (N m) to turn the drum by hand (at OMEGA_REF) with these lining-to-drum normal forces (N)."""
+    return T_BEAR + MU_LINING * DRUM_R_IN * (max(f_lead, 0.0) + max(f_trail, 0.0))
 
 
-def drum_damping(c_mm: float) -> float:
-    """The drum joint's damping (N m s/rad) that gives ``drag_torque`` at OMEGA_REF; LOCK_DAMPING once locked."""
-    t = drag_torque(c_mm)
-    return LOCK_DAMPING if math.isinf(t) else t / OMEGA_REF
+def shoe_force(target_m: float, travel_m: float) -> float:
+    """A shoe's normal force on the drum (N) from its commanded and measured outward travel (m)."""
+    return max(0.0, K_SHOE * (target_m - travel_m))
+
+
+def ideal_torque(n: float) -> float:
+    """The model's torque after ``n`` clicks with the drum perfectly rigid and round (for the tests and the README)."""
+    f = shoe_force(target_mm(n) / 1000, min(target_mm(n), C0_MM) / 1000)
+    return turning_torque(f, f)
 
 
 # Star wheel detent: the self-adjuster's spring-loaded lever rides on the teeth. Turning the wheel one tooth takes
@@ -218,18 +229,38 @@ def _arc(name, r0, r1, y, a0, a1, step):
     return out
 
 
-def shoe_boxes():
-    """Both shoes (fixed): lining, table and web as arc segments, with the lining C0_MM inside the drum."""
+# (link and joint name, middle angle, sign of its outward travel along B's x, half the lining's arc)
+SHOES = (("shoe_primary", 0.0, 1.0, 6.10 * 0.0254 / 2 / DRUM_R_IN),
+         ("shoe_secondary", math.pi, -1.0, 8.65 * 0.0254 / 2 / DRUM_R_IN))
+PAD_R = 0.005            # each lining's contact: three 5 mm spheres along its crown line, their outer points on the
+PAD_ANGLES = (-0.5, 0.0, 0.5)   # lining's face (rad from the shoe's middle), axially in the lining's middle
+SHOE_MASS = 0.6          # kg each
+
+
+def shoe_visual_boxes(side: str):
+    """One shoe (its link's frame = B at zero travel): lining, table and web as arc segments, for looks only; the
+    lining's face is C0_MM inside the drum."""
+    mid, span = {n: (m, h) for n, m, _, h in SHOES}[side]
     r_out = DRUM_R_IN - C0_MM / 1000
-    out = []
-    for side, mid in (("lead", 0.0), ("trail", math.pi)):
-        a0, a1 = mid - SHOE_SPAN, mid + SHOE_SPAN
-        out += _arc(f"lining_{side}", r_out - 0.005, r_out, SHOE_Y, a0, a1, math.radians(8))
-        out += _arc(f"table_{side}", r_out - 0.007, r_out - 0.005, SHOE_Y, a0, a1, math.radians(8))
-        out += _arc(f"web_{side}", WEB_R0, r_out - 0.007, WEB_Y, a0, a1, math.radians(8))
-    # the wheel cylinder at the top, between the shoes' upper ends, and the anchor pin above it
-    out.append(("wheel_cylinder", (0.0, 0.035, 0.083), (0.070, 0.028, 0.022), np.eye(3)))
+    a0, a1 = mid - span, mid + span
+    out = _arc(f"lining_{side}", r_out - 0.005, r_out - 0.0003, SHOE_Y, a0, a1, math.radians(8))
+    out += _arc(f"table_{side}", r_out - 0.007, r_out - 0.005, SHOE_Y, a0, a1, math.radians(8))
+    out += _arc(f"web_{side}", WEB_R0, r_out - 0.007, WEB_Y, a0, a1, math.radians(8))
     return out
+
+
+def shoe_pads(side: str):
+    """The lining's contact spheres (name, centre, radius) in the shoe link's frame: their outer points lie on the
+    lining's face, C0_MM inside the drum at zero travel."""
+    mid = {n: m for n, m, _, _ in SHOES}[side]
+    r = DRUM_R_IN - C0_MM / 1000 - PAD_R
+    y = (SHOE_Y[0] + SHOE_Y[1]) / 2
+    return [(f"pad_{i}", (r * math.cos(mid + a), y, r * math.sin(mid + a)), PAD_R) for i, a in enumerate(PAD_ANGLES)]
+
+
+def base_boxes():
+    """Fixed parts inside the drum: the wheel cylinder at the top, between the shoes' upper ends."""
+    return [("wheel_cylinder", (0.0, 0.035, 0.083), (0.070, 0.028, 0.022), np.eye(3))]
 
 
 def shoe_cylinders():
@@ -254,8 +285,18 @@ def stand_cylinders():
 
 
 def drum_boxes():
-    """The drum's braking band as N_SEG flat segments (drum link frame = B at drum angle 0)."""
-    return _arc("band", DRUM_R_IN, DRUM_R_OUT, DRUM_Y, 0.0, 2 * math.pi, 2 * math.pi / N_SEG)
+    """The drum's braking band as N_BAND flat segments (drum link frame = B at drum angle 0). Each segment's inner face
+    is a chord of the 228.6 mm bore, so the band is round to 0.01 mm."""
+    out = []
+    da = 2 * math.pi / N_BAND
+    t = DRUM_R_OUT - DRUM_R_IN
+    for i in range(N_BAND):
+        a = (i + 0.5) * da
+        r = DRUM_R_IN + t / 2
+        w = 2 * DRUM_R_IN * math.tan(da / 2) + 0.0002   # chord width, overlapping its neighbours by 0.1 mm
+        out.append((f"band_{i}", (r * math.cos(a), (DRUM_Y[0] + DRUM_Y[1]) / 2, r * math.sin(a)),
+                    (t, DRUM_Y[1] - DRUM_Y[0], w), rot_y(-a)))
+    return out
 
 
 def stud_angle(i: int) -> float:
@@ -450,15 +491,17 @@ def spoon_boxes(pos, rot):
     return [(np.asarray(pos, float) + rot @ c, rot @ r, h) for c, r, h in spoon_boxes_s()]
 
 
-def corner_boxes_world(drum_angle: float = 0.0, star_angle: float = 0.0, base=None, base_rot=None):
-    """Every box of the corner in the station frame (centre, rotation, half sizes), for clearance checks."""
+def corner_boxes_world(drum_angle: float = 0.0, star_angle: float = 0.0, base=None, base_rot=None, band: bool = True):
+    """Every box of the corner in the station frame (centre, rotation, half sizes), for clearance checks (``band``
+    False: without the drum's 240 band segments, which ``drum_world_cylinders`` covers as one cylinder)."""
     p0 = B0 if base is None else np.asarray(base, float)
     r0 = np.eye(3) if base_rot is None else np.asarray(base_rot, float)
     out = []
-    for _, c, s, r in plate_boxes() + shoe_boxes() + stand_boxes():
+    for _, c, s, r in plate_boxes() + base_boxes() + stand_boxes() + shoe_visual_boxes("shoe_primary") \
+            + shoe_visual_boxes("shoe_secondary"):
         out.append((p0 + r0 @ np.asarray(c), r0 @ r, np.asarray(s) / 2))
     rd = rot_y(drum_angle)
-    for _, c, s, r in drum_boxes():
+    for _, c, s, r in drum_boxes() if band else []:
         out.append((p0 + r0 @ rd @ np.asarray(c), r0 @ rd @ r, np.asarray(s) / 2))
     rs = rot_x(star_angle)
     for _, c, s, r in star_boxes():

@@ -6,7 +6,8 @@ resets only the arms); per-joint drives (``UsdBody.drives``: springs as well as 
 positions or, for sprung joints, ``UsdBody.drive_targets``; a collision ``contact_offset``; per-link poses in
 :class:`BodyState` (``links``); putting free rigid bodies back at their spawn pose once the scene has settled; an
 optional effort cap per drive group; and helpers to set a joint's drive target, its damping, or its position while
-the trial runs (:func:`set_target`, :func:`set_damping`, :func:`write_joint`).
+the trial runs (:func:`set_target`, :func:`set_damping`, :func:`write_joint`), and a feed-forward joint effort
+(:func:`set_effort`, used as a torque probe by the demo's calibration).
 
 yam_arena's task files spawn single primitives (yaw only) and library assets. This module adds two object kinds
 (here :class:`UsdBody` is used for the brake corner and the spoon):
@@ -39,7 +40,7 @@ import numpy as np
 from yam_arena.task_file import Box, ObjectState
 
 __all__ = ["BodyState", "Shape", "UsdBody", "arm_joints", "env", "on_reset", "on_step", "robot_links", "set_damping",
-           "set_target", "write_joint", "write_start_joints", "write_start_poses"]
+           "set_effort", "set_target", "write_joint", "write_start_joints", "write_start_poses"]
 
 HERE = Path(__file__).resolve().parent
 
@@ -242,6 +243,12 @@ def set_target(environment, name: str, joint: str, value: float) -> None:
     """Set one joint's drive target (rad or m)."""
     asset, ids = _joint_ids(environment, name, joint)
     asset.actuators.target_command.set_position_index(value=_value(environment, len(ids), value), joint_ids=ids)
+
+
+def set_effort(environment, name: str, joint: str, value: float) -> None:
+    """Apply a feed-forward effort (N m or N) on one joint, on top of its drive (a torque probe)."""
+    asset, ids = _joint_ids(environment, name, joint)
+    asset.actuators.target_command.set_effort_index(value=_value(environment, len(ids), value), joint_ids=ids)
 
 
 def set_damping(environment, name: str, joint: str, value: float) -> None:
