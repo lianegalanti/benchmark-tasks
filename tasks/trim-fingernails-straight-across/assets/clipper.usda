@@ -1,0 +1,508 @@
+#usda 1.0
+(
+    defaultPrim = "clipper"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "clipper"
+{
+    def Scope "Looks"
+    {
+        def Material "steel"
+        {
+            token outputs:surface.connect = </clipper/Looks/steel/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.72, 0.73, 0.76)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "dark"
+        {
+            token outputs:surface.connect = </clipper/Looks/dark/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.45, 0.46, 0.48)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "steel_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.45
+            float physics:restitution = 0
+            float physics:staticFriction = 0.5
+        }
+
+        def Material "lever_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "body" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI", "PhysicsFilteredPairsAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0.03, 0, 0.001)
+            float3 physics:diagonalInertia = (1e-7, 0.0000035, 0.0000035)
+            prepend rel physics:filteredPairs = [
+                </clipper/Geometry/body/upper>,
+                </clipper/Geometry/body/lever>,
+            ]
+            float physics:mass = 0.012
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 1
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Cube "arm" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/steel>
+                rel material:binding:physics = </clipper/Looks/lever_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                double size = 1
+                float3 xformOp:scale = (0.049, 0.014, 0.0015)
+                double3 xformOp:translate = (0.0245, 0, 0.00075)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.009440816, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05372040816326531, -0.005571428571428571, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.009195918, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05359795918367347, -0.0037142857142857142, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.00904898, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05352448979591837, -0.0018571428571428571, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.009, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.053500000000000006, 0, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw4" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.00904898, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05352448979591837, 0.0018571428571428576, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw5" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.009195918, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05359795918367347, 0.0037142857142857142, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jaw6" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/dark>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double size = 1
+                float3 xformOp:scale = (0.009440816, 0.0018571429, 0.002)
+                double3 xformOp:translate = (0.05372040816326531, 0.005571428571428571, 0.001)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jawsidel" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/steel>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                double size = 1
+                float3 xformOp:scale = (0.009, 0.0005, 0.0015)
+                double3 xformOp:translate = (0.053500000000000006, -0.00675, 0.00075)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "jawsider" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/steel>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                double size = 1
+                float3 xformOp:scale = (0.009, 0.0005, 0.0015)
+                double3 xformOp:translate = (0.053500000000000006, 0.00675, 0.00075)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "spacer" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </clipper/Looks/steel>
+                rel material:binding:physics = </clipper/Looks/steel_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                double size = 1
+                float3 xformOp:scale = (0.007, 0.01, 0.0045)
+                double3 xformOp:translate = (0.004, 0, 0.00375)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cylinder "pin" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.008692455646931238
+                rel material:binding = </clipper/Looks/dark>
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double radius = 0.0011
+                double3 xformOp:translate = (0.044, 0, 0.0058462278234656185)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Cylinder "pinhead" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.0008
+                rel material:binding = </clipper/Looks/dark>
+                color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                double radius = 0.0018
+                double3 xformOp:translate = (0.044, 0, 0.010592455646931237)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+            }
+
+            def Xform "upper" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.025, 0, 0.0008)
+                float3 physics:diagonalInertia = (1e-7, 0.000002, 0.000002)
+                float physics:mass = 0.007
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                double3 xformOp:translate = (0.0045, 0, 0.006)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                def Cube "arm" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/steel>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                    double size = 1
+                    float3 xformOp:scale = (0.048, 0.014, 0.0015)
+                    double3 xformOp:translate = (0.0205, 0, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw0" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.009440816, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.04922040816326531, -0.005571428571428571, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.009195918, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.049097959183673476, -0.0037142857142857142, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw2" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.00904898, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.04902448979591838, -0.0018571428571428571, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw3" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.009, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.049, 0, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw4" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.00904898, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.04902448979591838, 0.0018571428571428576, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw5" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.009195918, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.049097959183673476, 0.0037142857142857142, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "jaw6" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/dark>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.45, 0.46, 0.48)]
+                    double size = 1
+                    float3 xformOp:scale = (0.009440816, 0.0018571429, 0.0015)
+                    double3 xformOp:translate = (0.04922040816326531, 0.005571428571428571, 0.00075)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+            }
+
+            def Xform "lever" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.018793853, 0, 0.0068404027)
+                float3 physics:diagonalInertia = (1e-7, 0.0000012, 0.0000012)
+                float physics:mass = 0.006
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                double3 xformOp:translate = (0.044, 0, 0.010192455646931237)
+                uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                def Cube "plate" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/steel>
+                    rel material:binding:physics = </clipper/Looks/lever_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                    double size = 1
+                    quatf xformOp:orient = (0.9848077, 0, 0.17364818, 0)
+                    float3 xformOp:scale = (0.039, 0.011, 0.0015)
+                    double3 xformOp:translate = (-0.015504928242967486, 0, 0.0056433323648735325)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Cube "nub" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </clipper/Looks/steel>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                    double size = 1
+                    quatf xformOp:orient = (0.9848077, 0, 0.17364818, 0)
+                    float3 xformOp:scale = (0.0026, 0.008, 0.00375)
+                    double3 xformOp:translate = (-0.008415343842517149, 0, 0.00026946801704234033)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Cylinder "heel" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Y"
+                    double height = 0.008
+                    rel material:binding = </clipper/Looks/steel>
+                    rel material:binding:physics = </clipper/Looks/steel_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.72, 0.73, 0.76)]
+                    double radius = 0.0012
+                    double3 xformOp:translate = (-0.009056631611252777, 0, -0.0014924556469312375)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "jaw" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular", "PhysxMimicJointAPI:rotY"]
+        )
+        {
+            float drive:angular:physics:damping = 0.000034906585
+            float drive:angular:physics:maxForce = 1000
+            float drive:angular:physics:stiffness = 0
+            float drive:angular:physics:targetPosition = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </clipper/Geometry/body>
+            rel physics:body1 = </clipper/Geometry/body/upper>
+            point3f physics:localPos0 = (0.0045, 0, 0.006)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = 0
+            float physics:upperLimit = 4.287798
+            custom float physxMimicJoint:rotY:gearing = 0.28134152
+            custom float physxMimicJoint:rotY:offset = 0
+            custom rel physxMimicJoint:rotY:referenceJoint = </clipper/Physics/lever>
+            custom uniform token physxMimicJoint:rotY:referenceJointAxis = "rotY"
+        }
+
+        def PhysicsRevoluteJoint "lever" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.000008726646
+            float drive:angular:physics:maxForce = 5
+            float drive:angular:physics:stiffness = 0.01423644
+            float drive:angular:physics:targetPosition = 2.5075746
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </clipper/Geometry/body>
+            rel physics:body1 = </clipper/Geometry/body/lever>
+            point3f physics:localPos0 = (0.044, 0, 0.010192456)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -15.125952
+            float physics:upperLimit = 0
+        }
+    }
+}
+

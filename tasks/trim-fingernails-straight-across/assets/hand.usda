@@ -1,0 +1,1179 @@
+#usda 1.0
+(
+    defaultPrim = "hand"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "hand"
+{
+    def Scope "Looks"
+    {
+        def Material "skin"
+        {
+            token outputs:surface.connect = </hand/Looks/skin/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.8, 0.62, 0.52)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "nail"
+        {
+            token outputs:surface.connect = </hand/Looks/nail/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.86, 0.66, 0.62)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "white"
+        {
+            token outputs:surface.connect = </hand/Looks/white/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.93, 0.86)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "skin_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+        }
+
+        def Material "nail_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.35
+            float physics:restitution = 0
+            float physics:staticFriction = 0.4
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "palm" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (-0.04, 0, 0)
+            float3 physics:diagonalInertia = (0.0005, 0.0005, 0.0008)
+            float physics:mass = 0.4
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Cube "palm" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </hand/Looks/skin>
+                rel material:binding:physics = </hand/Looks/skin_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                double size = 1
+                quatf xformOp:orient = (0.25881904, -0, -0, -0.9659258)
+                float3 xformOp:scale = (0.088, 0.086, 0.028)
+                double3 xformOp:translate = (0.028658965343808684, 0.026361215932167725, -0.0020000000000000018)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "part0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.09
+                rel material:binding = </hand/Looks/skin>
+                rel material:binding:physics = </hand/Looks/skin_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                double radius = 0.0085
+                quatf xformOp:orient = (0.5416752, 0.5416752, -0.45451948, -0.45451948)
+                double3 xformOp:translate = (-0.052584298077980485, 0.010506340080676906, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+
+            def Capsule "part1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.07199999999999997
+                rel material:binding = </hand/Looks/skin>
+                rel material:binding:physics = </hand/Looks/skin_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                double radius = 0.0075
+                quatf xformOp:orient = (0.45451948, 0.45451948, -0.5416752, -0.5416752)
+                double3 xformOp:translate = (-0.04406077426302624, 0.04516029973981815, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+
+            def Capsule "part2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.062000000000000006
+                rel material:binding = </hand/Looks/skin>
+                rel material:binding:physics = </hand/Looks/skin_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                double radius = 0.0095
+                quatf xformOp:orient = (0.7064338, 0.7064338, -0.030843565, -0.030843565)
+                double3 xformOp:translate = (0.05126931514512237, -0.03436279775437727, -0.006000000000000005)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+
+            def Capsule "part3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                double height = 0.13000000000000006
+                rel material:binding = </hand/Looks/skin>
+                rel material:binding:physics = </hand/Looks/skin_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                double radius = 0.024
+                quatf xformOp:orient = (0.35355338, 0.35355338, 0.61237246, 0.61237246)
+                double3 xformOp:translate = (0.11959163274117476, 0.07886121593216774, 0.008000000000000007)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+
+            def Xform "index" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.0565, 0, 0)
+                float3 physics:diagonalInertia = (0.000002, 0.0000319225, 0.0000319225)
+                float physics:mass = 0.03
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                custom bool physxRigidBody:disableGravity = 1
+                quatf xformOp:orient = (0.42261827, -0, -0, -0.9063078)
+                double3 xformOp:translate = (0.012732050807568895, -0.018052558883257644, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+                def Capsule "proximal" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.048
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.009
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.019999999999999997, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Capsule "middle" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.02500000000000001
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.008
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.0565, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Capsule "distal" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.01319999999999999
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.0068
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.0756, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Cube "bed" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double size = 1
+                    float3 xformOp:scale = (0.012, 0.0105, 0.0068)
+                    double3 xformOp:translate = (0.08199999999999999, 0, 0.0034)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "plate" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </hand/Looks/nail>
+                    rel material:binding:physics = </hand/Looks/nail_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.86, 0.66, 0.62)]
+                    double size = 1
+                    float3 xformOp:scale = (0.012, 0.0105, 0.0005)
+                    double3 xformOp:translate = (0.08199999999999999, 0, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Xform "index_b0" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00154375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, -0.004593750000000001, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0030875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.0015437499999999998, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b1" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00169375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, -0.0032812500000000003, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0033875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.00169375, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b2" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00179375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, -0.00196875, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0035875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.00179375, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b3" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00184375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, -0.0006562499999999997, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0036875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.0018437500000000001, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b4" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00184375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, 0.0006562499999999997, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0036875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.0018437500000000001, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b5" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00179375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, 0.00196875, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0035875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.00179375, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b6" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00169375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, 0.0032812500000000003, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0033875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.00169375, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "index_b7" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.00154375, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.088, 0.00459375, 0.00705)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0030875, 0.0012625, 0.00045)
+                        double3 xformOp:translate = (0.00154375, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+            }
+
+            def Xform "middle" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.0625, 0, 0)
+                float3 physics:diagonalInertia = (0.000002, 0.0000390625, 0.0000390625)
+                float physics:mass = 0.03
+                quatf physics:principalAxes = (1, 0, 0, 0)
+                custom bool physxRigidBody:disableGravity = 1
+                quatf xformOp:orient = (0.25881904, -0, -0, -0.9659258)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+                def Capsule "proximal" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.052000000000000005
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.0092
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.022, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Capsule "middle" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.028999999999999998
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.0082
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.0625, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Capsule "distal" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    double height = 0.013999999999999999
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double radius = 0.007
+                    quatf xformOp:orient = (0.5, 0.5, 0.5, 0.5)
+                    double3 xformOp:translate = (0.08399999999999999, 0, 0)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+                }
+
+                def Cube "bed" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </hand/Looks/skin>
+                    rel material:binding:physics = </hand/Looks/skin_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.8, 0.62, 0.52)]
+                    double size = 1
+                    float3 xformOp:scale = (0.012, 0.0115, 0.007)
+                    double3 xformOp:translate = (0.091, 0, 0.0035)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Cube "plate" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </hand/Looks/nail>
+                    rel material:binding:physics = </hand/Looks/nail_physics> (
+                        bindMaterialAs = "weakerThanDescendants"
+                    )
+                    color3f[] primvars:displayColor = [(0.86, 0.66, 0.62)]
+                    double size = 1
+                    float3 xformOp:scale = (0.012, 0.0115, 0.0005)
+                    double3 xformOp:translate = (0.091, 0, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                }
+
+                def Xform "middle_b0" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0017054687, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, -0.00503125, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0034109375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.00170546875, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b1" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0018742187, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, -0.0035937499999999997, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0037484374, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0018742187499999998, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b2" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0019867187, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, -0.00215625, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0039734375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0019867187499999998, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b3" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0020429688, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, -0.0007187499999999998, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0040859375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0020429687499999996, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b4" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0020429688, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, 0.0007187499999999998, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0040859375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0020429687499999996, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b5" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0019867187, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, 0.00215625, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0039734375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0019867187499999998, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b6" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0018742187, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, 0.0035937499999999997, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0037484374, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0018742187499999998, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+
+                def Xform "middle_b7" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0017054687, 0, 0)
+                    float3 physics:diagonalInertia = (2e-8, 2e-8, 2e-8)
+                    float physics:mass = 0.002
+                    quatf physics:principalAxes = (1, 0, 0, 0)
+                    custom bool physxRigidBody:disableGravity = 1
+                    double3 xformOp:translate = (0.097, 0.005031249999999999, 0.00725)
+                    uniform token[] xformOpOrder = ["xformOp:translate"]
+
+                    def Cube "strip" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </hand/Looks/white>
+                        rel material:binding:physics = </hand/Looks/nail_physics> (
+                            bindMaterialAs = "weakerThanDescendants"
+                        )
+                        color3f[] primvars:displayColor = [(0.95, 0.93, 0.86)]
+                        double size = 1
+                        float3 xformOp:scale = (0.0034109375, 0.0013875, 0.00045)
+                        double3 xformOp:translate = (0.0017054687500000002, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+                    }
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsRevoluteJoint "index" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.00006981317
+            float drive:angular:physics:maxForce = 1000
+            float drive:angular:physics:stiffness = 0.006981317
+            float drive:angular:physics:targetPosition = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </hand/Geometry/palm>
+            rel physics:body1 = </hand/Geometry/palm/index>
+            point3f physics:localPos0 = (0.01273205, -0.01805256, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (0.42261827, -0, -0, -0.9063078)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -20
+            float physics:upperLimit = 45
+        }
+
+        def PhysicsPrismaticJoint "index_b0" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b0>
+            point3f physics:localPos0 = (0.088, -0.00459375, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0035875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b1>
+            point3f physics:localPos0 = (0.088, -0.00328125, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0038875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b2" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b2>
+            point3f physics:localPos0 = (0.088, -0.00196875, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0040875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b3" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b3>
+            point3f physics:localPos0 = (0.088, -0.00065625, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0041875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b4" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b4>
+            point3f physics:localPos0 = (0.088, 0.00065625, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0041875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b5" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b5>
+            point3f physics:localPos0 = (0.088, 0.00196875, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0040875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b6" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b6>
+            point3f physics:localPos0 = (0.088, 0.00328125, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0038875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "index_b7" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/index>
+            rel physics:body1 = </hand/Geometry/palm/index/index_b7>
+            point3f physics:localPos0 = (0.088, 0.00459375, 0.00705)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0035875
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsRevoluteJoint "middle" (
+            prepend apiSchemas = ["PhysicsDriveAPI:angular"]
+        )
+        {
+            float drive:angular:physics:damping = 0.00006981317
+            float drive:angular:physics:maxForce = 1000
+            float drive:angular:physics:stiffness = 0.006981317
+            float drive:angular:physics:targetPosition = 0
+            uniform token drive:angular:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </hand/Geometry/palm>
+            rel physics:body1 = </hand/Geometry/palm/middle>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (0.25881904, -0, -0, -0.9659258)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -20
+            float physics:upperLimit = 45
+        }
+
+        def PhysicsPrismaticJoint "middle_b0" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b0>
+            point3f physics:localPos0 = (0.097, -0.00503125, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0039109373
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b1>
+            point3f physics:localPos0 = (0.097, -0.00359375, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0042484375
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b2" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b2>
+            point3f physics:localPos0 = (0.097, -0.00215625, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0044734376
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b3" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b3>
+            point3f physics:localPos0 = (0.097, -0.00071875, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0045859376
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b4" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b4>
+            point3f physics:localPos0 = (0.097, 0.00071875, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0045859376
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b5" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b5>
+            point3f physics:localPos0 = (0.097, 0.00215625, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0044734376
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b6" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b6>
+            point3f physics:localPos0 = (0.097, 0.00359375, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0042484375
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "middle_b7" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 50
+            float drive:linear:physics:maxForce = 100
+            float drive:linear:physics:stiffness = 100000
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </hand/Geometry/palm/middle>
+            rel physics:body1 = </hand/Geometry/palm/middle/middle_b7>
+            point3f physics:localPos0 = (0.097, 0.00503125, 0.00725)
+            point3f physics:localPos1 = (0, 0, 0)
+            quatf physics:localRot0 = (1, 0, 0, 0)
+            quatf physics:localRot1 = (1, 0, 0, 0)
+            float physics:lowerLimit = -0.0039109373
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsFixedJoint "root_joint"
+        {
+            rel physics:body0 = </hand>
+            rel physics:body1 = </hand/Geometry/palm>
+        }
+    }
+}
+
