@@ -16,5 +16,5 @@
   "reset_notes": "Pull both catch lugs outward together (or squeeze them toward each other's ends) and slide the tray off toward the robot; lay it flat at its start position. Check the booster's feet are on their marked outline.",
   "fidelity": "Rigid bodies. The tray's deck and rim are a smooth rounded mesh over matching hidden colliders (boxes, corner cylinders, 6 rim segments per corner); seat and ratchet are boxes, ramps turned 45 degrees, catch noses cylinders. Each catch is a prismatic joint with a 600 N/m spring, no preload; teeth, lip and stop hold by contact. Friction: catch 0.2, tray 0.4, feet 0.9. The seat stands unstrapped; the 3 cm move limit stands for the straps. No force limits or plastic flex.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-3TSRYA"
+  "media": "M-E36P68"
 }
