@@ -1,0 +1,2117 @@
+#usda 1.0
+(
+    defaultPrim = "string_c"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "string_c"
+{
+    def Scope "Looks"
+    {
+        def Material "string"
+        {
+            token outputs:surface.connect = </string_c/Looks/string/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.94, 0.88)
+                float inputs:roughness = 0.35
+                token outputs:surface
+            }
+        }
+
+        def Material "string_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "PhysxMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.18
+            float physics:restitution = 0
+            float physics:staticFriction = 0.22
+            custom token physxMaterial:frictionCombineMode = "min"
+        }
+    }
+
+    def Scope "Geometry"
+    {
+        def Xform "anchor" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsArticulationRootAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxArticulation:enabledSelfCollisions = 0
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "lat_00" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004557803468208092, -0.008, 0.0017740462427745666)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_00" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004557803468208092, -0.008, 0.0017740462427745666)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.011371095188727674
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.0000028549714376187654, 0.00039512804696649126, -0.000005138948587714472)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_01" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.0046403142182957656, -0.019419487812134036, 0.0019225655929323792)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_01" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.0046403142182957656, -0.019419487812134036, 0.0019225655929323792)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.007910968384216056
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.00000964410336753551, 0.0013347439060670194, -0.000017359386061565306)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_02" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004684248554913294, -0.0255, 0.0020016473988439306)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_02" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004684248554913294, -0.0255, 0.0020016473988439306)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.00420081391158398
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.000003758150628370427, 0.0005201280469664914, -0.0000067646711310667684)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_03" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004713150289017341, -0.0295, 0.0020536705202312136)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_03" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004713150289017341, -0.0295, 0.0020536705202312136)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.0031604426899273443
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0, 0, 4.336808689942018e-19)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_04" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004742052023121387, -0.0335, 0.0021056936416184975)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_04" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004742052023121387, -0.0335, 0.0021056936416184975)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.003284978232781056
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-4.4986185592996164e-7, -0.00006226088086064979, 8.097513406728901e-7)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_05" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004772753204649151, -0.03774904352344261, 0.002160955768368473)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_05" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004772753204649151, -0.03774904352344261, 0.002160955768368473)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.0026603873536864262
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.0000027060820933615115, 0.00037452176172130675, -0.000004870947768051241)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_06" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004792630057803468, -0.0405, 0.0021967341040462426)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_06" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004792630057803468, -0.0405, 0.0021967341040462426)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.0022858241427122414
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.0000013530410466807558, -0.0001872608808606499, 0.0000024354738840260542)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_07" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004817919075144508, -0.044, 0.0022422543352601156)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_07" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004817919075144508, -0.044, 0.0022422543352601156)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.002410359685565967
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (9.031791907516615e-7, 0.0001250000000000001, -0.0000016257225433527304)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_08" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004839595375722543, -0.047, 0.002281271676300578)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_08" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004839595375722543, -0.047, 0.002281271676300578)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.002410359685565967
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-9.031791907516615e-7, -0.0001250000000000001, 0.0000016257225433522968)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_09" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004864884393063583, -0.0505, 0.0023267919075144507)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_09" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004864884393063583, -0.0505, 0.0023267919075144507)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.00318536560901081
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000001896387865272381, -0.00026246008055369474, 0.0000034134981574903724)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_10" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004897758961865713, -0.05504984032221478, 0.002385966131358285)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_10" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004897758961865713, -0.05504984032221478, 0.002385966131358285)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.005510702770259647
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000006503467044022097, -0.0009000798388926132, 0.000011706240679238908)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_11" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004956647398843931, -0.0632, 0.0024919653179190752)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_11" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.004956647398843931, -0.0632, 0.0024919653179190752)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.007325792472155578
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-5.3212304400480914e-8, -0.000007364582929048069, 9.578214792138606e-8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_12" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.00501574868503975, -0.07137961800950146, 0.002598347633071551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_12" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.00501574868503975, -0.07137961800950146, 0.002598347633071551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.010957743391220734
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000013066545667145095, -0.001808409920332793, 0.00002351978220086013)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_13" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005127116153904147, -0.08679287570033409, 0.002798809077027467)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_13" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005127116153904147, -0.08679287570033409, 0.002798809077027467)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.015972051420806842
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000005046724365668012, -0.0006984666522083238, 0.000009084103858200167)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_14" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005258670520231214, -0.105, 0.0030356069364161848)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_14" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005258670520231214, -0.105, 0.0030356069364161848)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.020765953069672546
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000012270367955805571, -0.001698218925083525, 0.000022086662320450375)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_15" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005439306358381503, -0.13, 0.0033607514450867057)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_15" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005439306358381503, -0.13, 0.0033607514450867057)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.0241627668120459
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0, 0, -4.336808689942018e-19)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_16" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005619942196531792, -0.155, 0.0036858959537572258)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_16" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005619942196531792, -0.155, 0.0036858959537572258)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.024162766812045846
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_17" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005800578034682081, -0.18, 0.004011040462427746)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_17" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005800578034682081, -0.18, 0.004011040462427746)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.021662490130841313
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.00000903179190751488, 0.0012500000000000011, -0.000016257225433526437)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_18" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005945086705202312, -0.2, 0.004271156069364162)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_18" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.005945086705202312, -0.2, 0.004271156069364162)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.015161770759709377
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.000014450867052023114, 0.0020000000000000018, -0.000026011560693641952)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_19" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006031791907514451, -0.212, 0.004427225433526012)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_19" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006031791907514451, -0.212, 0.004427225433526012)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.010161217397300169
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0.0000036127167630057785, 0.0004999999999999727, -0.000006502890173410922)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_20" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006104046242774566, -0.222, 0.00455728323699422)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_20" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006104046242774566, -0.222, 0.00455728323699422)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.00916110672481836
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_21" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006176300578034682, -0.232, 0.004687341040462428)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_21" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006176300578034682, -0.232, 0.004687341040462428)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.010661272733541088
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.0000054190751445091015, -0.0007500000000000007, 0.000009754335260115515)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_22" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006270231213872832, -0.245, 0.004856416184971099)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_22" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006270231213872832, -0.245, 0.004856416184971099)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.015661826095950293
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000012644508670521526, -0.0017500000000000016, 0.000022760115606935624)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_23" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006414739884393064, -0.265, 0.005116531791907515)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_23" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006414739884393064, -0.265, 0.005116531791907515)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.021662490130841257
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000009031791907514013, -0.0012499999999999734, 0.00001625722543352557)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_24" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006595375722543352, -0.29, 0.005441676300578034)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_24" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006595375722543352, -0.29, 0.005441676300578034)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.0241627668120459
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-8.673617379884035e-19, 0, 8.673617379884035e-19)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+
+        def Xform "lat_25" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.001
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006776011560693642, -0.315, 0.005766820809248555)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "node_25" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysxRigidBodyAPI", "PhysicsMassAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0, 0, 0)
+            float3 physics:diagonalInertia = (1e-8, 1e-8, 1e-8)
+            float physics:mass = 0.04
+            quatf physics:principalAxes = (1, 0, 0, 0)
+            custom bool physxRigidBody:disableGravity = 1
+            double3 xformOp:translate = (-0.006776011560693642, -0.315, 0.005766820809248555)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Capsule "cap" (
+                prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+            )
+            {
+                uniform token axis = "Y"
+                double height = 0.03866437156303247
+                rel material:binding = </string_c/Looks/string>
+                rel material:binding:physics = </string_c/Looks/string_physics> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+                color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+                double radius = 0.00042
+                quatf xformOp:orient = (0.0074384217, 0.8741331, 0, 0.4856295)
+                double3 xformOp:translate = (-0.000052384393063583355, -0.007249999999999979, 0.00009429190751445143)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def PhysicsFixedJoint "root_joint"
+        {
+            rel physics:body0 = </string_c>
+            rel physics:body1 = </string_c/Geometry/anchor>
+        }
+
+        def PhysicsPrismaticJoint "lat_00" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.75
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3875
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/anchor>
+            rel physics:body1 = </string_c/Geometry/lat_00>
+            point3f physics:localPos0 = (-0.0045578033, -0.008, 0.0017740462)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_00" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.75
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3875
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_00>
+            rel physics:body1 = </string_c/Geometry/node_00>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_01" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 5.429315
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2714.6577
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_00>
+            rel physics:body1 = </string_c/Geometry/lat_01>
+            point3f physics:localPos0 = (-0.00008251075, -0.011419488, 0.00014851935)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_01" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 5.429315
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2714.6577
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_01>
+            rel physics:body1 = </string_c/Geometry/node_01>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_02" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 10.196509
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 5098.255
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_01>
+            rel physics:body1 = </string_c/Geometry/lat_02>
+            point3f physics:localPos0 = (-0.000043934335, -0.006080512, 0.00007908181)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_02" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 10.196509
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 5098.255
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_02>
+            rel physics:body1 = </string_c/Geometry/node_02>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_03" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 15.5
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7750
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_02>
+            rel physics:body1 = </string_c/Geometry/lat_03>
+            point3f physics:localPos0 = (-0.000028901733, -0.004, 0.000052023122)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_03" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 15.5
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7750
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_03>
+            rel physics:body1 = </string_c/Geometry/node_03>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_04" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 15.5
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7750
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_03>
+            rel physics:body1 = </string_c/Geometry/lat_04>
+            point3f physics:localPos0 = (-0.000028901733, -0.004, 0.000052023122)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_04" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 15.5
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7750
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_04>
+            rel physics:body1 = </string_c/Geometry/node_04>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_05" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 14.591519
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7295.76
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_04>
+            rel physics:body1 = </string_c/Geometry/lat_05>
+            point3f physics:localPos0 = (-0.000030701183, -0.0042490433, 0.000055262128)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_05" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 14.591519
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 7295.76
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_05>
+            rel physics:body1 = </string_c/Geometry/node_05>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_06" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 22.537615
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 11268.808
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_05>
+            rel physics:body1 = </string_c/Geometry/lat_06>
+            point3f physics:localPos0 = (-0.000019876854, -0.0027509565, 0.000035778336)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_06" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 22.537615
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 11268.808
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_06>
+            rel physics:body1 = </string_c/Geometry/node_06>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_07" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 17.714285
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 8857.143
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_06>
+            rel physics:body1 = </string_c/Geometry/lat_07>
+            point3f physics:localPos0 = (-0.000025289017, -0.0035, 0.00004552023)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_07" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 17.714285
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 8857.143
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_07>
+            rel physics:body1 = </string_c/Geometry/node_07>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_08" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 20.666666
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 10333.333
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_07>
+            rel physics:body1 = </string_c/Geometry/lat_08>
+            point3f physics:localPos0 = (-0.0000216763, -0.003, 0.00003901734)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_08" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 20.666666
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 10333.333
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_08>
+            rel physics:body1 = </string_c/Geometry/node_08>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_09" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 17.714285
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 8857.143
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_08>
+            rel physics:body1 = </string_c/Geometry/lat_09>
+            point3f physics:localPos0 = (-0.000025289017, -0.0035, 0.00004552023)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_09" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 17.714285
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 8857.143
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_09>
+            rel physics:body1 = </string_c/Geometry/node_09>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_10" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 13.626852
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 6813.426
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_09>
+            rel physics:body1 = </string_c/Geometry/lat_10>
+            point3f physics:localPos0 = (-0.00003287457, -0.0045498405, 0.000059174225)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_10" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 13.626852
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 6813.426
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_10>
+            rel physics:body1 = </string_c/Geometry/node_10>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_11" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.607213
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3803.6064
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_10>
+            rel physics:body1 = </string_c/Geometry/lat_11>
+            point3f physics:localPos0 = (-0.000058888436, -0.008150159, 0.000105999185)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_11" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.607213
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3803.6064
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_11>
+            rel physics:body1 = </string_c/Geometry/node_11>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_12" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.579816
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3789.908
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_11>
+            rel physics:body1 = </string_c/Geometry/lat_12>
+            point3f physics:localPos0 = (-0.000059101287, -0.008179618, 0.000106382315)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_12" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 7.579816
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3789.908
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_12>
+            rel physics:body1 = </string_c/Geometry/node_12>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_13" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 4.022511
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2011.2555
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_12>
+            rel physics:body1 = </string_c/Geometry/lat_13>
+            point3f physics:localPos0 = (-0.000111367466, -0.015413257, 0.00020046145)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_13" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 4.022511
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2011.2555
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_13>
+            rel physics:body1 = </string_c/Geometry/node_13>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_14" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.4052603
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1702.6302
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_13>
+            rel physics:body1 = </string_c/Geometry/lat_14>
+            point3f physics:localPos0 = (-0.00013155436, -0.018207124, 0.00023679786)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_14" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.4052603
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1702.6302
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_14>
+            rel physics:body1 = </string_c/Geometry/node_14>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_15" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_14>
+            rel physics:body1 = </string_c/Geometry/lat_15>
+            point3f physics:localPos0 = (-0.00018063583, -0.025, 0.0003251445)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_15" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_15>
+            rel physics:body1 = </string_c/Geometry/node_15>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_16" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_15>
+            rel physics:body1 = </string_c/Geometry/lat_16>
+            point3f physics:localPos0 = (-0.00018063583, -0.025, 0.0003251445)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_16" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_16>
+            rel physics:body1 = </string_c/Geometry/node_16>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_17" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_16>
+            rel physics:body1 = </string_c/Geometry/lat_17>
+            point3f physics:localPos0 = (-0.00018063583, -0.025, 0.0003251445)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_17" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_17>
+            rel physics:body1 = </string_c/Geometry/node_17>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_18" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.1
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1550
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_17>
+            rel physics:body1 = </string_c/Geometry/lat_18>
+            point3f physics:localPos0 = (-0.00014450867, -0.02, 0.0002601156)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_18" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.1
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1550
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_18>
+            rel physics:body1 = </string_c/Geometry/node_18>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_19" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 5.1666665
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2583.3333
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_18>
+            rel physics:body1 = </string_c/Geometry/lat_19>
+            point3f physics:localPos0 = (-0.0000867052, -0.012, 0.00015606936)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_19" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 5.1666665
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2583.3333
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_19>
+            rel physics:body1 = </string_c/Geometry/node_19>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_20" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 6.2
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3100
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_19>
+            rel physics:body1 = </string_c/Geometry/lat_20>
+            point3f physics:localPos0 = (-0.000072254334, -0.01, 0.0001300578)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_20" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 6.2
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3100
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_20>
+            rel physics:body1 = </string_c/Geometry/node_20>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_21" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 6.2
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3100
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_20>
+            rel physics:body1 = </string_c/Geometry/lat_21>
+            point3f physics:localPos0 = (-0.000072254334, -0.01, 0.0001300578)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_21" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 6.2
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 3100
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_21>
+            rel physics:body1 = </string_c/Geometry/node_21>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_22" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 4.769231
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2384.6155
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_21>
+            rel physics:body1 = </string_c/Geometry/lat_22>
+            point3f physics:localPos0 = (-0.000093930634, -0.013, 0.00016907514)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_22" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 4.769231
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 2384.6155
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_22>
+            rel physics:body1 = </string_c/Geometry/node_22>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_23" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.1
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1550
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_22>
+            rel physics:body1 = </string_c/Geometry/lat_23>
+            point3f physics:localPos0 = (-0.00014450867, -0.02, 0.0002601156)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_23" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 3.1
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1550
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_23>
+            rel physics:body1 = </string_c/Geometry/node_23>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_24" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_23>
+            rel physics:body1 = </string_c/Geometry/lat_24>
+            point3f physics:localPos0 = (-0.00018063583, -0.025, 0.0003251445)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_24" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_24>
+            rel physics:body1 = </string_c/Geometry/node_24>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "lat_25" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "X"
+            rel physics:body0 = </string_c/Geometry/node_24>
+            rel physics:body1 = </string_c/Geometry/lat_25>
+            point3f physics:localPos0 = (-0.00018063583, -0.025, 0.0003251445)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+
+        def PhysicsPrismaticJoint "vert_25" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+        )
+        {
+            float drive:linear:physics:damping = 2.48
+            float drive:linear:physics:maxForce = 10000
+            float drive:linear:physics:stiffness = 1240
+            float drive:linear:physics:targetPosition = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Z"
+            rel physics:body0 = </string_c/Geometry/lat_25>
+            rel physics:body1 = </string_c/Geometry/node_25>
+            point3f physics:localPos0 = (0, 0, 0)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.02
+            float physics:upperLimit = 0.02
+        }
+    }
+}
+

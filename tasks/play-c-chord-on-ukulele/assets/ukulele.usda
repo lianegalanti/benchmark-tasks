@@ -1,0 +1,958 @@
+#usda 1.0
+(
+    defaultPrim = "ukulele"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "ukulele" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+)
+{
+    point3f physics:centerOfMass = (0, 0, 0)
+    float3 physics:diagonalInertia = (0.004, 0.0005, 0.004)
+    bool physics:kinematicEnabled = 1
+    float physics:mass = 0.35
+    quatf physics:principalAxes = (1, 0, 0, 0)
+
+    def Scope "Looks"
+    {
+        def Material "mahogany"
+        {
+            token outputs:surface.connect = </ukulele/Looks/mahogany/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.5, 0.28, 0.14)
+                float inputs:roughness = 0.45
+                token outputs:surface
+            }
+        }
+
+        def Material "rosewood"
+        {
+            token outputs:surface.connect = </ukulele/Looks/rosewood/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.2, 0.12, 0.08)
+                float inputs:roughness = 0.6
+                token outputs:surface
+            }
+        }
+
+        def Material "nickel"
+        {
+            token outputs:surface.connect = </ukulele/Looks/nickel/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.8, 0.8, 0.76)
+                float inputs:roughness = 0.25
+                token outputs:surface
+            }
+        }
+
+        def Material "bone"
+        {
+            token outputs:surface.connect = </ukulele/Looks/bone/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.93, 0.9, 0.8)
+                float inputs:roughness = 0.5
+                token outputs:surface
+            }
+        }
+
+        def Material "dark"
+        {
+            token outputs:surface.connect = </ukulele/Looks/dark/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.04, 0.03, 0.03)
+                float inputs:roughness = 0.9
+                token outputs:surface
+            }
+        }
+
+        def Material "pearl"
+        {
+            token outputs:surface.connect = </ukulele/Looks/pearl/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.92, 0.9, 0.86)
+                float inputs:roughness = 0.3
+                token outputs:surface
+            }
+        }
+
+        def Material "foam"
+        {
+            token outputs:surface.connect = </ukulele/Looks/foam/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.12, 0.12, 0.13)
+                float inputs:roughness = 0.95
+                token outputs:surface
+            }
+        }
+
+        def Material "chrome"
+        {
+            token outputs:surface.connect = </ukulele/Looks/chrome/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.7, 0.72)
+                float inputs:roughness = 0.2
+                token outputs:surface
+            }
+        }
+
+        def Material "string"
+        {
+            token outputs:surface.connect = </ukulele/Looks/string/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.95, 0.94, 0.88)
+                float inputs:roughness = 0.35
+                token outputs:surface
+            }
+        }
+
+        def Material "wood_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.4
+            float physics:restitution = 0
+            float physics:staticFriction = 0.45
+        }
+
+        def Material "fret_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.25
+            float physics:restitution = 0
+            float physics:staticFriction = 0.3
+        }
+
+        def Material "foam_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.8
+            float physics:restitution = 0
+            float physics:staticFriction = 0.9
+        }
+
+        def Material "string_physics" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "PhysxMaterialAPI"]
+        )
+        {
+            float physics:dynamicFriction = 0.18
+            float physics:restitution = 0
+            float physics:staticFriction = 0.22
+            custom token physxMaterial:frictionCombineMode = "min"
+        }
+    }
+
+    def Cube "fingerboard0" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0355, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.0128125, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0365, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.0384375, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0375, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.0640625, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0385, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.0896875, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard4" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0395, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.11531249999999998, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard5" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0405, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.1409375, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard6" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0415, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.1665625, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "fingerboard7" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.0425, 0.025625, 0.005)
+        double3 xformOp:translate = (0, -0.19218749999999998, -0.0025)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "neck" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/mahogany>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.5, 0.28, 0.14)]
+        double size = 1
+        float3 xformOp:scale = (0.034, 0.177, 0.015)
+        double3 xformOp:translate = (0, -0.0885, -0.0125)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "heel" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/mahogany>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.5, 0.28, 0.14)]
+        double size = 1
+        float3 xformOp:scale = (0.034, 0.024, 0.06)
+        double3 xformOp:translate = (0, -0.16099999999999998, -0.034999999999999996)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "headstock" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/mahogany>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.5, 0.28, 0.14)]
+        double size = 1
+        float3 xformOp:scale = (0.05, 0.099, 0.014)
+        double3 xformOp:translate = (0, 0.0555, -0.009000000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "nut" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/bone>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.93, 0.9, 0.8)]
+        double size = 1
+        float3 xformOp:scale = (0.036, 0.006, 0.0066)
+        double3 xformOp:translate = (0, 0.003, -0.0017000000000000001)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "bridge" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/rosewood>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.2, 0.12, 0.08)]
+        double size = 1
+        float3 xformOp:scale = (0.058, 0.014, 0.007)
+        double3 xformOp:translate = (0, -0.346, -0.0015)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "saddle" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/bone>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.93, 0.9, 0.8)]
+        double size = 1
+        float3 xformOp:scale = (0.046, 0.0025, 0.00355)
+        double3 xformOp:translate = (0, -0.346, 0.003775)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "upper_bout" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.06
+        rel material:binding = </ukulele/Looks/mahogany>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.5, 0.28, 0.14)]
+        double radius = 0.0675
+        double3 xformOp:translate = (0, -0.2405, -0.034999999999999996)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "lower_bout" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.06
+        rel material:binding = </ukulele/Looks/mahogany>
+        rel material:binding:physics = </ukulele/Looks/wood_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.5, 0.28, 0.14)]
+        double radius = 0.081
+        double3 xformOp:translate = (0, -0.342, -0.034999999999999996)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret1" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03375783367071743
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.019419487812134036, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret2" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03447313340579288
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.03774904352344261, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret3" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03514828645159863
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.05504984032221478, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret4" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03578554606866347
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.07137961800950146, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret5" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03638703905172035
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.08679287570033409, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret6" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03695477282768603
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.10134105370945454, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret7" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.037490642155261815
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.11507270522858405, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret8" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03799643544851461
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.12803365836818692, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret9" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0384738407455426
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.14026716910452924, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret10" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.0389244513421455
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.15181406564247846, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret11" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03934977110930114
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.1627128846758419, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret12" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.03975121951219512
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.173, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret13" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.04013013634755383
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.182709743906067, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret14" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.04048778621509156
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.19187452176172132, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "fret15" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        uniform token axis = "X"
+        double height = 0.04082536273799443
+        rel material:binding = </ukulele/Looks/nickel>
+        rel material:binding:physics = </ukulele/Looks/fret_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.76)]
+        double radius = 0.001
+        double3 xformOp:translate = (0, -0.2005249201611074, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "cradle" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/foam>
+        rel material:binding:physics = </ukulele/Looks/foam_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+        double size = 1
+        float3 xformOp:scale = (0.12, 0.1, 0.03)
+        double3 xformOp:translate = (0, -0.342, -0.08000000000000008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "cradle_front" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/foam>
+        rel material:binding:physics = </ukulele/Looks/foam_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+        double size = 1
+        float3 xformOp:scale = (0.08, 0.05, 0.03)
+        double3 xformOp:translate = (0, -0.2405, -0.08000000000000008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "neck_rest" (
+        prepend apiSchemas = ["MaterialBindingAPI", "PhysicsCollisionAPI"]
+    )
+    {
+        rel material:binding = </ukulele/Looks/foam>
+        rel material:binding:physics = </ukulele/Looks/foam_physics> (
+            bindMaterialAs = "weakerThanDescendants"
+        )
+        color3f[] primvars:displayColor = [(0.12, 0.12, 0.13)]
+        double size = 1
+        float3 xformOp:scale = (0.06, 0.04, 0.079)
+        double3 xformOp:translate = (0, 0.04, -0.05550000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cylinder "rosette" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0004
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.031
+        double3 xformOp:translate = (0, -0.2405, -0.0048000000000000004)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "soundhole" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0004
+        rel material:binding = </ukulele/Looks/dark>
+        color3f[] primvars:displayColor = [(0.04, 0.03, 0.03)]
+        double radius = 0.025
+        double3 xformOp:translate = (0, -0.2405, -0.0046)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "dot5_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0002
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.003
+        double3 xformOp:translate = (0, -0.07908624685491777, 0.00005)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "dot7_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0002
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.003
+        double3 xformOp:translate = (0, -0.1082068794690193, 0.00005)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "dot10_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0002
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.003
+        double3 xformOp:translate = (0, -0.14604061737350385, 0.00005)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "dot12_0" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0002
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.003
+        double3 xformOp:translate = (-0.006, -0.16785644233792096, 0.00005)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "dot12_1" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.0002
+        rel material:binding = </ukulele/Looks/pearl>
+        color3f[] primvars:displayColor = [(0.92, 0.9, 0.86)]
+        double radius = 0.003
+        double3 xformOp:translate = (0.006, -0.16785644233792096, 0.00005)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cylinder "post_G" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.012
+        rel material:binding = </ukulele/Looks/chrome>
+        color3f[] primvars:displayColor = [(0.7, 0.7, 0.72)]
+        double radius = 0.003
+        double3 xformOp:translate = (-0.016, 0.035, 0.004)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "tail_nut_G" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.03536645868616195
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00033
+        quatf xformOp:orient = (0.9974062, 0.06265109, 0, 0.03543614)
+        double3 xformOp:translate = (-0.01475, 0.0175, 0.00379)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Capsule "tail_saddle_G" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.006250000000000004
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00033
+        quatf xformOp:orient = (-0.31622776, 0.9486833, 0, 0)
+        double3 xformOp:translate = (-0.021, -0.3485, 0.004205)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cylinder "post_C" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.012
+        rel material:binding = </ukulele/Looks/chrome>
+        color3f[] primvars:displayColor = [(0.7, 0.7, 0.72)]
+        double radius = 0.003
+        double3 xformOp:translate = (-0.016, 0.075, 0.004)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "tail_nut_C" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.07599999276315755
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00042
+        quatf xformOp:orient = (0.9967051, 0.028581016, 0, 0.07590801)
+        double3 xformOp:translate = (-0.01025, 0.0375, 0.003835)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Capsule "tail_saddle_C" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.006250000000000004
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00042
+        quatf xformOp:orient = (-0.31622776, 0.9486833, 0, 0)
+        double3 xformOp:translate = (-0.007, -0.3485, 0.004295)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cylinder "post_E" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.012
+        rel material:binding = </ukulele/Looks/chrome>
+        color3f[] primvars:displayColor = [(0.7, 0.7, 0.72)]
+        double radius = 0.003
+        double3 xformOp:translate = (0.016, 0.075, 0.004)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "tail_nut_E" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.0760028578410049
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00037
+        quatf xformOp:orient = (0.9966958, 0.02891023, 0, -0.07590586)
+        double3 xformOp:translate = (0.01025, 0.0375, 0.00381)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Capsule "tail_saddle_E" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.006250000000000003
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.00037
+        quatf xformOp:orient = (-0.31622776, 0.9486833, 0, 0)
+        double3 xformOp:translate = (0.007, -0.3485, 0.004245)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Cylinder "post_A" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Z"
+        double height = 0.012
+        rel material:binding = </ukulele/Looks/chrome>
+        color3f[] primvars:displayColor = [(0.7, 0.7, 0.72)]
+        double radius = 0.003
+        double3 xformOp:translate = (0.016, 0.035, 0.004)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Capsule "tail_nut_A" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.0353695918127422
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.000305
+        quatf xformOp:orient = (0.99738425, 0.06300126, 0, -0.03543378)
+        double3 xformOp:translate = (0.01475, 0.0175, 0.0037775)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def Capsule "tail_saddle_A" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        uniform token axis = "Y"
+        double height = 0.006250000000000003
+        rel material:binding = </ukulele/Looks/string>
+        color3f[] primvars:displayColor = [(0.95, 0.94, 0.88)]
+        double radius = 0.000305
+        quatf xformOp:orient = (-0.31622776, 0.9486833, 0, 0)
+        double3 xformOp:translate = (0.021, -0.3485, 0.00418)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+}
+
