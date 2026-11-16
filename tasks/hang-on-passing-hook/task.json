@@ -16,5 +16,5 @@
   "reset_notes": "Take the plates off the hooks and stand them back in their blocks, either end down (the plate is symmetric); return the hooks to their start positions (70, 100 and 130 cm left of the midpoint) and start the conveyor with the trial. For safety, drive the hook carriers with a low-force belt and slip clutch at 5 cm/s, so a hook blocked by an arm stops instead of pushing, and put a padded tray under the hooks' path to catch a dropped plate; time each hook over the red mark (due at 26, 32 and 38 s): one more than 0.2 s late was held back and credits no plate.",
   "fidelity": "Hooks follow their path exactly (a stiff chain drive); a real slip-clutch drive could be stalled by an arm, so the scorer gives no credit on a hook over 1 cm behind schedule. Round wire and round holes are modelled as boxes of the same size (4 mm square wire, 14.3 mm square holes). The plate is one rigid body of ten boxes with the real plate's mass; steel friction 0.6 static, 0.5 dynamic. Blocks are fixed boxes; the rail's end supports aren't modelled.",
   "scores": "Dream-1 run: 0; demo: 1.0",
-  "media": "M-JV9VRB"
+  "media": "M-YLJLS5"
 }
